@@ -298,6 +298,8 @@
         <option value="year_on_year_price">前年比</option>
         <option value="unit_price">平均単価</option>
       </select>
+      <span class="text-xs text-gray-500 ml-3">検索</span>
+      <input id="menuSearchBox" type="search" placeholder="商品名・カテゴリ" class="border border-gray-300 rounded px-2 py-1 text-sm" style="min-width:180px" />
       <span class="ml-auto text-[11px] text-gray-400" id="menuStatus"></span>
     </div>
     <div id="menuSections" class="space-y-4"></div>
@@ -1417,6 +1419,15 @@ function renderMenuTab() {
     });
     periodSel.value = "FY25_annual";  // default to FY25 annual for richest view
     [periodSel, sortSel].forEach(s => s.addEventListener("change", drawMenu));
+    const sb = document.getElementById("menuSearchBox");
+    if (sb && !sb._wired) {
+      sb._wired = true;
+      let timer;
+      sb.addEventListener("input", () => {
+        clearTimeout(timer);
+        timer = setTimeout(drawMenu, 200);  // debounce
+      });
+    }
   }
   drawMenu();
 }
@@ -1530,6 +1541,8 @@ function drawMenu() {
   const period = document.getElementById("menuPeriodSel").value;
   const sortKey = document.getElementById("menuSortSel").value;
   const status = document.getElementById("menuStatus");
+  const searchBox = document.getElementById("menuSearchBox");
+  const query = (searchBox && searchBox.value || "").trim().toLowerCase();
 
   // 5 scopes
   const scopes = [
@@ -1542,21 +1555,30 @@ function drawMenu() {
 
   const root = document.getElementById("menuSections");
   const mom_available = !!prevMonthOf(period);
-  status.innerHTML = `期間 <strong>${period}</strong>${mom_available ? " · 前月比あり" : " · 前月比なし (annual/MTD)"}`;
+  const queryNote = query ? ` · 検索 <strong>"${query}"</strong>` : "";
+  status.innerHTML = `期間 <strong>${period}</strong>${mom_available ? " · 前月比あり" : " · 前月比なし (annual/MTD)"}${queryNote}`;
 
   root.innerHTML = scopes.map((sc, i) => {
-    const rows = getMenuRowsForScope(period, sc.sid, sc.dept);
+    let rows = getMenuRowsForScope(period, sc.sid, sc.dept);
+    if (query) {
+      rows = rows.filter(r =>
+        ((r.commodity_name || "").toLowerCase().includes(query)) ||
+        ((r.category_status_name || "").toLowerCase().includes(query))
+      );
+    }
     const totalSales = rows.reduce((a, r) => a + (parseInt(r.total_price) || 0), 0);
     const totalCount = rows.reduce((a, r) => a + (parseInt(r.count) || 0), 0);
     const open = i === 0 ? "open" : "";  // expand first by default
+    // Auto-expand all sections that have matches when searching
+    const openWhenSearched = query && rows.length ? "open" : open;
     return `
-      <details ${open} class="card overflow-hidden">
+      <details ${openWhenSearched} class="card overflow-hidden">
         <summary class="${sc.headerCls} text-white px-4 py-3 flex items-center justify-between cursor-pointer list-none">
           <div class="flex items-center gap-2">
             <span class="text-xs opacity-60 transition-transform" style="display:inline-block">▶</span>
             <div>
               <div class="font-bold">${sc.title}</div>
-              <div class="text-xs opacity-80 mt-0.5">${sc.subtitle}</div>
+              <div class="text-xs opacity-80 mt-0.5">${sc.subtitle}${query ? ` · ${rows.length}件ヒット` : ""}</div>
             </div>
           </div>
           <div class="text-right">
@@ -1564,7 +1586,7 @@ function drawMenu() {
             <div class="text-[11px] opacity-80">${fmtN(totalCount)}件</div>
           </div>
         </summary>
-        <div class="p-4">${buildMenuTable(rows, sortKey, 20)}</div>
+        <div class="p-4">${rows.length === 0 && query ? `<div class="text-center text-sm text-gray-400 py-6">該当なし</div>` : buildMenuTable(rows, sortKey, query ? 50 : 20)}</div>
       </details>`;
   }).join("");
   // Rotate caret on open via CSS
