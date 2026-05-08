@@ -217,7 +217,7 @@
     <div class="grid md:grid-cols-3 gap-3 mb-5" id="nominationCards"></div>
 
     <!-- 月次推移チャート -->
-    <div class="grid lg:grid-cols-2 gap-3">
+    <div class="grid lg:grid-cols-2 gap-3 mb-3">
       <div class="card p-5">
         <h3 class="section-title mb-3">客数 月次推移 <span class="section-sub">店舗別</span></h3>
         <div style="height:260px"><canvas id="visitorMonthlyChart"></canvas></div>
@@ -225,6 +225,16 @@
       <div class="card p-5">
         <h3 class="section-title mb-3">リピート率 月次推移 <span class="section-sub">店舗別</span></h3>
         <div style="height:260px"><canvas id="repeatRateChart"></canvas></div>
+      </div>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-3">
+      <div class="card p-5">
+        <h3 class="section-title mb-3">客単価 月次推移 <span class="section-sub">店舗別 (税抜)</span></h3>
+        <div style="height:260px"><canvas id="avgTicketChart"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="section-title mb-3">指名率 月次推移 <span class="section-sub">店舗別</span></h3>
+        <div style="height:260px"><canvas id="nominationRateChart"></canvas></div>
       </div>
     </div>
   </div>
@@ -2465,6 +2475,8 @@ function renderCharts(month) {
   drawDailySalesChart(month);
   drawVisitorMonthly();
   drawRepeatRateMonthly();
+  drawAvgTicketMonthly();
+  drawNominationRateMonthly();
 }
 
 function drawVisitorMonthly() {
@@ -2521,6 +2533,75 @@ function drawRepeatRateMonthly() {
     options: {
       responsive: true, maintainAspectRatio: false,
       scales: { y: { beginAtZero: false, suggestedMin: 40, suggestedMax: 100, ticks: { callback: v => v + "%" } } },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: {size: 11} } } }
+    }
+  });
+}
+
+function drawAvgTicketMonthly() {
+  const el = document.getElementById("avgTicketChart");
+  if (!el) return;
+  if (window._chartAT) window._chartAT.destroy();
+  const months = ["202505","202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604","202605"];
+  const labels = months.map(m => parseInt(m.slice(4,6),10) + "月");
+  // 客単価 = 月次総売上 / 月次客数。 daily CSV 集計を優先、 なければ monthly_by_store にフォールバック
+  const ticketFor = (sid, ym) => {
+    const ds = (DATA.daily_by_store[sid] || {})[ym] || [];
+    let sales = ds.reduce((a, d) => a + d.sales, 0);
+    let cust = ds.reduce((a, d) => a + d.customers, 0);
+    if (!sales || !cust) {
+      const ms = (DATA.monthly_by_store[sid] || {})[ym];
+      if (ms) { sales = ms.total_sales || 0; cust = ms.customers || 0; }
+    }
+    if (!cust) return null;
+    return Math.round(sales / cust);
+  };
+  window._chartAT = new Chart(el.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "Hanabi 綱島店", data: months.map(m => ticketFor("tsunashima", m)), borderColor: "#1E88E5", backgroundColor: "rgba(30,136,229,0.1)", tension: 0.3, fill: false, pointRadius: 4 },
+        { label: "ELLE 宮古島店", data: months.map(m => ticketFor("miyakojima", m)), borderColor: "#D63384", backgroundColor: "rgba(214,51,132,0.1)", tension: 0.3, fill: false, pointRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: false, ticks: { callback: v => "¥" + (v >= 1000 ? (v/1000).toFixed(0) + "K" : v) } } },
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 12, font: {size: 11} } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y == null ? "—" : "¥" + c.parsed.y.toLocaleString()}` } }
+      }
+    }
+  });
+}
+
+function drawNominationRateMonthly() {
+  const el = document.getElementById("nominationRateChart");
+  if (!el) return;
+  if (window._chartNR) window._chartNR.destroy();
+  const months = ["202505","202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604","202605"];
+  const labels = months.map(m => parseInt(m.slice(4,6),10) + "月");
+  const nomRateFor = (sid, ym) => {
+    const ms = (DATA.monthly_by_store[sid] || {})[ym];
+    if (!ms) return null;
+    const nom = ms.tech_customers_nominated || 0;
+    const free = ms.tech_customers_free || 0;
+    if (!(nom + free)) return null;
+    return parseFloat((nom / (nom + free) * 100).toFixed(1));
+  };
+  window._chartNR = new Chart(el.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "Hanabi 綱島店", data: months.map(m => nomRateFor("tsunashima", m)), borderColor: "#1E88E5", backgroundColor: "rgba(30,136,229,0.1)", tension: 0.3, fill: false, pointRadius: 4 },
+        { label: "ELLE 宮古島店", data: months.map(m => nomRateFor("miyakojima", m)), borderColor: "#D63384", backgroundColor: "rgba(214,51,132,0.1)", tension: 0.3, fill: false, pointRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: false, suggestedMin: 0, suggestedMax: 100, ticks: { callback: v => v + "%" } } },
       plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: {size: 11} } } }
     }
   });
