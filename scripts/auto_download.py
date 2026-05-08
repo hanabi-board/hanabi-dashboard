@@ -85,7 +85,7 @@ def capture_top_snapshot(page: Page, log_dir: Path) -> dict:
             const tsMatch = text.match(/(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})時点/);
             if (tsMatch) out.snapshot_time = tsMatch[1];
             const grab = (label) => {
-                const re = new RegExp(label + "[^¥0-9]*([¥0-9,()/人円-]+)");
+                const re = new RegExp(label + "[^¥0-9]*([¥0-9,()/人件円-]+)");
                 const m = text.match(re);
                 return m ? m[1].trim() : null;
             };
@@ -96,16 +96,24 @@ def capture_top_snapshot(page: Page, log_dir: Path) -> dict:
             out.today_reservation_rate = grab("消化数/予約数");
             const storeMatch = text.match(/(00[12]):([^\s]+店)/);
             if (storeMatch) out.current_store_code = storeMatch[1];
-            // weekly reservations
-            const weekTbl = Array.from(document.querySelectorAll("table"))
-              .find(tbl => tbl.innerText.includes("件") && /\d+\/\d+/.test(tbl.innerText));
-            const week = {};
-            if (weekTbl) {
-              const ths = Array.from(weekTbl.querySelectorAll("th, thead td")).map(t=>t.innerText.trim());
-              const tds = Array.from(weekTbl.querySelectorAll("tbody td")).map(t=>t.innerText.trim());
-              ths.forEach((d, i) => {
-                if (d.match(/\d+\/\d+/)) week[d] = tds[i] || "";
-              });
+            // weekly reservations: find table with 月/日 + 件
+            const tables = document.querySelectorAll("table");
+            const week = [];
+            for (const tbl of tables) {
+                const txt = tbl.innerText;
+                if (!/件/.test(txt) || !/\d+\/\d+/.test(txt)) continue;
+                const allCells = Array.from(tbl.querySelectorAll("th, td")).map(c => c.innerText.trim());
+                // pair date with count
+                const dates = [];
+                const counts = [];
+                for (const c of allCells) {
+                    if (/^\d+\/\d+/.test(c)) dates.push(c);
+                    else if (/^\d+件$/.test(c)) counts.push(c);
+                }
+                for (let i = 0; i < dates.length && i < counts.length; i++) {
+                    week.push({ date: dates[i], count: counts[i] });
+                }
+                if (week.length) break;
             }
             out.weekly_reservations = week;
             return out;

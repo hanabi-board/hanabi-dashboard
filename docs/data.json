@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-08T18:53:40",
+  "generated_at": "2026-05-08T19:06:40",
   "stores": {
     "tsunashima": {
       "name": "Hanabi 綱島店",
@@ -22567,5 +22567,44 @@
     "202603": 31,
     "202604": 30,
     "202605": 31
+  },
+  "uregi_top_snapshot": {
+    "snapshot_time": "2026/05/08 19:06:18",
+    "today_sales": "¥120,397(-)",
+    "today_customers": "10人(0人)",
+    "today_avg": "¥12,040",
+    "today_active_staff": "0人/9人",
+    "today_reservation_rate": "10件/11件",
+    "current_store_code": "001",
+    "weekly_reservations": [
+      {
+        "date": "5/8(金)",
+        "count": "11件"
+      },
+      {
+        "date": "5/9(土)",
+        "count": "16件"
+      },
+      {
+        "date": "5/10(日)",
+        "count": "8件"
+      },
+      {
+        "date": "5/11(月)",
+        "count": "6件"
+      },
+      {
+        "date": "5/12(火)",
+        "count": "7件"
+      },
+      {
+        "date": "5/13(水)",
+        "count": "7件"
+      },
+      {
+        "date": "5/14(木)",
+        "count": "3件"
+      }
+    ]
   }
 }

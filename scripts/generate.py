@@ -321,6 +321,15 @@ def main():
         for sid, bm in (budgets.get("monthly") or {}).items():
             target_by_store[sid] = bm
 
+    # Include uregi top snapshot if available
+    snapshot = None
+    snapshot_path = DATA / "uregi_top_snapshot.json"
+    if snapshot_path.exists():
+        try:
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     out = {
         "generated_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
         "stores": STORES,
@@ -335,6 +344,7 @@ def main():
         "budgets": budgets,
         "target_by_store": target_by_store,
         "days_in_month": {m: days_in_month(m) for m in months} if months else {},
+        "uregi_top_snapshot": snapshot,
     }
 
     out_path = DOCS / "data.json"

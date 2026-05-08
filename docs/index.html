@@ -150,6 +150,9 @@
       <div class="text-sm text-gray-500 mt-1" id="summarySubtitle">—</div>
     </div>
 
+    <!-- Real-time today banner (from Uレジ TOP page snapshot) -->
+    <div id="realtimeTodayBanner" class="mb-5"></div>
+
     <!-- Top KPI row (6 cards) -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5" id="topKpi"></div>
 
@@ -409,6 +412,7 @@ function render(month) {
   const ymLabel = month.slice(0,4) + "年" + month.slice(4,6) + "月";
   document.getElementById("summarySubtitle").innerHTML = `全社 / ${ymLabel} ${SCOPE.globalElapsedDays}日経過 (${SCOPE.daysInMonth}日中) <span class="text-gray-400">·</span> <span class="text-gray-500">数値はすべて税抜</span>`;
 
+  renderRealtimeBanner();
   renderTopKpi();
   renderFyProgress();
   renderStatusPanel();
@@ -482,6 +486,74 @@ function renderTopKpi() {
       ${c.bar ? `<div class="progress-track mt-2"><div class="progress-fill" style="width:${Math.min(100,c.bar.val)}%; background:${c.bar.color}"></div></div>` : ""}
     </div>
   `).join("");
+}
+
+function renderRealtimeBanner() {
+  const root = document.getElementById("realtimeTodayBanner");
+  if (!root) return;
+  // Only show on current/latest month
+  if (currentMonth !== DATA.latest_month) { root.innerHTML = ""; return; }
+  const s = DATA.uregi_top_snapshot;
+  if (!s) { root.innerHTML = ""; return; }
+  // Parse % helpers
+  const parseRate = (str) => {
+    if (!str) return null;
+    const m = str.match(/(\d+)\s*[\/人件]?\s*\/\s*(\d+)/);
+    if (!m) return null;
+    const a = parseInt(m[1]), b = parseInt(m[2]);
+    return { a, b, pct: b ? Math.round(a/b*100) : 0 };
+  };
+  const occRate = parseRate(s.today_active_staff);
+  const resRate = parseRate(s.today_reservation_rate);
+  const storeName = s.current_store_code === "002" ? "ELLE 宮古島店" : "Hanabi 綱島店";
+
+  root.innerHTML = `
+    <div class="card overflow-hidden" style="border:1px solid #d1fae5; box-shadow: 0 0 0 3px rgba(0,200,83,0.08)">
+      <div class="px-5 py-3 flex items-center justify-between" style="background:linear-gradient(90deg,#F0FDF4,#FFFFFF)">
+        <div class="flex items-center gap-3">
+          <span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:#10B981"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5" style="background:#10B981"></span></span>
+          <span class="text-sm font-bold">本日リアルタイム</span>
+          <span class="text-xs text-gray-500">${storeName} のみ${s.snapshot_time ? ` · ${s.snapshot_time}時点` : ""}</span>
+        </div>
+        <span class="text-[11px] text-gray-400">※ 全社版は今後対応予定</span>
+      </div>
+      <div class="p-5 grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div>
+          <div class="text-xs text-gray-500">本日売上</div>
+          <div class="kpi-num text-2xl font-bold">${(s.today_sales || "—").replace(/\(.*\)/, "")}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500">客数</div>
+          <div class="kpi-num text-2xl font-bold">${(s.today_customers || "—").replace(/\(.*\)/, "")}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500">客単価</div>
+          <div class="kpi-num text-2xl font-bold">${s.today_avg || "—"}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500">稼働率</div>
+          <div class="kpi-num text-2xl font-bold ${occRate ? (occRate.pct >= 70 ? 'pct-good' : occRate.pct >= 40 ? 'pct-warn' : 'pct-bad') : ''}">${occRate ? occRate.pct + "%" : "—"}</div>
+          <div class="text-[11px] text-gray-500">${s.today_active_staff || "—"}</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-500">予約消化率</div>
+          <div class="kpi-num text-2xl font-bold ${resRate ? (resRate.pct >= 80 ? 'pct-good' : resRate.pct >= 50 ? 'pct-warn' : 'pct-bad') : ''}">${resRate ? resRate.pct + "%" : "—"}</div>
+          <div class="text-[11px] text-gray-500">${s.today_reservation_rate || "—"}</div>
+        </div>
+      </div>
+      ${(s.weekly_reservations && s.weekly_reservations.length) ? `
+        <div class="px-5 pb-4 pt-2 border-t border-gray-100">
+          <div class="text-[11px] text-gray-500 mb-2">週間予約見込み</div>
+          <div class="flex gap-2 overflow-x-auto">
+            ${s.weekly_reservations.map(w => `
+              <div class="flex-shrink-0 px-3 py-2 rounded border border-gray-200 bg-white min-w-[70px] text-center">
+                <div class="text-[11px] text-gray-500">${w.date}</div>
+                <div class="kpi-num text-base font-bold">${w.count}</div>
+              </div>
+            `).join("")}
+          </div>
+        </div>` : ""}
+    </div>`;
 }
 
 function renderFyProgress() {
