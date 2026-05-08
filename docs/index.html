@@ -138,7 +138,7 @@
     <button class="tab-btn" data-tab="visits">来客分析</button>
     <button class="tab-btn" data-tab="staff">スタッフ実績</button>
     <button class="tab-btn" data-tab="menu">メニュー別</button>
-    <button class="tab-btn" data-tab="recruit">採用 <span class="text-[11px] text-gray-400 ml-0.5">(準備中)</span></button>
+    <button class="tab-btn" data-tab="recruit">採用</button>
   </div>
 </nav>
 
@@ -258,14 +258,45 @@
     <div id="menuSections" class="space-y-4"></div>
   </div>
 
-  <!-- =========== Tab 6: 採用 (placeholder) =========== -->
+  <!-- =========== Tab 6: 採用 =========== -->
   <div class="tab-panel" data-panel="recruit">
     <div class="mb-4">
-      <h2 class="text-2xl font-bold">採用 <span class="text-sm text-gray-500 font-normal ml-2">Phase 2 で実装予定</span></h2>
+      <h2 class="text-2xl font-bold">採用</h2>
+      <div class="text-sm text-gray-500 mt-1">候補者管理 / ファネル / ソース分析</div>
     </div>
-    <div class="card p-12 text-center text-gray-500">
-      <div class="text-base mb-2">採用管理機能は次のフェーズで追加します</div>
-      <div class="text-xs">サロンダッシュボード版を移植予定: ステータス9種・コホート分析・YoY</div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5" id="recruitKpi"></div>
+
+    <!-- Funnel + Source side by side -->
+    <div class="grid lg:grid-cols-2 gap-3 mb-5">
+      <div class="card p-5">
+        <h3 class="section-title mb-3">ステータスファネル <span class="section-sub">進行中の候補者</span></h3>
+        <div id="recruitFunnel" class="space-y-2"></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="section-title mb-3">ソース別 <span class="section-sub">流入経路</span></h3>
+        <div id="recruitSource" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- Candidate list -->
+    <div class="card overflow-hidden mb-5">
+      <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="section-title">候補者リスト</h3>
+        <div class="flex gap-2">
+          <select id="recruitStatusFilter" class="border border-gray-300 rounded px-2 py-1 text-xs">
+            <option value="active">進行中のみ</option>
+            <option value="all">全て</option>
+            <option value="closed">クローズ済 (入社/辞退/不採用)</option>
+          </select>
+        </div>
+      </div>
+      <div class="overflow-x-auto" id="recruitList"></div>
+    </div>
+
+    <div class="text-[11px] text-gray-400 text-center">
+      候補者データの追加・編集は <code class="bg-gray-100 px-1 rounded">data/recruitment.json</code> を直接編集 (本部のみ)
     </div>
   </div>
 
@@ -455,6 +486,7 @@ function render(month) {
   renderTopKpi();
   renderFyProgress();
   renderMenuTab();
+  renderRecruitTab();
   renderStatusPanel();
   renderStoreCompare();
   renderDeptBreakdownSummary();
@@ -542,6 +574,149 @@ function renderTopKpi() {
       ${c.bar ? `<div class="progress-track mt-2"><div class="progress-fill" style="width:${Math.min(100,c.bar.val)}%; background:${c.bar.color}"></div></div>` : ""}
     </div>
   `).join("");
+}
+
+function renderRecruitTab() {
+  const data = DATA.recruitment;
+  if (!data) return;
+  const settings = data._settings || {};
+  const candidates = data.candidates || [];
+
+  // Filter for KPIs (this month applied count etc.)
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const thisMonthApplied = candidates.filter(c => (c.applied_date || "").startsWith(thisMonth));
+  const totalActive = candidates.filter(c => (settings.active_statuses || []).includes(c.status)).length;
+  const interviewed = candidates.filter(c => ["面接1","面接2","内定","入社"].includes(c.status)).length;
+  const offered = candidates.filter(c => ["内定","入社"].includes(c.status)).length;
+  const hired = candidates.filter(c => c.status === "入社").length;
+  const totalApplied = candidates.length;
+  const offerRate = interviewed ? (offered/interviewed*100).toFixed(0) : 0;
+  const hireRate = totalApplied ? (hired/totalApplied*100).toFixed(0) : 0;
+
+  document.getElementById("recruitKpi").innerHTML = `
+    <div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">今月応募</div>
+      <div class="kpi-num text-2xl font-bold">${thisMonthApplied.length}</div>
+      <div class="text-[11px] text-gray-500">累計 ${totalApplied}名</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">進行中</div>
+      <div class="kpi-num text-2xl font-bold">${totalActive}</div>
+      <div class="text-[11px] text-gray-500">${(settings.active_statuses||[]).join("/")}</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">面接実施</div>
+      <div class="kpi-num text-2xl font-bold">${interviewed}</div>
+      <div class="text-[11px] text-gray-500">面接以降に進んだ件数</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">内定率</div>
+      <div class="kpi-num text-2xl font-bold ${offerRate >= 30 ? 'pct-good' : offerRate >= 15 ? 'pct-warn' : 'pct-bad'}">${interviewed ? offerRate + "%" : "—"}</div>
+      <div class="text-[11px] text-gray-500">面接後内定 ${offered}/${interviewed}</div>
+    </div>
+    <div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">入社</div>
+      <div class="kpi-num text-2xl font-bold">${hired}</div>
+      <div class="text-[11px] text-gray-500">採用率 ${totalApplied ? hireRate+"%" : "—"}</div>
+    </div>`;
+
+  // Funnel
+  const stages = ["応募", "書類選考", "面接1", "面接2", "内定", "入社"];
+  const funnel = stages.map(s => {
+    const reachedCount = candidates.filter(c => {
+      const idx = stages.indexOf(c.status);
+      return idx >= stages.indexOf(s) || ["辞退","不採用"].includes(c.status) && stages.indexOf(s) === 0;
+    }).length;
+    return { stage: s, count: reachedCount };
+  });
+  const maxFunnel = Math.max(...funnel.map(f => f.count), 1);
+  document.getElementById("recruitFunnel").innerHTML = funnel.length === 0 || candidates.length === 0
+    ? `<div class="text-center text-sm text-gray-400 py-6">候補者データなし</div>`
+    : funnel.map(f => {
+        const w = (f.count / maxFunnel * 100).toFixed(1);
+        return `<div class="flex items-center gap-3 text-sm">
+          <div class="w-20 text-gray-700">${f.stage}</div>
+          <div class="flex-1 bg-gray-100 rounded h-6 overflow-hidden relative">
+            <div style="width:${w}%; background:linear-gradient(90deg,#1E88E5,#60A5FA); height:100%"></div>
+            <div class="absolute inset-0 flex items-center justify-end pr-2 text-xs font-semibold text-white">${f.count}名</div>
+          </div>
+        </div>`;
+      }).join("");
+
+  // Source
+  const sources = {};
+  for (const c of candidates) {
+    const src = c.source || "未指定";
+    sources[src] = (sources[src] || 0) + 1;
+  }
+  const sortedSrc = Object.entries(sources).sort((a,b) => b[1] - a[1]);
+  const srcMax = Math.max(...sortedSrc.map(([_,v]) => v), 1);
+  document.getElementById("recruitSource").innerHTML = sortedSrc.length === 0
+    ? `<div class="text-center text-sm text-gray-400 py-6">候補者データなし</div>`
+    : sortedSrc.map(([src, count]) => {
+        const w = (count / srcMax * 100).toFixed(1);
+        const pct = candidates.length ? (count / candidates.length * 100).toFixed(1) : 0;
+        return `<div class="flex items-center gap-3 text-sm">
+          <div class="w-24 text-gray-700 truncate">${src}</div>
+          <div class="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
+            <div style="width:${w}%; background:#FF6B35; height:100%"></div>
+          </div>
+          <div class="kpi-num font-semibold text-right w-12">${count}名</div>
+          <div class="text-[11px] text-gray-400 w-12 text-right">${pct}%</div>
+        </div>`;
+      }).join("");
+
+  // Candidate list
+  const filterSel = document.getElementById("recruitStatusFilter");
+  const drawList = () => {
+    const filter = filterSel.value;
+    let filtered = candidates;
+    if (filter === "active") filtered = candidates.filter(c => (settings.active_statuses || []).includes(c.status));
+    else if (filter === "closed") filtered = candidates.filter(c => (settings.closed_statuses || []).includes(c.status));
+    const root = document.getElementById("recruitList");
+    if (!filtered.length) {
+      root.innerHTML = `<div class="text-center text-sm text-gray-400 py-12">該当候補者なし<br><span class="text-[11px]">data/recruitment.json に候補者を追加してください</span></div>`;
+      return;
+    }
+    const statusBadge = (s) => {
+      const colors = {
+        "応募": "#1E88E5", "書類選考": "#60A5FA", "面接1": "#F59E0B", "面接2": "#FB923C",
+        "内定": "#10B981", "入社": "#43A047", "辞退": "#9CA3AF", "不採用": "#EF4444"
+      };
+      const c = colors[s] || "#6B7280";
+      return `<span class="badge" style="background:${c}22; color:${c}; border:1px solid ${c}50">${s}</span>`;
+    };
+    root.innerHTML = `<table class="w-full text-sm" style="min-width:780px">
+      <thead class="text-[11px] text-gray-500 border-b border-gray-100">
+        <tr>
+          <th class="text-left py-2 px-3">応募日</th>
+          <th class="text-left py-2 px-3">氏名</th>
+          <th class="text-left py-2 px-3">希望職種</th>
+          <th class="text-left py-2 px-3">希望店舗</th>
+          <th class="text-left py-2 px-3">経験年数</th>
+          <th class="text-left py-2 px-3">ソース</th>
+          <th class="text-left py-2 px-3">ステータス</th>
+          <th class="text-left py-2 px-3">備考</th>
+        </tr>
+      </thead>
+      <tbody>${filtered.map(c => `<tr class="border-b border-gray-50 hover:bg-gray-50">
+        <td class="py-2 px-3 text-xs text-gray-600 whitespace-nowrap">${c.applied_date || "—"}</td>
+        <td class="py-2 px-3 font-semibold whitespace-nowrap">${c.name || "—"}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}</td>
+        <td class="py-2 px-3 text-xs">${c.role || "—"}</td>
+        <td class="py-2 px-3 text-xs">${c.store_pref || "—"}</td>
+        <td class="py-2 px-3 text-xs">${c.experience_years != null ? c.experience_years + "年" : "—"}</td>
+        <td class="py-2 px-3 text-xs">${c.source || "—"}</td>
+        <td class="py-2 px-3">${statusBadge(c.status)}</td>
+        <td class="py-2 px-3 text-xs text-gray-600 truncate" style="max-width:200px">${c.notes || ""}</td>
+      </tr>`).join("")}</tbody>
+    </table>`;
+  };
+  if (filterSel && !filterSel._wired) {
+    filterSel.addEventListener("change", drawList);
+    filterSel._wired = true;
+  }
+  drawList();
 }
 
 function deptOfCategory(cat) {
@@ -755,23 +930,11 @@ function renderRealtimeBanner() {
       <div class="px-5 py-3 flex flex-wrap items-center gap-x-3 gap-y-1" style="background:linear-gradient(90deg,#F0FDF4,#FFFFFF)">
         <div class="flex items-center gap-2">
           <span class="relative flex h-2.5 w-2.5 flex-shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:#10B981"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5" style="background:#10B981"></span></span>
-          <span class="text-sm font-bold whitespace-nowrap">本日リアルタイム</span>
+          <span class="text-sm font-bold whitespace-nowrap">本日の状況</span>
         </div>
         <span class="text-[11px] text-gray-500">${storeName}${s.snapshot_time ? ` · ${s.snapshot_time.slice(5,16)}時点` : ""}</span>
       </div>
-      <div class="p-5 grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div>
-          <div class="text-xs text-gray-500">本日売上</div>
-          <div class="kpi-num text-2xl font-bold">${(s.today_sales || "—").replace(/\(.*\)/, "")}</div>
-        </div>
-        <div>
-          <div class="text-xs text-gray-500">客数</div>
-          <div class="kpi-num text-2xl font-bold">${(s.today_customers || "—").replace(/\(.*\)/, "")}</div>
-        </div>
-        <div>
-          <div class="text-xs text-gray-500">客単価</div>
-          <div class="kpi-num text-2xl font-bold">${s.today_avg || "—"}</div>
-        </div>
+      <div class="p-5 grid grid-cols-2 gap-4">
         <div>
           <div class="text-xs text-gray-500">稼働率</div>
           <div class="kpi-num text-2xl font-bold ${occRate ? (occRate.pct >= 70 ? 'pct-good' : occRate.pct >= 40 ? 'pct-warn' : 'pct-bad') : ''}">${occRate ? occRate.pct + "%" : "—"}</div>

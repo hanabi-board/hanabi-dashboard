@@ -342,6 +342,15 @@ def main():
         except Exception as e:
             print(f"  warn: failed to load {p.name}: {e}")
 
+    # Load recruitment data
+    recruitment = None
+    rec_path = DATA / "recruitment.json"
+    if rec_path.exists():
+        try:
+            recruitment = json.loads(rec_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     out = {
         "generated_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
         "stores": STORES,
@@ -358,6 +367,7 @@ def main():
         "days_in_month": {m: days_in_month(m) for m in months} if months else {},
         "uregi_top_snapshot": snapshot,
         "menu_data": menu_data,
+        "recruitment": recruitment,
     }
 
     out_path = DOCS / "data.json"

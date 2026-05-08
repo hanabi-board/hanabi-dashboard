@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-08T20:03:52",
+  "generated_at": "2026-05-08T20:57:48",
   "stores": {
     "tsunashima": {
       "name": "Hanabi 綱島店",
@@ -86340,5 +86340,55 @@
         }
       ]
     }
+  },
+  "recruitment": {
+    "_comment": "採用管理データ。手動編集 OK (本部のみ編集権限)",
+    "_settings": {
+      "statuses": [
+        "応募",
+        "書類選考",
+        "面接1",
+        "面接2",
+        "内定",
+        "入社",
+        "辞退",
+        "不採用"
+      ],
+      "active_statuses": [
+        "応募",
+        "書類選考",
+        "面接1",
+        "面接2",
+        "内定"
+      ],
+      "closed_statuses": [
+        "入社",
+        "辞退",
+        "不採用"
+      ],
+      "sources": [
+        "HotPepper",
+        "Indeed",
+        "ハローワーク",
+        "紹介",
+        "Instagram",
+        "公式HP",
+        "その他"
+      ],
+      "roles": [
+        "ヘア (スタイリスト)",
+        "ヘア (アシスタント)",
+        "アイ",
+        "ネイル",
+        "受付",
+        "管理者"
+      ],
+      "stores": [
+        "Hanabi 綱島店",
+        "ELLE by Hanabi 宮古島店",
+        "未定"
+      ]
+    },
+    "candidates": []
   }
 }
