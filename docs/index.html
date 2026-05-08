@@ -322,7 +322,7 @@ Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Hiragino Sans"
 async function loadData() {
   if (_dataLoaded) return;
   _dataLoaded = true;
-  const r = await fetch("data.json");
+  const r = await fetch("data.json?v=" + Date.now());
   const d = await r.json();
   DATA = d;
   document.getElementById("generatedAt").textContent = "generated " + d.generated_at;
@@ -588,6 +588,8 @@ function renderDeptBreakdownSummary() {
   const root = document.getElementById("deptBreakdownSummary");
   if (!eleMs) { root.innerHTML = "<div class='text-gray-500 text-sm'>データなし</div>"; return; }
   const total = ["ヘア","アイ","ネイル"].reduce((a,d) => a + eleMs.by_dept[d].sales, 0) || 1;
+  // Use monthly_dept_miyakojima if available, else fall back to annual/12
+  const monthDeptBudget = ((DATA.budgets || {}).monthly_dept_miyakojima || {})[currentMonth] || {};
   const annualBudget = (DATA.budgets || {}).annual?.by_dept_miyakojima || {};
 
   // Per-dept metrics from staff_rows
@@ -602,31 +604,54 @@ function renderDeptBreakdownSummary() {
     m.nomSales += s.tech_sales_nominated || 0;
   }
 
-  root.innerHTML = `<div class="space-y-4">${
+  root.innerHTML = `<div class="space-y-5">${
     ["ヘア","アイ","ネイル"].map(d => {
       const sales = eleMs.by_dept[d].sales;
-      const w = (sales/total*100).toFixed(1);
+      const compW = (sales/total*100).toFixed(1);
       const color = d==="ヘア" ? "var(--dept-hair)" : d==="アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+      const monthly = monthDeptBudget[d] || (annualBudget[d] ? annualBudget[d]/12 : 0);
       const fyAnnual = annualBudget[d] || 0;
-      const monthly = fyAnnual / 12;
       const expectedToDate = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+      const monthPct = monthly ? (sales/monthly*100) : 0;
       const pacePct = expectedToDate ? (sales/expectedToDate*100) : 0;
+      const projection = SCOPE.globalElapsedDays ? Math.round(sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
+      const projDelta = projection - monthly;
+      const w = monthly ? Math.min(100, sales/monthly*100) : 0;
+      const paceW = monthly ? Math.min(100, expectedToDate/monthly*100) : 0;
       const m = deptMetrics[d];
       const totalTech = m.nom + m.free;
       const nomRate = totalTech ? (m.nom/totalTech*100).toFixed(1) : "—";
       const cpc = m.cust ? Math.round(sales/m.cust) : 0;
       return `
         <div>
-          <div class="flex items-baseline justify-between mb-1.5">
+          <div class="flex items-baseline justify-between mb-2">
             <div class="flex items-center gap-2">
-              <span class="w-2 h-6 rounded" style="background:${color}"></span>
-              <span class="text-sm font-semibold">${d}</span>
+              <span class="w-2 h-7 rounded" style="background:${color}"></span>
+              <span class="text-sm font-bold">${d}</span>
               <span class="badge ${badgeCls(pacePct)} text-[10px]">ペース ${monthly ? pacePct.toFixed(0)+'%' : '—'}</span>
             </div>
-            <div class="kpi-num text-base font-bold">${fmt(sales)}</div>
+            <div class="text-right">
+              <div class="kpi-num text-lg font-bold">${fmt(sales)}</div>
+              <div class="text-[10px] text-gray-500">/ 月予算 ${fmt(Math.round(monthly))}</div>
+            </div>
           </div>
-          <div class="progress-track"><div class="progress-fill" style="width:${w}%; background:${color}"></div></div>
-          <div class="grid grid-cols-4 gap-1 text-[11px] mt-2 pt-2 border-t border-gray-100">
+          <div class="progress-track"><div class="progress-fill" style="width:${w}%; background:${color}"></div><div class="progress-pace" style="left:${paceW}%"></div></div>
+          <div class="grid grid-cols-3 gap-2 text-[11px] mt-2">
+            <div>
+              <div class="text-gray-400">月達成率</div>
+              <div class="kpi-num font-semibold ${pctClass(monthPct)}">${monthly ? monthPct.toFixed(1)+'%' : '—'}</div>
+            </div>
+            <div>
+              <div class="text-gray-400">月末着地予測</div>
+              <div class="kpi-num font-semibold ${projDelta>=0?'pct-good':'pct-bad'}">${projection ? fmtM(projection) : '—'}</div>
+              <div class="text-[10px] ${projDelta>=0?'pct-good':'pct-bad'}">${projection ? (projDelta>=0?'+':'')+fmtN(projDelta) : ''}</div>
+            </div>
+            <div>
+              <div class="text-gray-400">構成比</div>
+              <div class="kpi-num font-semibold">${compW}%</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-[11px] mt-2 pt-2 border-t border-gray-100">
             <div>
               <div class="text-gray-400">客数</div>
               <div class="kpi-num font-semibold">${fmtN(m.cust)}</div>
@@ -639,12 +664,7 @@ function renderDeptBreakdownSummary() {
               <div class="text-gray-400">指名率</div>
               <div class="kpi-num font-semibold" style="color:${color}">${nomRate}${totalTech?'%':''}</div>
             </div>
-            <div>
-              <div class="text-gray-400">構成比</div>
-              <div class="kpi-num font-semibold">${w}%</div>
-            </div>
           </div>
-          ${fyAnnual ? `<div class="text-[10px] text-gray-400 mt-1">月予算 ${fmt(Math.round(monthly))} (年${fmtM(fyAnnual)})</div>` : ""}
         </div>`;
     }).join("")
   }</div>`;
