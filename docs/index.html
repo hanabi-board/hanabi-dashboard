@@ -173,17 +173,12 @@
     <!-- Store comparison row -->
     <div class="grid md:grid-cols-2 gap-3 mb-5" id="storeCompare"></div>
 
-    <!-- Department + Visit breakdown row -->
-    <div class="grid lg:grid-cols-2 gap-3 mb-5">
-      <div class="card p-5">
-        <h3 class="section-title mb-3">部門別売上 <span class="section-sub">ELLE by Hanabi 宮古島店</span></h3>
-        <div id="deptBreakdownSummary"></div>
-      </div>
-      <div class="card p-5">
-        <h3 class="section-title mb-3">新規 vs リピート <span class="section-sub">店舗別</span></h3>
-        <div class="grid grid-cols-3 gap-3" id="visitDonutRow"></div>
-      </div>
+    <!-- Visit breakdown (full width — dept moved into ELLE store card above) -->
+    <div class="card p-5 mb-5">
+      <h3 class="section-title mb-3">新規 vs リピート <span class="section-sub">店舗別</span></h3>
+      <div class="grid grid-cols-3 gap-3" id="visitDonutRow"></div>
     </div>
+    <div id="deptBreakdownSummary" class="hidden"></div>
   </div>
 
   <!-- =========== Tab 2: 売上 & 部門 =========== -->
@@ -543,6 +538,45 @@ function renderStoreCompare() {
     const projDelta = projection - r.monthlyTarget;
     const w = r.monthlyTarget ? Math.min(100, (r.sales/r.monthlyTarget)*100) : 0;
     const paceW = r.monthlyTarget ? Math.min(100, (r.elapsedTarget/r.monthlyTarget)*100) : 0;
+    // Dept breakdown for ELLE only
+    let deptHtml = "";
+    if (r.sid === "miyakojima" && r.ms) {
+      const monthDeptBudget = ((DATA.budgets || {}).monthly_dept_miyakojima || {})[currentMonth] || {};
+      const total = ["ヘア","アイ","ネイル"].reduce((a,d) => a + r.ms.by_dept[d].sales, 0) || 1;
+      deptHtml = `<div class="mt-4 pt-4 border-t border-gray-100">
+        <div class="text-xs font-semibold text-gray-500 mb-3">部門別売上</div>
+        <div class="space-y-3">
+          ${["ヘア","アイ","ネイル"].map(d => {
+            const sales = r.ms.by_dept[d].sales;
+            const compW = (sales/total*100).toFixed(1);
+            const color = d==="ヘア" ? "var(--dept-hair)" : d==="アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+            const monthly = monthDeptBudget[d] || 0;
+            const expected = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+            const dPacePct = expected ? (sales/expected*100) : 0;
+            const dProjection = SCOPE.globalElapsedDays ? Math.round(sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
+            const dProjDelta = dProjection - monthly;
+            return `<div>
+              <div class="flex items-baseline justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-1.5 h-5 rounded" style="background:${color}"></span>
+                  <span class="text-sm font-semibold">${d}</span>
+                  <span class="badge ${badgeCls(dPacePct)} text-[10px]">進捗 ${monthly ? dPacePct.toFixed(0)+'%' : '—'}</span>
+                </div>
+                <div class="text-right">
+                  <div class="kpi-num text-sm font-bold">${fmt(sales)}</div>
+                  <div class="text-[10px] text-gray-500">/ ${fmt(monthly)}</div>
+                </div>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:${compW}%; background:${color}"></div></div>
+              <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+                <span>構成比 ${compW}%</span>
+                <span>月末予測 <span class="kpi-num font-semibold ${dProjDelta>=0?'pct-good':'pct-bad'}">${dProjection?fmtM(dProjection):'—'} (${dProjDelta>=0?'+':''}${fmtN(dProjDelta)})</span></span>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+    }
     return `
       <div class="card overflow-hidden card-hover">
         <div class="${headerCls} text-white px-4 py-3">
@@ -563,7 +597,7 @@ function renderStoreCompare() {
             </div>
           </div>
           <div class="progress-track mb-2"><div class="progress-fill" style="width:${w}%; background:${pctColor(monthPct)}"></div><div class="progress-pace" style="left:${paceW}%"></div></div>
-          <div class="grid grid-cols-3 gap-2 text-xs mt-3 pt-3 border-t border-gray-700">
+          <div class="grid grid-cols-3 gap-2 text-xs mt-3 pt-3 border-t border-gray-100">
             <div>
               <div class="text-gray-500">客数</div>
               <div class="kpi-num font-semibold">${fmtN(r.customers)}</div>
@@ -577,6 +611,7 @@ function renderStoreCompare() {
               <div class="kpi-num font-semibold ${projDelta>=0?'pct-good':'pct-bad'}">${fmtM(projection)}</div>
             </div>
           </div>
+          ${deptHtml}
         </div>
       </div>`;
   }).join("");
