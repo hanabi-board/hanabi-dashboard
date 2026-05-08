@@ -146,16 +146,16 @@
 
 <!-- Brand strip (dark, HANABI identity) -->
 <header class="brand-strip">
-  <div class="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <img src="assets/hanabi-logo.png" alt="HANABI" class="h-9 w-auto" />
+  <div class="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <img src="assets/hanabi-logo.png" alt="HANABI" class="h-9 w-auto flex-shrink-0" />
       <span class="text-[11px] text-gray-500 tracking-[0.2em] font-light ml-1 hidden sm:inline">DASHBOARD</span>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
       <span class="text-[11px] tracking-wider text-gray-500 border border-gray-700 rounded px-2 py-0.5 whitespace-nowrap hidden md:inline">数値はすべて税抜</span>
-      <select id="monthSelect" class="bg-gray-900 border border-gray-700 rounded px-2.5 py-1 text-sm"></select>
-      <button id="printBtn" class="text-xs text-gray-400 hover:text-white border border-gray-700 rounded px-2 py-1" title="サマリーを印刷 (A4 1枚)">印刷</button>
-      <span id="roleBadge" class="text-xs px-2 py-0.5 rounded border border-gray-600 text-gray-300">…</span>
+      <select id="monthSelect" class="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs sm:text-sm"></select>
+      <button id="printBtn" class="text-xs text-gray-400 hover:text-white border border-gray-700 rounded px-2 py-1 hidden sm:inline-block" title="サマリーを印刷 (A4 1枚)">印刷</button>
+      <span id="roleBadge" class="text-xs px-2 py-0.5 rounded border border-gray-600 text-gray-300 hidden sm:inline">…</span>
       <button id="logoutBtn" class="text-xs text-gray-400 hover:text-white">切替</button>
     </div>
   </div>
