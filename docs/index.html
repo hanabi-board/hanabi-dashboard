@@ -213,7 +213,19 @@
       <div class="text-sm text-gray-500 mt-1">来店種別 / 指名・フリー比率 / 店舗別</div>
     </div>
     <div class="grid md:grid-cols-3 gap-3 mb-5" id="visitorBreakdownCards"></div>
-    <div class="grid md:grid-cols-3 gap-3" id="nominationCards"></div>
+    <div class="grid md:grid-cols-3 gap-3 mb-5" id="nominationCards"></div>
+
+    <!-- 月次推移チャート -->
+    <div class="grid lg:grid-cols-2 gap-3">
+      <div class="card p-5">
+        <h3 class="section-title mb-3">客数 月次推移 <span class="section-sub">店舗別</span></h3>
+        <div style="height:260px"><canvas id="visitorMonthlyChart"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="section-title mb-3">リピート率 月次推移 <span class="section-sub">店舗別</span></h3>
+        <div style="height:260px"><canvas id="repeatRateChart"></canvas></div>
+      </div>
+    </div>
   </div>
 
   <!-- =========== Tab 4: スタッフ =========== -->
@@ -1562,6 +1574,67 @@ function rankTable(rows, sortKey) {
 function renderCharts(month) {
   drawMonthlyTrend();
   drawDailySalesChart(month);
+  drawVisitorMonthly();
+  drawRepeatRateMonthly();
+}
+
+function drawVisitorMonthly() {
+  const el = document.getElementById("visitorMonthlyChart");
+  if (!el) return;
+  if (window._chartVM) window._chartVM.destroy();
+  // Past 13 months ordered chronologically (FY25 May → FY26 May)
+  const months = ["202505","202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604","202605"];
+  const labels = months.map(m => parseInt(m.slice(4,6),10) + "月");
+  const customersFor = (sid, ym) => {
+    const ds = (DATA.daily_by_store[sid] || {})[ym] || [];
+    const c = ds.reduce((a,d) => a + d.customers, 0);
+    if (c > 0) return c;
+    const ms = (DATA.monthly_by_store[sid] || {})[ym];
+    return ms ? ms.customers : null;
+  };
+  window._chartVM = new Chart(el.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Hanabi 綱島店", data: months.map(m => customersFor("tsunashima", m)), backgroundColor: "#1E88E5" },
+        { label: "ELLE 宮古島店", data: months.map(m => customersFor("miyakojima", m)), backgroundColor: "#D63384" },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { stacked: true, beginAtZero: true, ticks: { callback: v => v + "人" } }, x: { stacked: true } },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: {size: 11} } } }
+    }
+  });
+}
+
+function drawRepeatRateMonthly() {
+  const el = document.getElementById("repeatRateChart");
+  if (!el) return;
+  if (window._chartRR) window._chartRR.destroy();
+  const months = ["202505","202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604","202605"];
+  const labels = months.map(m => parseInt(m.slice(4,6),10) + "月");
+  const repeatFor = (sid, ym) => {
+    const v = ((DATA.visitors_by_store || {})[sid] || {})[ym];
+    if (!v || !v.customers) return null;
+    return parseFloat((v.repeat / v.customers * 100).toFixed(1));
+  };
+  window._chartRR = new Chart(el.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "Hanabi 綱島店", data: months.map(m => repeatFor("tsunashima", m)), borderColor: "#1E88E5", backgroundColor: "rgba(30,136,229,0.1)", tension: 0.3, fill: false, pointRadius: 4 },
+        { label: "ELLE 宮古島店", data: months.map(m => repeatFor("miyakojima", m)), borderColor: "#D63384", backgroundColor: "rgba(214,51,132,0.1)", tension: 0.3, fill: false, pointRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: false, suggestedMin: 40, suggestedMax: 100, ticks: { callback: v => v + "%" } } },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: {size: 11} } } }
+    }
+  });
 }
 
 function drawMonthlyTrend() {
