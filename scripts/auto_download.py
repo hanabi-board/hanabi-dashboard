@@ -179,10 +179,15 @@ def configure_and_download(page: Page, report: str, year_month: str, store_code:
     (log_dir / f"results_{report}_{store_code}.html").write_text(page.content(), encoding="utf-8")
 
     # CSV download icon: ui-icon-disk (16x16, bottom-left) — sigma_grid's save button.
-    # Click it via Playwright locator.
+    # Wait for the icon to appear (it only renders after data loads)
+    try:
+        page.wait_for_selector(".ui-icon.ui-icon-disk", timeout=20000)
+    except Exception:
+        print("  ! disk icon never appeared (no data?)")
+        return None
     download = None
     try:
-        with page.expect_download(timeout=20000) as dl_info:
+        with page.expect_download(timeout=30000) as dl_info:
             page.click(".ui-icon.ui-icon-disk", force=True)
         download = dl_info.value
         saved = log_dir / f"raw_{report}_{store_code}_{download.suggested_filename}"
