@@ -3,11 +3,14 @@
 Uレジに公式CSV出力がないため、結果テーブルをHTMLから直接抽出する。
 
 実行:
-  python3 scripts/scrape_menu.py FY25       # FY25年間 (2店舗)
-  python3 scripts/scrape_menu.py 202605MTD  # 5月1日〜今日 (2店舗)
-  python3 scripts/scrape_menu.py 202505     # 単月 (2店舗)
+  python3 scripts/scrape_menu.py FY22        # FY22 年間 (2022/05–2023/04)
+  python3 scripts/scrape_menu.py FY25        # FY25年間 (2店舗)
   python3 scripts/scrape_menu.py FY25_MONTHLY  # FY25 月別 12ヶ月分
+  python3 scripts/scrape_menu.py FY22_MONTHLY  # FY22 月別 12ヶ月分
+  python3 scripts/scrape_menu.py 202605MTD   # 5月1日〜今日 (2店舗)
+  python3 scripts/scrape_menu.py 202505      # 単月 (2店舗)
 
+FY<NN>: 5月1日〜翌4月30日, FY<NN>_MONTHLY: その12ヶ月別
 出力: data/menu_<period>_<store>.json
 """
 from __future__ import annotations
@@ -185,11 +188,39 @@ def main():
 
     # Build period list
     periods = []  # (label, date_from, date_to)
-    if mode == "FY25":
+    import calendar, re as _re
+
+    def _fy_months(fy_num: int) -> list[str]:
+        # FY<NN>: starts 5月 of year (2000+NN), 12 months
+        start_year = 2000 + fy_num
+        out = []
+        for i in range(12):
+            mi = (4 + i) % 12  # 0-indexed month relative to May
+            m = mi + 1
+            y = start_year if i < 8 else start_year + 1
+            out.append(f"{y}{m:02d}")
+        return out
+
+    fy_match = _re.match(r"^FY(\d{2})(_MONTHLY)?$", mode)
+    if mode == "FY25":  # legacy alias
         periods.append(("FY25_annual", "20250501", "20260430"))
-    elif mode == "FY25_MONTHLY":
+    elif fy_match:
+        fy_num = int(fy_match.group(1))
+        is_monthly = bool(fy_match.group(2))
+        months = _fy_months(fy_num)
+        if is_monthly:
+            for ym in months:
+                y, m = int(ym[:4]), int(ym[4:6])
+                last = calendar.monthrange(y, m)[1]
+                periods.append((ym, f"{ym}01", f"{ym}{last:02d}"))
+        else:
+            start = months[0]
+            end = months[-1]
+            ey, em = int(end[:4]), int(end[4:6])
+            last = calendar.monthrange(ey, em)[1]
+            periods.append((f"FY{fy_num}_annual", f"{start}01", f"{end}{last:02d}"))
+    elif mode == "FY25_MONTHLY":  # legacy alias
         for ym in ["202505","202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604"]:
-            import calendar
             y, m = int(ym[:4]), int(ym[4:6])
             last = calendar.monthrange(y, m)[1]
             periods.append((ym, f"{ym}01", f"{ym}{last:02d}"))
@@ -198,7 +229,6 @@ def main():
         periods.append(("202605MTD", "20260501", today.strftime("%Y%m%d")))
     elif len(mode) == 6 and mode.isdigit():
         ym = mode
-        import calendar
         y, m = int(ym[:4]), int(ym[4:6])
         last = calendar.monthrange(y, m)[1]
         periods.append((ym, f"{ym}01", f"{ym}{last:02d}"))
