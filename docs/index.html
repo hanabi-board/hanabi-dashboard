@@ -1396,10 +1396,20 @@ function renderMenuTab() {
     document.getElementById("menuStatus").textContent = "データなし。scripts/scrape_menu.py を実行してください";
     return;
   }
-  // 3択構成: FY25 通年 / FY26 通年 (進行中) / 2026年5月 単月
-  // FY26_total は menu_data に直接ない場合は menu_<YYYYMM>_<store> の FY26月を集約
+  // FY annual + FY26 progress + monthly (latest first)
   const optionList = [];
-  if ("FY25_annual" in menuData) optionList.push({ value: "FY25_annual", label: "FY25 通年 (2025/5〜2026/4)" });
+  // Discover all FY<NN>_annual periods in menu_data
+  const annualLabels = Object.keys(menuData).filter(k => /^FY\d+_annual$/.test(k))
+    .sort((a,b) => parseInt(b.match(/\d+/)[0]) - parseInt(a.match(/\d+/)[0]));  // newest first
+  for (const lbl of annualLabels) {
+    const fy = parseInt(lbl.match(/\d+/)[0]);
+    const startY = 2000 + fy;
+    optionList.push({ value: lbl, label: `FY${fy} 通年 (${startY}/5〜${startY+1}/4)` });
+  }
+  // Backwards-compat alias
+  if ("FY25_annual" in menuData && !annualLabels.includes("FY25_annual")) {
+    optionList.push({ value: "FY25_annual", label: "FY25 通年 (2025/5〜2026/4)" });
+  }
   // FY26 通年: 202605〜現在の FY26 月別を集約 (現状202605のみ)
   const fy26Months = ["202605","202606","202607","202608","202609","202610","202611","202612","202701","202702","202703","202704"];
   const availableFY26 = fy26Months.filter(m => m in menuData);
@@ -1417,7 +1427,9 @@ function renderMenuTab() {
       opt.value = o.value; opt.textContent = o.label;
       periodSel.appendChild(opt);
     });
-    periodSel.value = "FY25_annual";  // default to FY25 annual for richest view
+    // Default: latest annual FY (most useful for richest year-over-year view)
+    if (annualLabels.length) periodSel.value = annualLabels[0];
+    else periodSel.value = optionList[0]?.value || "";
     [periodSel, sortSel].forEach(s => s.addEventListener("change", drawMenu));
     const sb = document.getElementById("menuSearchBox");
     if (sb && !sb._wired) {
