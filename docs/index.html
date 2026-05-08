@@ -359,13 +359,17 @@ function computeScope(month) {
     const sales = daySales || (ms ? ms.total_sales : 0);
     const customers = (vis && vis.customers) ? vis.customers : (ms ? ms.customers : 0);
     const fyAnnual = ((DATA.budgets || {}).annual?.by_store || {})[sid] || 0;
-    const prevYear = ((DATA.budgets || {}).prev_year_actual || {})[sid] || 0;
+    const prevYearAnnual = ((DATA.budgets || {}).prev_year_actual || {})[sid] || 0;
+    // Previous year same month (e.g. 202605 → 202505) — actual data, not annual/12
+    const prevYM = (parseInt(month.slice(0,4)) - 1).toString() + month.slice(4);
+    const prevMs = (DATA.monthly_by_store[sid] || {})[prevYM];
+    const prevMonthSales = prevMs ? prevMs.total_sales : 0;
     // Last day's sales (most recent day with sales > 0)
     const lastDay = [...ds].reverse().find(d => d.sales > 0) || null;
-    storeRows.push({ sid, store: stores[sid], ms, ds, vis, daySales, monthlyTarget, elapsedTarget, sales, customers, fyAnnual, prevYear, lastDay });
+    storeRows.push({ sid, store: stores[sid], ms, ds, vis, daySales, monthlyTarget, elapsedTarget, sales, customers, fyAnnual, prevYearAnnual, prevMonthSales, prevYM, lastDay });
   }
 
-  let totals = { sales: 0, target: 0, expected: 0, customers: 0, staff: 0, fyAnnual: 0, prevYear: 0, lastDaySales: 0 };
+  let totals = { sales: 0, target: 0, expected: 0, customers: 0, staff: 0, fyAnnual: 0, prevYearAnnual: 0, prevMonthSales: 0, lastDaySales: 0 };
   let cVis = { new: 0, repeat: 0, referral: 0, customers: 0 };
   let cMs = { tech_customers_nominated: 0, tech_customers_free: 0, tech_sales_nominated: 0, tech_sales_free: 0, customers: 0, total_sales: 0, by_dept: {ヘア:{sales:0},アイ:{sales:0},ネイル:{sales:0}} };
   for (const r of storeRows) {
@@ -374,7 +378,8 @@ function computeScope(month) {
     totals.expected += r.elapsedTarget;
     totals.customers += r.customers;
     totals.fyAnnual += r.fyAnnual;
-    totals.prevYear += r.prevYear;
+    totals.prevYearAnnual += r.prevYearAnnual;
+    totals.prevMonthSales += r.prevMonthSales;
     if (r.lastDay) totals.lastDaySales += r.lastDay.sales;
     if (r.ms) {
       const visibleStaffNames = r.ms.staff.filter(n => !DATA.staff_rows.find(s => s.store === r.sid && s.month === month && s.name === n && s.hidden));
@@ -418,9 +423,9 @@ function renderTopKpi() {
   const projection = SCOPE.globalElapsedDays ? Math.round(t.sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
   const projDelta = projection - t.target;
   const projPct = t.target ? (projection / t.target * 100) : 0;
-  const yoyMonthAvg = t.prevYear ? Math.round(t.prevYear / 12) : 0;
-  // Pace-adjust YoY: compare current sales to expected prev-year proportional
-  const yoyExpected = yoyMonthAvg ? yoyMonthAvg * (SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 0;
+  // YoY: real previous-year same month (preferred), pace-adjusted
+  const prevMonthSales = t.prevMonthSales;
+  const yoyExpected = prevMonthSales ? prevMonthSales * (SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 0;
   const yoyPct = yoyExpected ? (t.sales / yoyExpected * 100) : 0;
   const lastDaySales = t.lastDaySales;
   // Find "last day" date string
@@ -453,9 +458,9 @@ function renderTopKpi() {
       sub: `客1人あたり`
     },
     {
-      title: "前年同月比 (ペース調整)",
-      main: t.prevYear ? `${yoyPct.toFixed(1)}%` : "—",
-      sub: `期待値 ${fmt(Math.round(yoyExpected))} (FY25月平均×${SCOPE.globalElapsedDays}/${SCOPE.daysInMonth}日)`,
+      title: "前年同月比",
+      main: prevMonthSales ? `${yoyPct.toFixed(1)}%` : "—",
+      sub: prevMonthSales ? `前年同月 ${fmt(prevMonthSales)} (${SCOPE.globalElapsedDays}/${SCOPE.daysInMonth}日進捗ベース)` : "前年データなし",
       mainCls: pctClass(yoyPct)
     },
     {
@@ -483,8 +488,8 @@ function renderStatusPanel() {
   const projDelta = projection - t.target;
   const remainTarget = Math.max(0, t.target - t.sales);
   const remainDays = Math.max(0, SCOPE.daysInMonth - SCOPE.globalElapsedDays);
-  const yoyMonthAvg = t.prevYear ? Math.round(t.prevYear / 12) : 0;
-  const yoyExpected = yoyMonthAvg ? Math.round(yoyMonthAvg * (SCOPE.globalElapsedDays / SCOPE.daysInMonth)) : 0;
+  const prevMonthSales = t.prevMonthSales;
+  const yoyExpected = prevMonthSales ? Math.round(prevMonthSales * (SCOPE.globalElapsedDays / SCOPE.daysInMonth)) : 0;
   const yoyPct = yoyExpected ? (t.sales / yoyExpected * 100) : 0;
   const yoyDelta = t.sales - yoyExpected;
 
@@ -500,9 +505,9 @@ function renderStatusPanel() {
 
   const rows = [
     {
-      type: yoyPct >= 100 ? "good" : "bad",
-      title: `前年同月比 (ペース調整) ${yoyPct >= 100 ? "+" : ""}${(yoyPct-100).toFixed(1)}%`,
-      sub: `${SCOPE.globalElapsedDays}日経過時の前年期待値 ${fmt(yoyExpected)} に対し ${yoyDelta>=0?'+':''}${fmt(yoyDelta)}`,
+      type: prevMonthSales ? (yoyPct >= 100 ? "good" : "bad") : "info",
+      title: prevMonthSales ? `前年同月比 ${yoyPct >= 100 ? "+" : ""}${(yoyPct-100).toFixed(1)}%` : "前年同月データなし",
+      sub: prevMonthSales ? `前年同月 ${fmt(prevMonthSales)} の ${SCOPE.globalElapsedDays}/${SCOPE.daysInMonth}日進捗 ${fmt(yoyExpected)} に対し ${yoyDelta>=0?'+':''}${fmt(yoyDelta)}` : "—",
     },
     {
       type: pacePct >= 90 ? "good" : pacePct >= 75 ? "warn" : "bad",
@@ -1190,39 +1195,44 @@ function drawMonthlyTrend() {
   const el = document.getElementById("monthlyTrendChart");
   if (!el) return;
   if (window._chartMT) window._chartMT.destroy();
-  // FY26 monthly budgets per store
-  const monthly = (DATA.budgets || {}).monthly || {};
-  const tsuMonths = monthly.tsunashima || {};
-  const eleMonths = monthly.miyakojima || {};
-  const months = Object.keys(tsuMonths).sort();
-  const labels = months.map(m => m.slice(0,4) + "/" + parseInt(m.slice(4,6),10));
-  const tsuTargets = months.map(m => tsuMonths[m] / 1000);
-  const eleTargets = months.map(m => eleMonths[m] / 1000);
-  // Actuals: from daily_by_store + monthly_by_store
-  const tsuActuals = months.map(m => {
-    const ds = (DATA.daily_by_store.tsunashima || {})[m] || [];
-    const sum = ds.reduce((a,d)=>a+d.sales,0);
-    if (sum > 0) return sum / 1000;
-    const ms = (DATA.monthly_by_store.tsunashima || {})[m];
-    return ms ? ms.total_sales / 1000 : null;
-  });
-  const eleActuals = months.map(m => {
-    const ds = (DATA.daily_by_store.miyakojima || {})[m] || [];
-    const sum = ds.reduce((a,d)=>a+d.sales,0);
-    if (sum > 0) return sum / 1000;
-    const ms = (DATA.monthly_by_store.miyakojima || {})[m];
-    return ms ? ms.total_sales / 1000 : null;
-  });
-  // Total target line per month
-  const totalTargets = months.map(m => (tsuMonths[m] + eleMonths[m]) / 1000);
+
+  // FY26 = 2026/05 〜 2027/04 / FY25 = 2025/05 〜 2026/04
+  const fy26Months = ["202605","202606","202607","202608","202609","202610","202611","202612","202701","202702","202703","202704"];
+  const fy25Months = ["202505","202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604"];
+  const monthLabels = ["5月","6月","7月","8月","9月","10月","11月","12月","1月","2月","3月","4月"];
+
+  const monthlyBudgets = (DATA.budgets || {}).monthly || {};
+  const tsuMonths = monthlyBudgets.tsunashima || {};
+  const eleMonths = monthlyBudgets.miyakojima || {};
+
+  // Sales lookup helper
+  const salesFor = (sid, ym) => {
+    const ds = (DATA.daily_by_store[sid] || {})[ym] || [];
+    const sum = ds.reduce((a,d) => a + d.sales, 0);
+    if (sum > 0) return sum;
+    const ms = (DATA.monthly_by_store[sid] || {})[ym];
+    return ms ? ms.total_sales : null;
+  };
+
+  const fy26Tsu = fy26Months.map(m => { const v = salesFor("tsunashima", m); return v == null ? null : v / 1000; });
+  const fy26Ele = fy26Months.map(m => { const v = salesFor("miyakojima", m); return v == null ? null : v / 1000; });
+  const fy25Tsu = fy25Months.map(m => { const v = salesFor("tsunashima", m); return v == null ? null : v / 1000; });
+  const fy25Ele = fy25Months.map(m => { const v = salesFor("miyakojima", m); return v == null ? null : v / 1000; });
+  const fy26Target = fy26Months.map(m => ((tsuMonths[m] || 0) + (eleMonths[m] || 0)) / 1000);
+
   window._chartMT = new Chart(el.getContext("2d"), {
     type: "bar",
     data: {
-      labels,
+      labels: monthLabels,
       datasets: [
-        { label: "Hanabi 綱島店 実績", data: tsuActuals, backgroundColor: "#1E88E5", stack: "actual", borderRadius: 2 },
-        { label: "ELLE by Hanabi 宮古島店 実績", data: eleActuals, backgroundColor: "#D63384", stack: "actual", borderRadius: 2 },
-        { label: "全社 予算", data: totalTargets, type: "line", borderColor: "#1A1A1A", borderWidth: 2, borderDash: [4,4], backgroundColor: "transparent", pointRadius: 3, pointBackgroundColor: "#1A1A1A", tension: 0.2 },
+        // FY25 (lighter, prior year)
+        { label: "FY25 綱島", data: fy25Tsu, backgroundColor: "rgba(30,136,229,0.35)", stack: "fy25", borderRadius: 2 },
+        { label: "FY25 宮古島", data: fy25Ele, backgroundColor: "rgba(214,51,132,0.35)", stack: "fy25", borderRadius: 2 },
+        // FY26 (saturated, current)
+        { label: "FY26 綱島", data: fy26Tsu, backgroundColor: "#1E88E5", stack: "fy26", borderRadius: 2 },
+        { label: "FY26 宮古島", data: fy26Ele, backgroundColor: "#D63384", stack: "fy26", borderRadius: 2 },
+        // FY26 budget overlay
+        { label: "FY26 予算", data: fy26Target, type: "line", borderColor: "#1A1A1A", borderWidth: 2, borderDash: [4,4], backgroundColor: "transparent", pointRadius: 3, pointBackgroundColor: "#1A1A1A", tension: 0.2, stack: "_line" },
       ]
     },
     options: {
