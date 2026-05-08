@@ -152,6 +152,9 @@
       <div class="text-sm text-gray-500 mt-1" id="summarySubtitle">—</div>
     </div>
 
+    <!-- Alert panel (auto-detected anomalies) -->
+    <div id="alertsPanel" class="mb-5"></div>
+
     <!-- Top KPI row (6 cards) -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5" id="topKpi"></div>
 
@@ -325,21 +328,85 @@
 
     <!-- Candidate list -->
     <div class="card overflow-hidden mb-5">
-      <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+      <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
         <h3 class="section-title">候補者リスト</h3>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
           <select id="recruitStatusFilter" class="border border-gray-300 rounded px-2 py-1 text-xs">
             <option value="active">進行中のみ</option>
             <option value="all">全て</option>
             <option value="closed">クローズ済 (入社/辞退/不採用)</option>
           </select>
+          <button id="recruitAddBtn" class="hidden text-xs bg-black text-white rounded px-3 py-1 hover:bg-gray-800 transition">+ 候補者を追加</button>
+          <button id="recruitExportBtn" class="hidden text-xs bg-gray-100 border border-gray-300 rounded px-3 py-1 hover:bg-gray-200 transition" title="recruitment.json をダウンロード">JSON出力</button>
         </div>
       </div>
       <div class="overflow-x-auto" id="recruitList"></div>
     </div>
 
-    <div class="text-[11px] text-gray-400 text-center">
+    <div class="text-[11px] text-gray-400 text-center" id="recruitFooterNote">
       候補者データの追加・編集は <code class="bg-gray-100 px-1 rounded">data/recruitment.json</code> を直接編集 (本部のみ)
+    </div>
+  </div>
+
+  <!-- Recruit candidate modal -->
+  <div id="recruitModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-gray-200 px-5 py-3 flex items-center justify-between sticky top-0 bg-white z-10">
+        <h3 class="font-bold" id="recruitModalTitle">候補者を追加</h3>
+        <button id="recruitModalClose" class="text-gray-400 hover:text-gray-700 text-xl leading-none">&times;</button>
+      </div>
+      <form id="recruitForm" class="p-5 space-y-3 text-sm">
+        <input type="hidden" id="rf_id" />
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-gray-600">応募日 <span class="text-red-500">*</span></span>
+            <input type="date" id="rf_applied_date" required class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+          </label>
+          <label class="block">
+            <span class="text-xs text-gray-600">ステータス <span class="text-red-500">*</span></span>
+            <select id="rf_status" required class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1"></select>
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-xs text-gray-600">氏名 <span class="text-red-500">*</span></span>
+          <input type="text" id="rf_name" required placeholder="例: 山田 花子" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+        </label>
+        <label class="block">
+          <span class="text-xs text-gray-600">フリガナ</span>
+          <input type="text" id="rf_kana" placeholder="例: ヤマダ ハナコ" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-gray-600">希望職種</span>
+            <select id="rf_role" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1"></select>
+          </label>
+          <label class="block">
+            <span class="text-xs text-gray-600">希望店舗</span>
+            <select id="rf_store_pref" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1"></select>
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-gray-600">経験年数</span>
+            <input type="number" id="rf_experience_years" min="0" max="60" step="1" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+          </label>
+          <label class="block">
+            <span class="text-xs text-gray-600">ソース</span>
+            <select id="rf_source" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1"></select>
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-xs text-gray-600">備考</span>
+          <textarea id="rf_notes" rows="2" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1"></textarea>
+        </label>
+        <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+          <button type="button" id="rf_delete" class="hidden text-xs text-red-600 hover:text-red-800 underline">この候補を削除</button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" id="rf_cancel" class="text-xs border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">キャンセル</button>
+            <button type="submit" class="text-xs bg-black text-white rounded px-4 py-1.5 hover:bg-gray-800">保存</button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -375,7 +442,9 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
 }
 
+let currentRole = null;
 function setAuthenticated(role) {
+  currentRole = role;
   const session = { role, expires: Date.now() + SESSION_HOURS * 3600 * 1000 };
   localStorage.setItem("hanabi_session", JSON.stringify(session));
   roleBadge.textContent = ROLE_LABEL[role] || role;
@@ -465,6 +534,7 @@ async function loadData() {
   const r = await fetch("data.json?v=" + Date.now());
   const d = await r.json();
   DATA = d;
+  mergeLocalRecruitOverrides();
   document.getElementById("generatedAt").textContent = "generated " + d.generated_at;
   const ms = document.getElementById("monthSelect");
   d.months.forEach(m => {
@@ -556,6 +626,7 @@ function render(month) {
   document.getElementById("summarySubtitle").innerHTML = `全社 / ${ymLabel} ${SCOPE.globalElapsedDays}日経過 (${SCOPE.daysInMonth}日中) <span class="text-gray-400">·</span> <span class="text-gray-500">数値はすべて税抜</span>`;
 
   renderRealtimeBanner();
+  renderAlerts();
   renderTopKpi();
   renderFyProgress();
   renderMenuTab();
@@ -1080,7 +1151,7 @@ function renderRecruitTab() {
           <th class="text-left py-2 px-3">備考</th>
         </tr>
       </thead>
-      <tbody>${filtered.map(c => `<tr class="border-b border-gray-50 hover:bg-gray-50">
+      <tbody>${filtered.map(c => `<tr class="border-b border-gray-50 hover:bg-gray-50 ${currentRole === 'master' ? 'cursor-pointer' : ''}" data-rid="${c.id || ''}">
         <td class="py-2 px-3 text-xs text-gray-600 whitespace-nowrap">${c.applied_date || "—"}</td>
         <td class="py-2 px-3 font-semibold whitespace-nowrap">${c.name || "—"}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}</td>
         <td class="py-2 px-3 text-xs">${c.role || "—"}</td>
@@ -1091,13 +1162,152 @@ function renderRecruitTab() {
         <td class="py-2 px-3 text-xs text-gray-600 truncate" style="max-width:200px">${c.notes || ""}</td>
       </tr>`).join("")}</tbody>
     </table>`;
+    if (currentRole === "master") {
+      root.querySelectorAll("tr[data-rid]").forEach(tr => {
+        tr.addEventListener("click", () => openRecruitModal(tr.dataset.rid));
+      });
+    }
   };
   if (filterSel && !filterSel._wired) {
     filterSel.addEventListener("change", drawList);
     filterSel._wired = true;
   }
+  // Show admin actions for master
+  const addBtn = document.getElementById("recruitAddBtn");
+  const expBtn = document.getElementById("recruitExportBtn");
+  const note = document.getElementById("recruitFooterNote");
+  if (currentRole === "master") {
+    if (addBtn) { addBtn.classList.remove("hidden"); addBtn.onclick = () => openRecruitModal(null); }
+    if (expBtn) { expBtn.classList.remove("hidden"); expBtn.onclick = exportRecruitJson; }
+    if (note) note.innerHTML = `候補者をクリックで編集 · ローカル変更は <code class="bg-gray-100 px-1 rounded">JSON出力</code> で <code class="bg-gray-100 px-1 rounded">data/recruitment.json</code> に反映してください`;
+  }
   drawList();
 }
+
+// === Recruit candidate management (master only) ===
+function _recruitOverrideKey() { return "hanabi_recruit_overrides_v1"; }
+function _loadRecruitOverrides() {
+  try { return JSON.parse(localStorage.getItem(_recruitOverrideKey()) || "{}"); }
+  catch { return {}; }
+}
+function _saveRecruitOverrides(o) {
+  localStorage.setItem(_recruitOverrideKey(), JSON.stringify(o));
+}
+function mergeLocalRecruitOverrides() {
+  if (!DATA || !DATA.recruitment) return;
+  const o = _loadRecruitOverrides();
+  if (!o || !Object.keys(o).length) return;
+  const list = DATA.recruitment.candidates = DATA.recruitment.candidates || [];
+  // Index by id
+  const byId = {};
+  list.forEach((c, i) => { if (c.id) byId[c.id] = i; });
+  for (const [id, val] of Object.entries(o)) {
+    if (val === null || val === "__deleted__") {
+      if (id in byId) { list[byId[id]] = null; }  // mark for removal
+      continue;
+    }
+    if (id in byId) {
+      list[byId[id]] = { ...list[byId[id]], ...val };
+    } else {
+      list.push({ ...val, id });
+    }
+  }
+  // Remove nulls
+  DATA.recruitment.candidates = list.filter(c => c);
+}
+
+function openRecruitModal(id) {
+  if (currentRole !== "master") return;
+  const modal = document.getElementById("recruitModal");
+  const title = document.getElementById("recruitModalTitle");
+  const settings = (DATA.recruitment || {})._settings || {};
+  // populate selects
+  const fillSel = (id, options, cur) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = `<option value="">—</option>` + options.map(o => `<option value="${o}" ${o === cur ? 'selected' : ''}>${o}</option>`).join("");
+  };
+  const cur = id ? (DATA.recruitment.candidates || []).find(c => c.id === id) : null;
+  title.textContent = cur ? "候補者を編集" : "候補者を追加";
+  document.getElementById("rf_id").value = id || "";
+  document.getElementById("rf_applied_date").value = cur && cur.applied_date ? cur.applied_date : new Date().toISOString().slice(0,10);
+  document.getElementById("rf_name").value = (cur && cur.name) || "";
+  document.getElementById("rf_kana").value = (cur && cur.kana) || "";
+  document.getElementById("rf_experience_years").value = cur && cur.experience_years != null ? cur.experience_years : "";
+  document.getElementById("rf_notes").value = (cur && cur.notes) || "";
+  fillSel("rf_status", settings.statuses || [], cur ? cur.status : "応募");
+  fillSel("rf_role", settings.roles || [], cur ? cur.role : "");
+  fillSel("rf_store_pref", settings.stores || [], cur ? cur.store_pref : "");
+  fillSel("rf_source", settings.sources || [], cur ? cur.source : "");
+  // Show delete button only when editing
+  document.getElementById("rf_delete").classList.toggle("hidden", !cur);
+  modal.classList.remove("hidden");
+}
+function closeRecruitModal() {
+  document.getElementById("recruitModal").classList.add("hidden");
+}
+function saveRecruitForm(e) {
+  e.preventDefault();
+  if (currentRole !== "master") return;
+  const id = document.getElementById("rf_id").value || ("c_" + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+  const candidate = {
+    id,
+    applied_date: document.getElementById("rf_applied_date").value,
+    name: document.getElementById("rf_name").value.trim(),
+    kana: document.getElementById("rf_kana").value.trim(),
+    role: document.getElementById("rf_role").value,
+    store_pref: document.getElementById("rf_store_pref").value,
+    experience_years: document.getElementById("rf_experience_years").value === "" ? null : Number(document.getElementById("rf_experience_years").value),
+    source: document.getElementById("rf_source").value,
+    status: document.getElementById("rf_status").value,
+    notes: document.getElementById("rf_notes").value.trim(),
+  };
+  if (!candidate.name || !candidate.applied_date || !candidate.status) return;
+  const o = _loadRecruitOverrides();
+  o[id] = candidate;
+  _saveRecruitOverrides(o);
+  // Update DATA in-memory
+  const list = DATA.recruitment.candidates = DATA.recruitment.candidates || [];
+  const idx = list.findIndex(c => c.id === id);
+  if (idx >= 0) list[idx] = candidate; else list.push(candidate);
+  closeRecruitModal();
+  renderRecruitTab();
+}
+function deleteRecruitCurrent() {
+  if (currentRole !== "master") return;
+  const id = document.getElementById("rf_id").value;
+  if (!id) return;
+  if (!confirm("この候補者を削除しますか？")) return;
+  const o = _loadRecruitOverrides();
+  o[id] = "__deleted__";
+  _saveRecruitOverrides(o);
+  DATA.recruitment.candidates = (DATA.recruitment.candidates || []).filter(c => c.id !== id);
+  closeRecruitModal();
+  renderRecruitTab();
+}
+function exportRecruitJson() {
+  if (currentRole !== "master") return;
+  const out = JSON.stringify(DATA.recruitment, null, 2);
+  const blob = new Blob([out], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "recruitment.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  alert("recruitment.json をダウンロードしました\n\n反映手順:\n1. ダウンロードした recruitment.json を ~/hanabi-dashboard/data/ に上書き\n2. git commit & push してデプロイ\n3. ブラウザでローカル変更を残しておくならそのまま、消すなら下記コンソールで:\n   localStorage.removeItem('hanabi_recruit_overrides_v1')");
+}
+// Wire modal events once
+document.addEventListener("DOMContentLoaded", () => {
+  const f = document.getElementById("recruitForm");
+  if (f) f.addEventListener("submit", saveRecruitForm);
+  const cancel = document.getElementById("rf_cancel");
+  if (cancel) cancel.addEventListener("click", closeRecruitModal);
+  const close = document.getElementById("recruitModalClose");
+  if (close) close.addEventListener("click", closeRecruitModal);
+  const del = document.getElementById("rf_delete");
+  if (del) del.addEventListener("click", deleteRecruitCurrent);
+  const modal = document.getElementById("recruitModal");
+  if (modal) modal.addEventListener("click", (e) => { if (e.target === modal) closeRecruitModal(); });
+});
 
 function deptOfCategory(cat) {
   if (!cat) return "ヘア";
@@ -1308,6 +1518,118 @@ function drawMenu() {
     update();
     d.addEventListener('toggle', update);
   });
+}
+
+function renderAlerts() {
+  const root = document.getElementById("alertsPanel");
+  if (!root) return;
+  if (currentMonth !== DATA.latest_month) { root.innerHTML = ""; return; }  // only on current month
+
+  const alerts = [];  // {severity: 'critical'|'warn'|'good'|'info', icon, title, detail}
+  const t = SCOPE.totals;
+
+  // 1. 全社ペース達成率
+  const pacePct = t.expected ? (t.sales / t.expected * 100) : 0;
+  if (pacePct < 75 && t.expected) {
+    alerts.push({ severity: 'critical', icon: '⚠', title: `全社ペース ${pacePct.toFixed(0)}% — 月予算未達ペース`,
+      detail: `期待値 ${fmt(t.expected)} に対し実績 ${fmt(t.sales)}。残${SCOPE.daysInMonth - SCOPE.globalElapsedDays}日で日商 ${fmt(Math.round((t.target - t.sales) / Math.max(1, SCOPE.daysInMonth - SCOPE.globalElapsedDays)))} 必要。` });
+  } else if (pacePct >= 110 && t.expected) {
+    alerts.push({ severity: 'good', icon: '✓', title: `全社ペース ${pacePct.toFixed(0)}% — 好調`,
+      detail: `期待値 ${fmt(t.expected)} を ${fmt(t.sales - t.expected)} 上回る。月末着地予測 ${fmt(Math.round(t.sales / Math.max(1, SCOPE.globalElapsedDays) * SCOPE.daysInMonth))}。` });
+  }
+
+  // 2. 同店舗 前年同月比
+  const ssPrev = t.prevMonthSalesSameStore;
+  const ssSales = t.salesSameStore;
+  if (ssPrev) {
+    const yoyExp = ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+    const yoyPct = (ssSales / yoyExp * 100);
+    if (yoyPct < 80) {
+      alerts.push({ severity: 'critical', icon: '↓', title: `前年同月比 ${yoyPct.toFixed(0)}% (同店舗) — 急落`,
+        detail: `前年同期 ${fmt(yoyExp)} に対し ${fmt(ssSales)}、▼ ${fmt(yoyExp - ssSales)}。集客施策の見直し検討。` });
+    } else if (yoyPct >= 120) {
+      alerts.push({ severity: 'good', icon: '↑', title: `前年同月比 ${yoyPct.toFixed(0)}% (同店舗) — 大幅成長`,
+        detail: `前年同期 ${fmt(yoyExp)} を ${fmt(ssSales - yoyExp)} 超過。要因分析→継続施策。` });
+    }
+  }
+
+  // 3. 店舗別ペース異常
+  for (const r of SCOPE.storeRows) {
+    if (!r.elapsedTarget) continue;
+    const sp = (r.sales / r.elapsedTarget * 100);
+    if (sp < 75) {
+      alerts.push({ severity: 'warn', icon: '⚠', title: `${r.store.name} ペース ${sp.toFixed(0)}% — 未達ペース`,
+        detail: `月予算 ${fmt(r.monthlyTarget)} の進捗値 ${fmt(r.elapsedTarget)} に対し ${fmt(r.sales)}。残目標 ${fmt(r.monthlyTarget - r.sales)}。` });
+    }
+  }
+
+  // 4. 部門別 (宮古島) ペース異常 — only depts with budget
+  const eleMs = (DATA.monthly_by_store.miyakojima || {})[currentMonth];
+  if (eleMs) {
+    const monthDeptBudget = ((DATA.budgets || {}).monthly_dept_miyakojima || {})[currentMonth] || {};
+    for (const d of ["ヘア", "アイ", "ネイル"]) {
+      const sales = eleMs.by_dept[d].sales;
+      const monthly = monthDeptBudget[d] || 0;
+      if (!monthly) continue;
+      const expected = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+      const pct = (sales / expected * 100);
+      const color = d === "ヘア" ? "#E91E63" : d === "アイ" ? "#1E88E5" : "#F59E0B";
+      if (pct < 70) {
+        alerts.push({ severity: 'warn', icon: '●', title: `宮古島 ${d}部門 ペース ${pct.toFixed(0)}% — 未達`,
+          detail: `月予算 ${fmt(monthly)} の進捗値 ${fmt(expected)} に対し ${fmt(sales)}、▼ ${fmt(expected - sales)}。`, accentColor: color });
+      } else if (pct >= 130) {
+        alerts.push({ severity: 'good', icon: '●', title: `宮古島 ${d}部門 ペース ${pct.toFixed(0)}% — 好調`,
+          detail: `月予算 ${fmt(monthly)} を超過予想。需要分析を。`, accentColor: color });
+      }
+    }
+  }
+
+  // 5. リピート率異常
+  for (const r of SCOPE.storeRows) {
+    if (!r.vis || !r.vis.customers) continue;
+    const rate = r.vis.repeat / r.vis.customers * 100;
+    if (rate < 50 && r.sid === "tsunashima") {  // 綱島は伝統的に高リピート
+      alerts.push({ severity: 'warn', icon: '⚲', title: `${r.store.name} リピート率 ${rate.toFixed(0)}% — 通常より低い`,
+        detail: `通常75%以上。一時的か再発か観察必要。新規 ${r.vis.new}/リピート ${r.vis.repeat}。` });
+    }
+  }
+
+  if (!alerts.length) {
+    root.innerHTML = `<div class="card p-4 flex items-center gap-3 text-sm text-gray-500">
+      <span class="text-base text-green-600">✓</span>
+      <span>主要指標に異常なし — 全店舗順調</span>
+    </div>`;
+    return;
+  }
+
+  // Sort: critical → warn → good → info
+  const order = { critical: 0, warn: 1, good: 2, info: 3 };
+  alerts.sort((a, b) => order[a.severity] - order[b.severity]);
+
+  const styleFor = (sev) => ({
+    critical: { bg: '#FEE2E2', border: '#DC2626', text: '#991B1B', iconColor: '#DC2626' },
+    warn:     { bg: '#FEF3C7', border: '#D97706', text: '#92400E', iconColor: '#D97706' },
+    good:     { bg: '#D1FAE5', border: '#059669', text: '#065F46', iconColor: '#059669' },
+    info:     { bg: '#DBEAFE', border: '#2563EB', text: '#1E3A8A', iconColor: '#2563EB' },
+  }[sev]);
+
+  root.innerHTML = `
+    <div class="space-y-2">
+      <div class="flex items-baseline justify-between">
+        <h3 class="section-title">アラート / 注目点 <span class="section-sub">${alerts.length}件</span></h3>
+      </div>
+      ${alerts.map(a => {
+        const s = styleFor(a.severity);
+        const accent = a.accentColor || s.iconColor;
+        return `<div class="flex items-start gap-3 p-3 rounded-lg" style="background:${s.bg}; border-left: 4px solid ${accent}">
+          <div class="text-xl font-bold flex-shrink-0 mt-0.5" style="color:${accent}; line-height:1; min-width:1.5rem; text-align:center">${a.icon}</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold" style="color:${s.text}">${a.title}</div>
+            <div class="text-xs mt-0.5" style="color:${s.text}; opacity:0.85">${a.detail}</div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
 }
 
 function renderRealtimeBanner() {
