@@ -418,6 +418,42 @@ def main():
         except Exception as e:
             print(f"  warn: failed to load {p.name}: {e}")
 
+    # Load denpyo (取引明細) data — 取引粒度のリピート率分析用
+    # 構造: denpyo_<date_range>_<store>.json
+    denpyo_summary = {}  # { store_id: { period: {row_count, unique_members, repeat_rate, ...} } }
+    for p in sorted(DATA.glob("denpyo_*.json")):
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+            sid = d.get("store_id")
+            period = f"{d.get('date_from')}-{d.get('date_to')}"
+            rows = d.get("rows", [])
+            # Aggregate metrics
+            members = {}
+            new_count = 0
+            for r in rows:
+                cust = r.get("customer", {})
+                member = cust.get("member_name", "").strip()
+                if member:
+                    members[member] = members.get(member, 0) + 1
+                else:
+                    new_count += 1  # 会員なし = 新規/ゲスト扱い
+            repeat_visits = sum(1 for c in members.values() if c > 1)
+            unique_members = len(members)
+            total_visits = len(rows)
+            repeat_rate = (repeat_visits / unique_members * 100) if unique_members else None
+            payment_total = sum((r.get("payment") or {}).get("total", 0) or sum((r.get("payment") or {}).values()) for r in rows)
+            denpyo_summary.setdefault(sid, {})[period] = {
+                "row_count": total_visits,
+                "unique_members": unique_members,
+                "guest_count": new_count,
+                "repeat_visits": repeat_visits,
+                "repeat_rate": repeat_rate,
+                "payment_total": payment_total,
+                "scraped_at": d.get("scraped_at"),
+            }
+        except Exception as e:
+            print(f"  warn: failed to load {p.name}: {e}")
+
     out = {
         "generated_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
         "stores": STORES,
@@ -438,6 +474,7 @@ def main():
         "staff_profiles": staff_profiles,
         "jouhou_data": jouhou_data,
         "external": external,
+        "denpyo_summary": denpyo_summary,
     }
 
     out_path = DOCS / "data.json"
