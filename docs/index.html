@@ -3564,13 +3564,15 @@ function staffInitial(name) {
   return (parts[0] || name).slice(0, 1);
 }
 
+// セッションごとに一意のキャッシュバスター (写真更新時のブラウザキャッシュ問題を回避)
+const _PHOTO_VERSION = Date.now();
 function staffAvatar(s, size = 24) {
-  const profile = (DATA.staff_profiles || {})[s.name];
+  const profile = (DATA.staff_profiles && DATA.staff_profiles.profiles && DATA.staff_profiles.profiles[s.name]) || null;
   const initial = staffInitial(s.name);
   const deptColor = s.primary_dept === "ヘア" ? "var(--dept-hair)" : s.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
   const sz = `width:${size}px;height:${size}px`;
   if (profile && profile.photo) {
-    return `<img src="assets/staff/${profile.photo}" alt="${s.name}" class="rounded-full object-cover border-2" style="${sz};border-color:${deptColor}">`;
+    return `<img src="assets/staff/${encodeURIComponent(profile.photo)}?v=${_PHOTO_VERSION}" alt="${s.name}" class="rounded-full object-cover border-2" style="${sz};border-color:${deptColor}" onerror="this.outerHTML='<div class=\\'rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0\\' style=\\'${sz};background:${deptColor}\\'>${initial}</div>'">`;
   }
   return `<div class="rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style="${sz};background:${deptColor}">${initial}</div>`;
 }
