@@ -264,7 +264,7 @@
         <div style="height:260px"><canvas id="repeatRateChart"></canvas></div>
       </div>
     </div>
-    <div class="grid lg:grid-cols-2 gap-3">
+    <div class="grid lg:grid-cols-2 gap-3 mb-3">
       <div class="card p-5">
         <h3 class="section-title mb-3">客単価 月次推移 <span class="section-sub">店舗別 (税抜)</span></h3>
         <div style="height:260px"><canvas id="avgTicketChart"></canvas></div>
@@ -272,6 +272,16 @@
       <div class="card p-5">
         <h3 class="section-title mb-3">指名率 月次推移 <span class="section-sub">店舗別</span></h3>
         <div style="height:260px"><canvas id="nominationRateChart"></canvas></div>
+      </div>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-3">
+      <div class="card p-5">
+        <h3 class="section-title mb-3">男女比率 月次推移 <span class="section-sub">Hanabi 綱島店 (技術客数ベース)</span></h3>
+        <div style="height:240px"><canvas id="genderRatioChartTsu"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="section-title mb-3">男女比率 月次推移 <span class="section-sub">ELLE by Hanabi 宮古島店 (技術客数ベース)</span></h3>
+        <div style="height:240px"><canvas id="genderRatioChartEle"></canvas></div>
       </div>
     </div>
   </div>
@@ -621,6 +631,23 @@ function getCurrentFY() {
   const fys = getAvailableFYs();
   return fys.length ? fys[fys.length - 1] : 25;
 }
+
+// 同店舗 YoY 判定: 開店から 12ヶ月以上経過した店舗のみ「同店舗」 扱い
+// (ELLE宮古島の開店ランプアップ中の月を YoY 比較から除外)
+function isSameStoreEligible(sid, currentMonth) {
+  const store = (DATA.stores || {})[sid];
+  if (!store || !store.open_date) return true;  // 不明な店舗は除外しない (フォールバック)
+  // 比較対象の前年同月の月初日
+  const prevYear = parseInt(currentMonth.slice(0, 4)) - 1;
+  const prevMonth = currentMonth.slice(4, 6);
+  const prevYearStart = new Date(`${prevYear}-${prevMonth}-01`);
+  // 開店日+12ヶ月の日付 (この日以降が「成熟」期)
+  const openDate = new Date(store.open_date);
+  const matureDate = new Date(openDate);
+  matureDate.setFullYear(matureDate.getFullYear() + 1);
+  // 前年同月の月初が「成熟日」 以降なら同店舗扱い
+  return prevYearStart >= matureDate;
+}
 Chart.defaults.color = "#6B7280";
 Chart.defaults.borderColor = "#E5E7EB";
 Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", system-ui';
@@ -693,8 +720,9 @@ function computeScope(month) {
     totals.fyAnnual += r.fyAnnual;
     totals.prevYearAnnual += r.prevYearAnnual;
     totals.prevMonthSales += r.prevMonthSales;
-    // Same-store: only count current sales if prev year had data for this store
-    if (r.prevMonthSales > 0) {
+    // Same-store: 開店から12ヶ月以上経過してる店舗のみ計上
+    // (店舗の開店初年度の数値はランプアップで歪むため除外)
+    if (isSameStoreEligible(r.sid, month)) {
       totals.prevMonthSalesSameStore += r.prevMonthSales;
       totals.salesSameStore += r.sales;
     }
@@ -805,16 +833,18 @@ function renderTopKpi() {
       };
     })(),
     (function() {
-      // Same-store YoY (excludes new stores that didn't exist last year)
+      // 同店舗 YoY (開店から12ヶ月未満の店舗を除外)
       const ssPrev = t.prevMonthSalesSameStore;
       const ssSales = t.salesSameStore;
       const expectedSS = ssPrev ? ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 0;
       const ssPct = expectedSS ? (ssSales / expectedSS * 100) : 0;
-      const newStoreCount = SCOPE.storeRows.filter(r => r.prevMonthSales === 0 && r.sales > 0).length;
+      const excludedStores = SCOPE.storeRows.filter(r => !isSameStoreEligible(r.sid, SCOPE.month));
+      const excludedCount = excludedStores.length;
+      const excludedNames = excludedStores.map(r => r.store.short || r.store.name).join("/");
       return {
-        title: newStoreCount ? "前年同月比 (同店舗)" : "前年同月比",
+        title: excludedCount ? "前年同月比 (同店舗)" : "前年同月比",
         main: ssPrev ? `${ssPct.toFixed(1)}%` : "—",
-        sub: ssPrev ? `前年同月 ${fmt(ssPrev)}${newStoreCount ? ` · 新店${newStoreCount}店除外` : ""}` : "前年データなし",
+        sub: ssPrev ? `前年同月 ${fmt(ssPrev)}${excludedCount ? ` · 新店除外: ${excludedNames}` : ""}` : "前年データなし",
         mainCls: pctClass(ssPct)
       };
     })(),
@@ -2994,6 +3024,7 @@ function renderCharts(month) {
   drawRepeatRateMonthly();
   drawAvgTicketMonthly();
   drawNominationRateMonthly();
+  drawGenderRatioMonthly();
 }
 
 function drawVisitorMonthly() {
@@ -3122,6 +3153,53 @@ function drawNominationRateMonthly() {
       plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: {size: 11} } } }
     }
   });
+}
+
+function drawGenderRatioMonthly() {
+  // 過去12ヶ月の男女比率推移を店舗別に表示 (技術客数ベース、 stacked area like)
+  const months = ["202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604","202605"];
+  const labels = months.map(m => parseInt(m.slice(4,6),10) + "月");
+
+  const drawOne = (canvasId, sid) => {
+    const el = document.getElementById(canvasId);
+    if (!el) return;
+    if (window["_chartGR_" + sid]) window["_chartGR_" + sid].destroy();
+
+    const dataFor = (gender) => months.map(ym => {
+      const ms = (DATA.monthly_by_store[sid] || {})[ym];
+      if (!ms) return null;
+      const male = ms.tech_customers_male || 0;
+      const female = ms.tech_customers_female || 0;
+      const tot = male + female;
+      if (!tot) return null;
+      return gender === "male" ? parseFloat((male / tot * 100).toFixed(1)) : parseFloat((female / tot * 100).toFixed(1));
+    });
+    const malePct = dataFor("male");
+    const femalePct = dataFor("female");
+
+    window["_chartGR_" + sid] = new Chart(el.getContext("2d"), {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "男性", data: malePct, borderColor: "#3B82F6", backgroundColor: "rgba(59,130,246,0.25)", tension: 0.3, pointRadius: 4, fill: "origin", stack: "stk" },
+          { label: "女性", data: femalePct, borderColor: "#EC4899", backgroundColor: "rgba(236,72,153,0.25)", tension: 0.3, pointRadius: 4, fill: "-1", stack: "stk" },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          y: { stacked: true, beginAtZero: true, max: 100, ticks: { callback: v => v + "%" } }
+        },
+        plugins: {
+          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y == null ? "—" : c.parsed.y.toFixed(1) + "%"}` } }
+        }
+      }
+    });
+  };
+  drawOne("genderRatioChartTsu", "tsunashima");
+  drawOne("genderRatioChartEle", "miyakojima");
 }
 
 function drawMonthlyTrend() {

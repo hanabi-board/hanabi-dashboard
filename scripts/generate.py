@@ -23,8 +23,21 @@ DATA = ROOT / "data"
 DOCS = ROOT / "docs"
 
 STORES = {
-    "tsunashima": {"name": "Hanabi 綱島店", "short": "綱島", "brand": "hanabi", "departments": ["ヘア"]},
-    "miyakojima": {"name": "ELLE by Hanabi 宮古島店", "short": "宮古島", "brand": "elle", "departments": ["ヘア", "アイ", "ネイル"]},
+    "tsunashima": {
+        "name": "Hanabi 綱島店",
+        "short": "綱島",
+        "brand": "hanabi",
+        "departments": ["ヘア"],
+        # 開店日 (実データの最古から推定/設定)。 同店舗 YoY 判定に使用。
+        "open_date": "2022-05-01",  # FY22期初時点で既にOPEN
+    },
+    "miyakojima": {
+        "name": "ELLE by Hanabi 宮古島店",
+        "short": "宮古島",
+        "brand": "elle",
+        "departments": ["ヘア", "アイ", "ネイル"],
+        "open_date": "2025-09-01",  # ELLE by Hanabi 宮古島店 開店
+    },
 }
 
 DEPARTMENTS = ("ヘア", "アイ", "ネイル")
