@@ -1,0 +1,52 @@
+{
+  "source": "hotpepper",
+  "scraped_at": "2026-05-11T20:37:06",
+  "stores": {
+    "tsunashima": {
+      "rating": 4.79,
+      "salon_name": "ハナビ(Hanabi)",
+      "recent_reviews": [
+        {
+          "text": "366件の口コミがあります",
+          "date": "",
+          "rating": null
+        }
+      ],
+      "url": "https://beauty.hotpepper.jp/slnH000578577/"
+    },
+    "miyakojima": {
+      "rating": 3.97,
+      "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
+      "recent_reviews": [
+        {
+          "text": "85件の口コミがあります",
+          "date": "",
+          "rating": null
+        }
+      ],
+      "url": "https://beauty.hotpepper.jp/slnH000546153/",
+      "listings": [
+        {
+          "rating": 3.97,
+          "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
+          "recent_reviews": [
+            {
+              "text": "85件の口コミがあります",
+              "date": "",
+              "rating": null
+            }
+          ],
+          "url": "https://beauty.hotpepper.jp/slnH000546153/"
+        },
+        {
+          "rating": 4.48,
+          "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
+          "recent_reviews": [],
+          "url": "https://beauty.hotpepper.jp/kr/slnH000551943/"
+        }
+      ],
+      "total_review_count": 0,
+      "avg_rating": 4.2250000000000005
+    }
+  }
+}

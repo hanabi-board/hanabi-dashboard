@@ -1,0 +1,16 @@
+{
+  "_comment": "店舗別 外部メディア URL を管理。 hotpepper は配列 (複数掲載対応: ヘア/ネイル等)。 instagram は単一 URL。",
+  "tsunashima": {
+    "hotpepper": [
+      "https://beauty.hotpepper.jp/slnH000578577/"
+    ],
+    "instagram": "https://www.instagram.com/hanabi_202203/"
+  },
+  "miyakojima": {
+    "hotpepper": [
+      "https://beauty.hotpepper.jp/slnH000546153/",
+      "https://beauty.hotpepper.jp/kr/slnH000551943/"
+    ],
+    "instagram": "https://www.instagram.com/elle_miyakojima/"
+  }
+}

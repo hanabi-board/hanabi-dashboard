@@ -73,12 +73,13 @@ def scrape_hotpepper(page, url: str) -> dict:
                 const m = rateEl.textContent.match(/[\d.]+/);
                 if (m) out.rating = parseFloat(m[0]);
             }
-            // 口コミ件数
-            const cntEl = document.querySelector('[class*="review"]') || document.querySelector('.comeReview');
-            if (cntEl) {
-                const m = cntEl.textContent.match(/(\d+)/);
-                if (m) out.review_count = parseInt(m[1]);
-            }
+            // 口コミ件数 — HPB は '口コミ ◯件' フォーマット (ページ全体から探す)
+            const fullText = document.body.innerText;
+            const m1 = fullText.match(/口コミ[\s]*([0-9,]+)\s*件/);
+            if (m1) out.review_count = parseInt(m1[1].replace(/,/g, ''));
+            // ブログ件数 (参考)
+            const m2 = fullText.match(/ブログ[\s]*([0-9,]+)\s*件/);
+            if (m2) out.blog_count = parseInt(m2[1].replace(/,/g, ''));
             // 店舗名
             const nameEl = document.querySelector('h1, .salon-name, [class*="salonName"]');
             if (nameEl) out.salon_name = nameEl.textContent.trim().slice(0, 50);
@@ -121,29 +122,62 @@ def scrape_hotpepper(page, url: str) -> dict:
 
 def scrape_instagram(page, url: str) -> dict:
     """Instagram の公開プロフィールページから フォロワー数 / 投稿数 を取得。
-    Note: Instagram は bot 検出が厳しい。 ログインなしの public view から
-    meta タグ経由でフォロワー数取得できる場合のみ動作。
+    Note: Instagram は bot 検出が厳しい。 公開HTMLの og:description / meta description /
+    本文中の数値 から フォロワー数取得を試みる。
     """
     page.goto(url, wait_until="domcontentloaded")
-    time.sleep(3)
+    time.sleep(4)
     return page.evaluate(r"""
         () => {
             const out = {};
-            // meta description 例: "456 Followers, 123 Following, 789 Posts - ..."
-            const meta = document.querySelector('meta[name="description"]');
-            if (meta) {
-                const c = meta.getAttribute('content') || '';
-                const fol = c.match(/([\d,]+)\s*Followers?/i);
-                const fwg = c.match(/([\d,]+)\s*Following/i);
-                const post = c.match(/([\d,]+)\s*Posts?/i);
-                if (fol) out.followers = parseInt(fol[1].replace(/,/g, ''));
-                if (fwg) out.following = parseInt(fwg[1].replace(/,/g, ''));
-                if (post) out.posts = parseInt(post[1].replace(/,/g, ''));
-            }
             // username
             const url = location.pathname;
             const m = url.match(/^\/([^\/]+)/);
             if (m) out.username = m[1];
+            // 1) meta description (英語): "456 Followers, 123 Following, 789 Posts"
+            // 2) meta og:description (日本語版あり): "フォロワー456人 ..."
+            const metas = document.querySelectorAll('meta[name="description"], meta[property="og:description"]');
+            for (const meta of metas) {
+                const c = meta.getAttribute('content') || '';
+                // 英語パターン
+                const folEn = c.match(/([\d,\.]+[KMkm]?)\s*Followers?/i);
+                const fwgEn = c.match(/([\d,\.]+[KMkm]?)\s*Following/i);
+                const postEn = c.match(/([\d,\.]+[KMkm]?)\s*Posts?/i);
+                // 日本語パターン (人/件)
+                const folJa = c.match(/フォロワー(\d+\.?\d*[万千]?)/);
+                const fwgJa = c.match(/フォロー中(\d+\.?\d*[万千]?)/);
+                const postJa = c.match(/(\d+\.?\d*[万千]?)\s*件の投稿/);
+                const parseNum = s => {
+                    if (!s) return null;
+                    s = s.replace(/,/g, '').trim();
+                    let mult = 1;
+                    if (/k$/i.test(s)) { mult = 1000; s = s.replace(/k$/i, ''); }
+                    else if (/m$/i.test(s)) { mult = 1000000; s = s.replace(/m$/i, ''); }
+                    else if (s.endsWith('万')) { mult = 10000; s = s.replace('万', ''); }
+                    else if (s.endsWith('千')) { mult = 1000; s = s.replace('千', ''); }
+                    const n = parseFloat(s);
+                    return isNaN(n) ? null : Math.round(n * mult);
+                };
+                if (!out.followers && (folEn || folJa)) out.followers = parseNum((folEn || folJa)[1]);
+                if (!out.following && (fwgEn || fwgJa)) out.following = parseNum((fwgEn || fwgJa)[1]);
+                if (!out.posts && (postEn || postJa)) out.posts = parseNum((postEn || postJa)[1]);
+            }
+            // meta の値が取れなかった場合 ページのDOM内 (header section の数値) を試す
+            if (!out.followers) {
+                const lis = document.querySelectorAll('header ul li, header section li');
+                for (const li of lis) {
+                    const txt = li.innerText || '';
+                    const m = txt.match(/([\d,\.]+[KMkm万千]?)\s*(?:followers?|フォロワー)/i);
+                    if (m) {
+                        const s = m[1].replace(/,/g, '');
+                        let mult = 1, val = s;
+                        if (/k$/i.test(s)) { mult = 1000; val = s.replace(/k$/i, ''); }
+                        else if (s.endsWith('万')) { mult = 10000; val = s.replace('万', ''); }
+                        const n = parseFloat(val);
+                        if (!isNaN(n)) { out.followers = Math.round(n * mult); break; }
+                    }
+                }
+            }
             return out;
         }
     """)
@@ -177,24 +211,46 @@ def main():
             for store_id, urls in targets.items():
                 if store_id.startswith("_"):
                     continue
-                url = urls.get(source, "").strip()
-                if not url:
+                url_field = urls.get(source, "")
+                # 配列 or 文字列の両方対応 (hotpepper は複数掲載 listing 想定)
+                url_list = []
+                if isinstance(url_field, list):
+                    url_list = [u.strip() for u in url_field if u and isinstance(u, str)]
+                elif isinstance(url_field, str) and url_field.strip():
+                    url_list = [url_field.strip()]
+                if not url_list:
                     print(f"  {store_id}: skip (URL未設定)")
                     continue
-                print(f"  {store_id}: {url}")
-                try:
-                    if source == "hotpepper":
-                        data = scrape_hotpepper(page, url)
-                    elif source == "instagram":
-                        data = scrape_instagram(page, url)
-                    else:
-                        data = {}
-                    print(f"    → {data}")
-                    result["stores"][store_id] = data
-                    page.screenshot(path=str(log_dir / f"{source}_{store_id}.png"), full_page=False)
-                except Exception as e:
-                    print(f"    ⚠️ failed: {e}")
-                    result["stores"][store_id] = {"error": str(e)}
+                # 1店舗で複数URL ある場合は全件 scrape して 配列で保存
+                listings = []
+                for i, url in enumerate(url_list):
+                    print(f"  {store_id}[{i}]: {url}")
+                    try:
+                        if source == "hotpepper":
+                            data = scrape_hotpepper(page, url)
+                        elif source == "instagram":
+                            data = scrape_instagram(page, url)
+                        else:
+                            data = {}
+                        data["url"] = url
+                        print(f"    → rating={data.get('rating')}, reviews={data.get('review_count')}, reviews_fetched={len(data.get('recent_reviews',[]))}" if source == "hotpepper" else f"    → {data}")
+                        listings.append(data)
+                        page.screenshot(path=str(log_dir / f"{source}_{store_id}_{i}.png"), full_page=False)
+                    except Exception as e:
+                        print(f"    ⚠️ failed: {e}")
+                        listings.append({"url": url, "error": str(e)})
+                # 後方互換: 1件なら dict, 複数なら 1件目をベース + listings 配列
+                if len(listings) == 1:
+                    result["stores"][store_id] = listings[0]
+                else:
+                    primary = dict(listings[0])  # 1件目をコピー (循環参照回避)
+                    primary["listings"] = listings  # 全件 (配列)
+                    primary["total_review_count"] = sum((l.get("review_count") or 0) for l in listings)
+                    # ratings の単純平均 (重み付け改善余地あり)
+                    rating_vals = [l.get("rating") for l in listings if l.get("rating") is not None]
+                    if rating_vals:
+                        primary["avg_rating"] = sum(rating_vals) / len(rating_vals)
+                    result["stores"][store_id] = primary
             out_path = DATA / f"external_{source}_{date_str}.json"
             out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
             print(f"  saved → {out_path.name}")
