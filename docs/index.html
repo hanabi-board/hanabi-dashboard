@@ -421,6 +421,9 @@
       <div class="text-sm text-gray-500 mt-1">経営視点 / 店舗ポートフォリオ / 利益貢献度 / 全社KPI</div>
     </div>
 
+    <!-- Admin actions (master only) -->
+    <div class="flex flex-wrap gap-2 mb-4" id="mgmtAdminActions"></div>
+
     <!-- 全社 当月 KPI -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5" id="mgmtCompanyKpi"></div>
 
@@ -500,6 +503,70 @@
   </div>
 
   <!-- Recruit candidate modal -->
+  <!-- Budget edit modal (master only) -->
+  <div id="budgetModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-gray-200 px-5 py-3 flex items-center justify-between sticky top-0 bg-white z-10">
+        <h3 class="font-bold">予算編集 <span class="text-xs text-gray-500 ml-2" id="budgetModalFY">FY26</span></h3>
+        <button id="budgetModalClose" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-5 space-y-5">
+        <div class="text-xs text-gray-600 bg-yellow-50 border-l-4 border-yellow-300 px-3 py-2">
+          月別予算を編集すると、 年間予算は自動で計算されます。 保存ボタンを押すと <strong>GitHub に直接反映</strong> されます (1-3分後にダッシュボードに反映)。
+        </div>
+        <!-- Monthly grid -->
+        <div>
+          <h4 class="section-title mb-3">月別予算</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" style="min-width:600px">
+              <thead class="text-xs text-gray-500 border-b border-gray-200">
+                <tr>
+                  <th class="text-left py-2 pr-3">月</th>
+                  <th class="text-right py-2 px-3">Hanabi 綱島店</th>
+                  <th class="text-right py-2 px-3">ELLE by Hanabi 宮古島店</th>
+                  <th class="text-right py-2 pl-3">全社</th>
+                </tr>
+              </thead>
+              <tbody id="budgetMonthlyBody"></tbody>
+              <tfoot class="border-t-2 border-gray-300 text-sm font-semibold">
+                <tr>
+                  <td class="py-2 pr-3">年間合計</td>
+                  <td class="py-2 px-3 text-right kpi-num" id="budgetAnnualTsu">—</td>
+                  <td class="py-2 px-3 text-right kpi-num" id="budgetAnnualEle">—</td>
+                  <td class="py-2 pl-3 text-right kpi-num text-lg" id="budgetAnnualCompany">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <!-- 部門別 (宮古島) -->
+        <div>
+          <h4 class="section-title mb-3">月別 部門予算 <span class="section-sub">ELLE by Hanabi 宮古島店</span></h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" style="min-width:600px">
+              <thead class="text-xs text-gray-500 border-b border-gray-200">
+                <tr>
+                  <th class="text-left py-2 pr-3">月</th>
+                  <th class="text-right py-2 px-3">ヘア</th>
+                  <th class="text-right py-2 px-3">アイ</th>
+                  <th class="text-right py-2 px-3">ネイル</th>
+                  <th class="text-right py-2 pl-3">月計</th>
+                </tr>
+              </thead>
+              <tbody id="budgetDeptBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Save bar -->
+        <div class="flex justify-end gap-2 pt-3 border-t border-gray-100 sticky bottom-0 bg-white">
+          <div id="budgetStatus" class="flex-1 text-xs text-gray-500"></div>
+          <button id="budgetCancel" class="text-xs border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">キャンセル</button>
+          <button id="budgetSave" class="text-xs bg-black text-white rounded px-4 py-1.5 hover:bg-gray-800">GitHub に保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Staff detail modal -->
   <div id="staffDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -2055,6 +2122,16 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sdClose) sdClose.addEventListener("click", closeStaffDetail);
   const sdModal = document.getElementById("staffDetailModal");
   if (sdModal) sdModal.addEventListener("click", (e) => { if (e.target === sdModal) closeStaffDetail(); });
+
+  // Budget edit modal
+  const bClose = document.getElementById("budgetModalClose");
+  if (bClose) bClose.addEventListener("click", closeBudgetModal);
+  const bCancel = document.getElementById("budgetCancel");
+  if (bCancel) bCancel.addEventListener("click", closeBudgetModal);
+  const bSave = document.getElementById("budgetSave");
+  if (bSave) bSave.addEventListener("click", saveBudgetForm);
+  const bModal = document.getElementById("budgetModal");
+  if (bModal) bModal.addEventListener("click", (e) => { if (e.target === bModal) closeBudgetModal(); });
 });
 
 function deptOfCategory(cat) {
@@ -3326,6 +3403,16 @@ function renderManagementTab() {
   if (!document.getElementById("mgmtCompanyKpi")) return;
   const t = SCOPE.totals;
 
+  // Admin actions (master only)
+  const adminActions = document.getElementById("mgmtAdminActions");
+  if (adminActions) {
+    adminActions.innerHTML = currentRole === "master"
+      ? `<button id="mgmtEditBudgetBtn" class="text-xs bg-black text-white rounded px-3 py-1.5 hover:bg-gray-800">予算編集</button>`
+      : "";
+    const btn = document.getElementById("mgmtEditBudgetBtn");
+    if (btn) btn.onclick = openBudgetModal;
+  }
+
   // 全社 KPI (合算意味あるもの: 売上・客数・スタッフ数)
   const pacePct = t.expected ? (t.sales / t.expected * 100) : 0;
   const projection = SCOPE.globalElapsedDays ? Math.round(t.sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
@@ -3530,6 +3617,150 @@ function drawMgmtCompanyTrend() {
       }
     }
   });
+}
+
+// === Budget edit modal (master only) ===
+function openBudgetModal() {
+  if (currentRole !== "master") return;
+  const modal = document.getElementById("budgetModal");
+  if (!modal) return;
+  const b = DATA.budgets || {};
+  const fy = b.fiscal_year || "FY26";
+  document.getElementById("budgetModalFY").textContent = fy;
+
+  // Determine FY months
+  const fyNum = parseInt(fy.replace("FY",""));
+  const months = getFYMonths(fyNum);
+  const monthlyTsu = ((b.monthly || {}).tsunashima || {});
+  const monthlyEle = ((b.monthly || {}).miyakojima || {});
+  const monthlyDept = b.monthly_dept_miyakojima || {};
+
+  // Build monthly grid
+  const tbody = document.getElementById("budgetMonthlyBody");
+  tbody.innerHTML = months.map(ym => {
+    const mo = parseInt(ym.slice(4,6), 10);
+    const tsuVal = monthlyTsu[ym] || 0;
+    const eleVal = monthlyEle[ym] || 0;
+    return `<tr class="border-b border-gray-50">
+      <td class="py-1.5 pr-3 text-xs">${ym.slice(0,4)}/${mo}月</td>
+      <td class="py-1.5 px-3 text-right">
+        <input type="number" class="bg-trans" data-budget="tsu" data-ym="${ym}" value="${tsuVal}" style="width:120px; text-align:right; border:1px solid #ddd; border-radius:4px; padding:3px 6px;" />
+      </td>
+      <td class="py-1.5 px-3 text-right">
+        <input type="number" class="bg-trans" data-budget="ele" data-ym="${ym}" value="${eleVal}" style="width:120px; text-align:right; border:1px solid #ddd; border-radius:4px; padding:3px 6px;" />
+      </td>
+      <td class="py-1.5 pl-3 text-right kpi-num text-gray-600" data-budget-total="${ym}">${(tsuVal + eleVal).toLocaleString()}</td>
+    </tr>`;
+  }).join("");
+
+  // Build dept grid (宮古島)
+  const deptBody = document.getElementById("budgetDeptBody");
+  deptBody.innerHTML = months.map(ym => {
+    const mo = parseInt(ym.slice(4,6), 10);
+    const dept = monthlyDept[ym] || {};
+    const hair = dept["ヘア"] || 0;
+    const eye = dept["アイ"] || 0;
+    const nail = dept["ネイル"] || 0;
+    return `<tr class="border-b border-gray-50">
+      <td class="py-1.5 pr-3 text-xs">${ym.slice(0,4)}/${mo}月</td>
+      <td class="py-1.5 px-3 text-right">
+        <input type="number" data-budget="dept-hair" data-ym="${ym}" value="${hair}" style="width:110px; text-align:right; border:1px solid #ddd; border-radius:4px; padding:3px 6px;" />
+      </td>
+      <td class="py-1.5 px-3 text-right">
+        <input type="number" data-budget="dept-eye" data-ym="${ym}" value="${eye}" style="width:110px; text-align:right; border:1px solid #ddd; border-radius:4px; padding:3px 6px;" />
+      </td>
+      <td class="py-1.5 px-3 text-right">
+        <input type="number" data-budget="dept-nail" data-ym="${ym}" value="${nail}" style="width:110px; text-align:right; border:1px solid #ddd; border-radius:4px; padding:3px 6px;" />
+      </td>
+      <td class="py-1.5 pl-3 text-right kpi-num text-gray-600" data-budget-dept-total="${ym}">${(hair + eye + nail).toLocaleString()}</td>
+    </tr>`;
+  }).join("");
+
+  // Wire input listeners to update totals
+  const updateTotals = () => {
+    let totalTsu = 0, totalEle = 0;
+    document.querySelectorAll('input[data-budget="tsu"]').forEach(input => {
+      const ym = input.dataset.ym;
+      const tsu = Number(input.value) || 0;
+      const ele = Number(document.querySelector(`input[data-budget="ele"][data-ym="${ym}"]`).value) || 0;
+      totalTsu += tsu;
+      totalEle += ele;
+      document.querySelector(`[data-budget-total="${ym}"]`).textContent = (tsu + ele).toLocaleString();
+    });
+    document.getElementById("budgetAnnualTsu").textContent = "¥" + totalTsu.toLocaleString();
+    document.getElementById("budgetAnnualEle").textContent = "¥" + totalEle.toLocaleString();
+    document.getElementById("budgetAnnualCompany").textContent = "¥" + (totalTsu + totalEle).toLocaleString();
+    // Dept totals per month
+    document.querySelectorAll('[data-budget-dept-total]').forEach(td => {
+      const ym = td.dataset.budgetDeptTotal;
+      const h = Number(document.querySelector(`input[data-budget="dept-hair"][data-ym="${ym}"]`).value) || 0;
+      const e = Number(document.querySelector(`input[data-budget="dept-eye"][data-ym="${ym}"]`).value) || 0;
+      const n = Number(document.querySelector(`input[data-budget="dept-nail"][data-ym="${ym}"]`).value) || 0;
+      td.textContent = (h + e + n).toLocaleString();
+    });
+  };
+  modal.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener("input", updateTotals);
+  });
+  updateTotals();
+
+  document.getElementById("budgetStatus").innerHTML = getGhToken()
+    ? `<span style="color:#10B981">●</span> GitHub 接続済`
+    : `<span style="color:#DC2626">●</span> GitHub 未接続 — ヘッダーの GH ボタンから設定`;
+
+  modal.classList.remove("hidden");
+}
+function closeBudgetModal() {
+  document.getElementById("budgetModal").classList.add("hidden");
+}
+async function saveBudgetForm() {
+  if (currentRole !== "master") return;
+  if (!getGhToken()) {
+    showToast("⚠️ GitHub トークン未設定 — ヘッダーの GH ボタンから設定してください", "error");
+    return;
+  }
+  // Build new budgets.json from inputs
+  const b = JSON.parse(JSON.stringify(DATA.budgets || {}));  // deep clone
+  const fyNum = parseInt((b.fiscal_year || "FY26").replace("FY", ""));
+  const months = getFYMonths(fyNum);
+  b.monthly = b.monthly || {};
+  b.monthly.tsunashima = b.monthly.tsunashima || {};
+  b.monthly.miyakojima = b.monthly.miyakojima || {};
+  b.monthly_dept_miyakojima = b.monthly_dept_miyakojima || {};
+  let totalTsu = 0, totalEle = 0;
+  const deptTotals = { "ヘア": 0, "アイ": 0, "ネイル": 0 };
+  for (const ym of months) {
+    const tsu = Number(document.querySelector(`input[data-budget="tsu"][data-ym="${ym}"]`).value) || 0;
+    const ele = Number(document.querySelector(`input[data-budget="ele"][data-ym="${ym}"]`).value) || 0;
+    b.monthly.tsunashima[ym] = tsu;
+    b.monthly.miyakojima[ym] = ele;
+    totalTsu += tsu; totalEle += ele;
+    const hair = Number(document.querySelector(`input[data-budget="dept-hair"][data-ym="${ym}"]`).value) || 0;
+    const eye = Number(document.querySelector(`input[data-budget="dept-eye"][data-ym="${ym}"]`).value) || 0;
+    const nail = Number(document.querySelector(`input[data-budget="dept-nail"][data-ym="${ym}"]`).value) || 0;
+    b.monthly_dept_miyakojima[ym] = { "ヘア": hair, "アイ": eye, "ネイル": nail };
+    deptTotals["ヘア"] += hair; deptTotals["アイ"] += eye; deptTotals["ネイル"] += nail;
+  }
+  // Update annual
+  b.annual = b.annual || {};
+  b.annual.company = totalTsu + totalEle;
+  b.annual.by_store = b.annual.by_store || {};
+  b.annual.by_store.tsunashima = totalTsu;
+  b.annual.by_store.miyakojima = totalEle;
+  b.annual.by_dept_miyakojima = deptTotals;
+
+  // Optimistic UI: update local DATA
+  DATA.budgets = b;
+  showToast("予算保存中 → GitHub反映...", "info");
+  try {
+    await pushJsonToGitHub("data/budgets.json", b, "Update budgets.json (予算編集)");
+    showToast("✓ GitHub反映成功 · 1-3分後に全画面で反映", "good");
+    closeBudgetModal();
+    // Re-render management tab to show new figures immediately
+    if (typeof render === "function") render(currentMonth);
+  } catch (err) {
+    showToast("⚠️ GitHub反映失敗: " + err.message, "error");
+  }
 }
 
 // === Staff detail modal ===
