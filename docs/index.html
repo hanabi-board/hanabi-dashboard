@@ -1732,9 +1732,12 @@ function deptOfCategory(cat) {
 }
 
 function prevMonthOf(period) {
-  if (!/^\d{6}$/.test(period)) return null;
-  const y = parseInt(period.slice(0,4));
-  const m = parseInt(period.slice(4,6));
+  // Match 6-digit YYYYMM or YYYYMMTYPE (e.g. 202605MTD) → extract base YYYYMM
+  const m6 = (period || "").match(/^(\d{6})(MTD)?$/);
+  if (!m6) return null;
+  const base = m6[1];
+  const y = parseInt(base.slice(0,4));
+  const m = parseInt(base.slice(4,6));
   const py = m === 1 ? y - 1 : y;
   const pm = m === 1 ? 12 : m - 1;
   return `${py}${String(pm).padStart(2,"0")}`;
@@ -1852,12 +1855,24 @@ function getMenuRowsForScope(period, sid, deptFilter) {
     const k = (pr.category_status_name || "") + "::" + (pr.commodity_name || "");
     prevMap[k] = pr;
   }
+  // 進行中月 (MTD) の場合、 前月実績を経過日数で按分してフェアな比較に
+  // 例: 202605MTD (11日経過) vs 202604 (30日) → 前月を 11/30 にスケール
+  let pmvScale = 1.0;
+  const mtdMatch = (period || "").match(/^(\d{6})MTD$/);
+  if (mtdMatch) {
+    const elapsedDays = SCOPE && SCOPE.globalElapsedDays ? SCOPE.globalElapsedDays : 1;
+    // prev month days
+    const py = parseInt(prevPeriod.slice(0,4));
+    const pm = parseInt(prevPeriod.slice(4,6));
+    const prevDaysInMonth = new Date(py, pm, 0).getDate();  // last day of prev month
+    pmvScale = elapsedDays / prevDaysInMonth;
+  }
   for (const r of rows) {
     const k = (r.category_status_name || "") + "::" + (r.commodity_name || "");
     const prev = prevMap[k];
     if (prev) {
       const cur = parseInt(r.total_price) || 0;
-      const pmv = parseInt(prev.total_price) || 0;
+      const pmv = Math.round((parseInt(prev.total_price) || 0) * pmvScale);
       r.prev_month_price = pmv;
       r.mom_pct = pmv ? (cur / pmv * 100) : null;
     } else {
@@ -1936,8 +1951,10 @@ function drawMenu() {
 
   const root = document.getElementById("menuSections");
   const mom_available = !!prevMonthOf(period);
+  const isMTD = /^\d{6}MTD$/.test(period);
   const queryNote = query ? ` · 検索 <strong>"${query}"</strong>` : "";
-  status.innerHTML = `期間 <strong>${period}</strong>${mom_available ? " · 前月比あり" : " · 前月比なし (annual/MTD)"}${queryNote}`;
+  const momNote = mom_available ? (isMTD ? " · 前月比 (経過日数で按分済)" : " · 前月比あり") : " · 前月比なし (annual)";
+  status.innerHTML = `期間 <strong>${period}</strong>${momNote}${queryNote}`;
 
   root.innerHTML = scopes.map((sc, i) => {
     let rows = getMenuRowsForScope(period, sc.sid, sc.dept);
