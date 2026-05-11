@@ -87,6 +87,16 @@
 
   .input-dark { background: #fff; border: 1px solid #374151; color: #fff; }
 
+  /* Star rating widget (visual rating display) */
+  .star-rating { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+  .star-rating .stars { position: relative; font-size: 1em; letter-spacing: 0; }
+  .star-rating .stars-bg { color: #E5E7EB; }
+  .star-rating .stars-fg {
+    position: absolute; top: 0; left: 0; white-space: nowrap; overflow: hidden;
+    color: #FBBF24;  /* gold */
+  }
+  .star-rating .value { font-weight: 700; color: #1A1A1A; font-feature-settings: "tnum" 1; }
+
   /* Print: A4 portrait, summary tab only, compressed */
   @media print {
     @page { size: A4 portrait; margin: 10mm 8mm; }
@@ -826,6 +836,24 @@ const fmtM = n => "¥" + ((n||0)/1000000).toFixed(1) + "M";
 const pctClass = p => p >= 100 ? "pct-good" : p >= 80 ? "pct-warn" : "pct-bad";
 const pctColor = p => p >= 100 ? "var(--accent-green)" : p >= 80 ? "var(--accent-yellow)" : "var(--accent-red)";
 const badgeCls = p => p >= 100 ? "badge-good" : p >= 80 ? "badge-warn" : "badge-bad";
+// Star rating display: 5星のうち rating 分塗りつぶし (小数も滑らかに)
+// renderStars(4.5) → '<span class="star-rating">...</span>'
+// renderStars(4.5, { size: '1.5em' }) でサイズ調整
+// renderStars(null) → '—'
+function renderStars(rating, opts = {}) {
+  if (rating == null || isNaN(rating)) return `<span class="text-gray-400">—</span>`;
+  const r = Math.max(0, Math.min(5, parseFloat(rating)));
+  const pct = (r / 5 * 100).toFixed(1);
+  const size = opts.size || "1em";
+  const showValue = opts.showValue !== false;
+  return `<span class="star-rating" style="font-size:${size}">
+    <span class="stars">
+      <span class="stars-bg">★★★★★</span>
+      <span class="stars-fg" style="width:${pct}%">★★★★★</span>
+    </span>
+    ${showValue ? `<span class="value">${r.toFixed(1)}</span>` : ""}
+  </span>`;
+}
 
 // === Login (SHA-256 + 24h expiry) ===
 // Hashes computed from "id:password"
@@ -3833,8 +3861,8 @@ function renderManagementTab() {
             <div class="grid grid-cols-2 gap-3 text-sm mb-3">
               <div>
                 <div class="text-[11px] text-gray-500">HotPepper 評価</div>
-                <div class="kpi-num text-xl font-bold mt-0.5">${hpCur.rating != null ? "★ " + hpCur.rating.toFixed(2) : "—"}</div>
-                <div class="text-[11px] text-gray-500 mt-1">口コミ ${hpCur.review_count != null ? hpCur.review_count + "件" : "—"} ${reviewDelta != null && reviewDelta > 0 ? `<span class="text-green-600">+${reviewDelta}</span>` : ""}</div>
+                <div class="mt-1">${renderStars(hpCur.rating, { size: "1.3em" })}</div>
+                <div class="text-[11px] text-gray-500 mt-1.5">口コミ ${hpCur.review_count != null ? hpCur.review_count + "件" : "—"} ${reviewDelta != null && reviewDelta > 0 ? `<span class="text-green-600">+${reviewDelta}</span>` : ""}</div>
                 ${ratingDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${parseFloat(ratingDelta) >= 0 ? '#10B981' : '#DC2626'}">${parseFloat(ratingDelta) >= 0 ? '+' : ''}${ratingDelta} (前回比)</div>` : ""}
               </div>
               <div>
@@ -3848,8 +3876,10 @@ function renderManagementTab() {
               <div class="text-[11px] text-gray-500 mb-2 font-semibold">最近の口コミ ${recentReviews.length}件</div>
               <div class="space-y-2">${recentReviews.map(rv => `
                 <div class="text-[11px] bg-gray-50 rounded p-2">
-                  ${rv.rating != null ? `<span class="font-bold text-yellow-600">★ ${rv.rating}</span> ` : ""}
-                  ${rv.date ? `<span class="text-gray-400">${rv.date}</span>` : ""}
+                  <div class="flex items-center gap-2">
+                    ${rv.rating != null ? renderStars(rv.rating, { size: "0.85em", showValue: false }) : ""}
+                    ${rv.date ? `<span class="text-gray-400">${rv.date}</span>` : ""}
+                  </div>
                   <div class="text-gray-700 mt-1">${rv.text}</div>
                 </div>
               `).join("")}</div>
