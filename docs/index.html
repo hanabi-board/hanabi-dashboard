@@ -482,12 +482,6 @@
       <div id="mgmtStaffProductivity" class="space-y-3"></div>
     </div>
 
-    <!-- HPB依存度 / クーポン使用率 -->
-    <div class="card p-5 mb-5">
-      <h3 class="section-title mb-3">HPB依存度 <span class="section-sub">HPBクーポン経由売上 / 技術売上</span></h3>
-      <div id="mgmtHpbDep"></div>
-    </div>
-
     <!-- 外部メディア (HotPepper / Instagram) -->
     <div class="card p-5 mb-5">
       <h3 class="section-title mb-3">外部メディア指標 <span class="section-sub">HotPepper Beauty 評価 / Instagram フォロワー</span></h3>
@@ -3906,62 +3900,6 @@ function renderManagementTab() {
       <tbody>${rowsHtml}</tbody>
     </table>
     <div class="text-[11px] text-gray-500 mt-3">※ 業態違い (綱島=ヘア専門 / 宮古島=トータルビューティ) のため、 客単価/指名率/リピート率の絶対比較は注意。 各店舗のトレンドを見ること推奨。</div>`;
-  }
-
-  // HPB依存度: 当月の HPB クーポン売上 / 技術売上 + 前月比 (店舗別)
-  const hpbEl = document.getElementById("mgmtHpbDep");
-  if (hpbEl) {
-    const prevMonth = (() => {
-      const y = parseInt(SCOPE.month.slice(0,4));
-      const m = parseInt(SCOPE.month.slice(4,6));
-      const py = m === 1 ? y - 1 : y;
-      const pm = m === 1 ? 12 : m - 1;
-      return `${py}${String(pm).padStart(2,"0")}`;
-    })();
-    hpbEl.innerHTML = `<div class="grid lg:grid-cols-2 gap-3">${SCOPE.storeRows.map(r => {
-      const ms = r.ms;
-      const techSales = ms ? (ms.tech_sales || 0) : 0;
-      const hpbSales = ms ? (ms.hpb_sales || 0) : 0;
-      const otherCoupon = ms ? (ms.other_coupon_sales || 0) : 0;
-      const hpbRate = techSales ? (hpbSales / techSales * 100) : 0;
-      // 前月比
-      const prevMs = (DATA.monthly_by_store[r.sid] || {})[prevMonth];
-      let prevRate = null, deltaRate = null;
-      if (prevMs && prevMs.tech_sales) {
-        prevRate = (prevMs.hpb_sales || 0) / prevMs.tech_sales * 100;
-        deltaRate = hpbRate - prevRate;
-      }
-      const gradient = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
-      const rateColor = hpbRate < 30 ? "var(--accent-green)" : hpbRate < 50 ? "var(--accent-yellow)" : "var(--accent-red)";
-      return `<div class="card overflow-hidden">
-        <div class="${gradient} text-white px-4 py-2 text-sm font-bold">${r.store.name}</div>
-        <div class="p-4">
-          <div class="flex items-baseline justify-between mb-3">
-            <span class="text-xs text-gray-500">HPB依存度</span>
-            <span class="kpi-num text-2xl font-bold" style="color:${rateColor}">${hpbRate.toFixed(1)}%</span>
-          </div>
-          <div class="progress-track mb-2" style="height:8px"><div class="progress-fill" style="width:${Math.min(100, hpbRate)}%; background:${rateColor}"></div></div>
-          <div class="grid grid-cols-3 gap-2 text-xs mt-3">
-            <div>
-              <div class="text-gray-500">HPB売上</div>
-              <div class="kpi-num font-semibold">${fmt(hpbSales)}</div>
-            </div>
-            <div>
-              <div class="text-gray-500">他クーポン</div>
-              <div class="kpi-num font-semibold">${fmt(otherCoupon)}</div>
-            </div>
-            <div>
-              <div class="text-gray-500">技術売上 全</div>
-              <div class="kpi-num font-semibold">${fmt(techSales)}</div>
-            </div>
-          </div>
-          ${deltaRate != null ? `<div class="text-[11px] mt-2" style="color:${deltaRate <= 0 ? '#10B981' : '#DC2626'}; font-weight:600">
-            ${deltaRate >= 0 ? '▲' : '▼'} ${Math.abs(deltaRate).toFixed(1)}pt (前月 ${prevRate.toFixed(1)}%)
-          </div>` : ""}
-        </div>
-      </div>`;
-    }).join("")}</div>
-    <div class="text-[11px] text-gray-400 mt-3">※ HPB依存度は低いほど自社集客力が高い。 30%未満=◯ / 30-50%=注意 / 50%以上=要対策</div>`;
   }
 
   // 外部メディア (HotPepper / Instagram) - 履歴データから最新+前回の比較
