@@ -231,7 +231,14 @@ def main():
         ym = mode
         y, m = int(ym[:4]), int(ym[4:6])
         last = calendar.monthrange(y, m)[1]
-        periods.append((ym, f"{ym}01", f"{ym}{last:02d}"))
+        # 進行中月 (month_end が今日より未来) の場合は date_to を today に丸める
+        # Uレジに未来日を渡すと意図しない挙動になる可能性があるため
+        today = date.today()
+        target_end_date = date(y, m, last)
+        if target_end_date > today:
+            periods.append((ym, f"{ym}01", today.strftime("%Y%m%d")))
+        else:
+            periods.append((ym, f"{ym}01", f"{ym}{last:02d}"))
     else:
         sys.exit(f"unknown mode: {mode}")
 
