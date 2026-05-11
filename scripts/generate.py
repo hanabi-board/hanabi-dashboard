@@ -367,6 +367,26 @@ def main():
         except Exception as e:
             print(f"  warn: failed to load {p.name}: {e}")
 
+    # Load jouhou_*.json files (scraped from 情報分析の他レポート)
+    # 構造: jouhou_<report>_<label>_<store>.json
+    # e.g. jouhou_lost_202605_tsunashima.json
+    jouhou_data = {}  # { report: { label: { store_id: {rows, ...} } } }
+    for p in DATA.glob("jouhou_*.json"):
+        try:
+            d = json.loads(p.read_text(encoding="utf-8"))
+            report = d.get("report_type")
+            label = d.get("label")
+            sid = d.get("store_id")
+            if report and label and sid:
+                jouhou_data.setdefault(report, {}).setdefault(label, {})[sid] = {
+                    "rows": d.get("rows", []),
+                    "date_from": d.get("date_from"),
+                    "date_to": d.get("date_to"),
+                    "scraped_at": d.get("scraped_at"),
+                }
+        except Exception as e:
+            print(f"  warn: failed to load {p.name}: {e}")
+
     # Load recruitment data
     recruitment = None
     rec_path = DATA / "recruitment.json"
@@ -403,6 +423,7 @@ def main():
         "menu_data": menu_data,
         "recruitment": recruitment,
         "staff_profiles": staff_profiles,
+        "jouhou_data": jouhou_data,
     }
 
     out_path = DOCS / "data.json"

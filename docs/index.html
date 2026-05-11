@@ -180,6 +180,7 @@
     <button class="tab-btn" data-tab="menu">メニュー別</button>
     <button class="tab-btn" data-tab="annual">年度レポート</button>
     <button class="tab-btn" data-tab="management">マネジメント</button>
+    <button class="tab-btn" data-tab="customers">顧客分析</button>
     <button class="tab-btn" data-tab="recruit">採用</button>
   </div>
 </nav>
@@ -456,6 +457,28 @@
       <h3 class="section-title mb-3">スタッフ生産性 <span class="section-sub">店舗別 1人あたり月売上</span></h3>
       <div id="mgmtStaffProductivity" class="space-y-3"></div>
     </div>
+  </div>
+
+  <!-- =========== Tab: 顧客分析 =========== -->
+  <div class="tab-panel" data-panel="customers">
+    <div class="mb-4">
+      <h2 class="text-2xl font-bold">顧客分析</h2>
+      <div class="text-sm text-gray-500 mt-1">失客 / 曜日別 / 年代別 — Uレジ情報分析から取得</div>
+    </div>
+    <div class="mb-5 text-xs text-gray-500 bg-blue-50 border-l-4 border-blue-300 px-3 py-2">
+      💡 データは <code class="bg-white px-1 rounded">python3 scripts/scrape_jouhou.py [report] [period]</code> で取得します。 取得済みなら自動表示、 なければ「データなし」 メッセージ。
+    </div>
+
+    <!-- セクションタブ (顧客分析の中で切替) -->
+    <div class="flex gap-2 mb-4 border-b border-gray-200">
+      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="lost">失客分析</button>
+      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="week">曜日別</button>
+      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="age">年代別</button>
+      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="repeat">再来店</button>
+    </div>
+
+    <!-- Section content -->
+    <div id="customersContent" class="space-y-4"></div>
   </div>
 
   <!-- =========== Tab 6: 採用 =========== -->
@@ -1108,6 +1131,7 @@ function render(month) {
   renderGrowthView();
   renderAnnualReport();
   renderManagementTab();
+  renderCustomersTab();
   renderRecruitTab();
   renderStatusPanel();
   renderStoreCompare();
@@ -3737,6 +3761,114 @@ function drawMgmtCompanyTrend() {
       }
     }
   });
+}
+
+// === 顧客分析タブ (失客 / 曜日別 / 年代別 / 再来店) ===
+const CUSTOMERS_SUBTAB_KEY = "hanabi_customers_subtab";
+function renderCustomersTab() {
+  if (!document.getElementById("customersContent")) return;
+  // Wire subtab buttons (once)
+  const buttons = document.querySelectorAll(".customers-subtab-btn");
+  if (buttons.length && !buttons[0]._wired) {
+    buttons.forEach(btn => {
+      btn._wired = true;
+      btn.addEventListener("click", () => {
+        const sub = btn.dataset.subtab;
+        localStorage.setItem(CUSTOMERS_SUBTAB_KEY, sub);
+        renderCustomersSubtab(sub);
+      });
+    });
+  }
+  const saved = localStorage.getItem(CUSTOMERS_SUBTAB_KEY) || "lost";
+  renderCustomersSubtab(saved);
+}
+function renderCustomersSubtab(subtab) {
+  document.querySelectorAll(".customers-subtab-btn").forEach(b => {
+    const active = b.dataset.subtab === subtab;
+    b.classList.toggle("border-black", active);
+    b.classList.toggle("text-black", active);
+    b.classList.toggle("border-transparent", !active);
+  });
+  const content = document.getElementById("customersContent");
+  // Look for jouhou_<report>_*.json data in DATA
+  const reportMap = { lost: "lost", week: "week", age: "age", repeat: "repeat" };
+  const reportKey = reportMap[subtab];
+  const reportTitleMap = {
+    lost: { name: "失客分析", desc: "直近来店から離れた顧客のリスト" },
+    week: { name: "曜日別", desc: "売上・客数の曜日別分布" },
+    age: { name: "年代別", desc: "顧客層の年代別構成" },
+    repeat: { name: "再来店", desc: "リピート顧客の動向" },
+  };
+  const info = reportTitleMap[subtab];
+
+  // Discover available data files (DATA.jouhou_data) — populated by generate.py
+  const jouhouData = (DATA.jouhou_data || {})[reportKey] || {};
+  const availablePeriods = Object.keys(jouhouData).sort((a,b) => b.localeCompare(a));
+
+  if (!availablePeriods.length) {
+    content.innerHTML = `
+      <div class="card p-8 text-center">
+        <div class="text-2xl mb-2">📊</div>
+        <h3 class="font-bold mb-2">${info.name} データなし</h3>
+        <p class="text-sm text-gray-500 mb-4">${info.desc}</p>
+        <div class="bg-gray-50 rounded px-4 py-3 text-xs text-left max-w-md mx-auto font-mono">
+          $ python3 scripts/scrape_jouhou.py ${reportKey} 202605
+        </div>
+        <p class="text-[11px] text-gray-400 mt-3">スクレイプ後 auto-deploy で data.json に反映 → このタブで表示</p>
+      </div>`;
+    return;
+  }
+
+  // Period selector
+  const periodOpts = availablePeriods.map(p => `<option value="${p}">${p}</option>`).join("");
+  content.innerHTML = `
+    <div class="flex items-center gap-3 mb-3">
+      <span class="text-xs text-gray-500">期間</span>
+      <select id="customersPeriodSel" class="border border-gray-300 rounded px-2 py-1 text-sm">${periodOpts}</select>
+    </div>
+    <div id="customersGrid" class="grid lg:grid-cols-2 gap-3"></div>
+  `;
+  const sel = document.getElementById("customersPeriodSel");
+  const draw = () => {
+    const period = sel.value;
+    const grid = document.getElementById("customersGrid");
+    const byStore = jouhouData[period] || {};
+    const cards = ["tsunashima", "miyakojima"].map(sid => {
+      const store = (DATA.stores || {})[sid];
+      const data = byStore[sid] || { rows: [] };
+      const rows = data.rows || [];
+      const headerCls = sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+      if (!rows.length) {
+        return `<div class="card overflow-hidden">
+          <div class="${headerCls} text-white px-4 py-3 font-bold">${store.name}</div>
+          <div class="p-6 text-center text-sm text-gray-500">データなし</div>
+        </div>`;
+      }
+      // Generic table render — show first N rows with all columns
+      const sampleRow = rows[0];
+      const keys = Object.keys(sampleRow).filter(k => k !== "_id" && k !== "_index");
+      return `<div class="card overflow-hidden">
+        <div class="${headerCls} text-white px-4 py-3 font-bold flex justify-between items-center">
+          <span>${store.name}</span>
+          <span class="text-xs opacity-80">${rows.length}件</span>
+        </div>
+        <div class="p-3 overflow-x-auto" style="max-height:500px">
+          <table class="w-full text-sm" style="min-width:500px">
+            <thead class="text-[10px] text-gray-500 border-b border-gray-100 sticky top-0 bg-white">
+              <tr>${keys.slice(0, 8).map(k => `<th class="text-left py-1.5 pr-2">${k}</th>`).join("")}</tr>
+            </thead>
+            <tbody>${rows.slice(0, 50).map(r => `<tr class="border-b border-gray-50 text-xs hover:bg-gray-50">
+              ${keys.slice(0, 8).map(k => `<td class="py-1.5 pr-2 whitespace-nowrap">${r[k] != null ? String(r[k]).slice(0, 30) : ""}</td>`).join("")}
+            </tr>`).join("")}</tbody>
+          </table>
+          ${rows.length > 50 ? `<div class="text-[11px] text-gray-400 mt-2">TOP 50 表示 (全 ${rows.length} 件)</div>` : ""}
+        </div>
+      </div>`;
+    }).join("");
+    grid.innerHTML = cards;
+  };
+  sel.addEventListener("change", draw);
+  draw();
 }
 
 // === Staff profile edit (master only, GitHub direct push) ===
