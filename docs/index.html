@@ -3866,25 +3866,67 @@ function renderManagementTab() {
     </div>
   `;
 
-  // 店舗別 売上構成比 (doughnut)
+  // 店舗別 売上構成比 (ネスト型 doughnut)
+  // 内輪: 綱島 vs 宮古島
+  // 外輪: 綱島 (単一) + 宮古島の3部門 (ヘア/アイ/ネイル) を pink グラデーション で
   const compositionEl = document.getElementById("mgmtCompositionChart");
   if (compositionEl) {
     if (window._chartMgmtComp) window._chartMgmtComp.destroy();
-    const labels = SCOPE.storeRows.map(r => r.store.name);
-    const data = SCOPE.storeRows.map(r => r.sales);
-    const colors = SCOPE.storeRows.map(r => r.sid === "miyakojima" ? "#D63384" : "#1E88E5");
+    const tsuRow = SCOPE.storeRows.find(r => r.sid === "tsunashima");
+    const eleRow = SCOPE.storeRows.find(r => r.sid === "miyakojima");
+    // 内輪 データ
+    const innerData = [], innerLabels = [], innerColors = [];
+    if (tsuRow) {
+      innerData.push(tsuRow.sales);
+      innerLabels.push(tsuRow.store.name);
+      innerColors.push("#1E88E5");
+    }
+    if (eleRow) {
+      innerData.push(eleRow.sales);
+      innerLabels.push(eleRow.store.name);
+      innerColors.push("#D63384");
+    }
+    // 外輪 データ (宮古島 を部門別に分割)
+    const outerData = [], outerLabels = [], outerColors = [];
+    if (tsuRow) {
+      outerData.push(tsuRow.sales);
+      outerLabels.push(tsuRow.store.name);
+      outerColors.push("#1E88E5");
+    }
+    if (eleRow && eleRow.ms) {
+      const hairSales = (eleRow.ms.by_dept["ヘア"] || {}).sales || 0;
+      const eyeSales = (eleRow.ms.by_dept["アイ"] || {}).sales || 0;
+      const nailSales = (eleRow.ms.by_dept["ネイル"] || {}).sales || 0;
+      outerData.push(hairSales, eyeSales, nailSales);
+      outerLabels.push("宮古島 ヘア", "宮古島 アイ", "宮古島 ネイル");
+      // ピンク系グラデで「ELLE 内」を視覚的に表現
+      outerColors.push("#B71C5C", "#D63384", "#E879A4");
+    }
+    const total = innerData.reduce((a,b) => a+b, 0);
     window._chartMgmtComp = new Chart(compositionEl.getContext("2d"), {
       type: "doughnut",
-      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: "#fff" }] },
+      data: {
+        datasets: [
+          // [0] 内輪 — 店舗レベル
+          { data: innerData, _labels: innerLabels, backgroundColor: innerColors, borderWidth: 2, borderColor: "#fff", weight: 1 },
+          // [1] 外輪 — 部門細分化
+          { data: outerData, _labels: outerLabels, backgroundColor: outerColors, borderWidth: 2, borderColor: "#fff", weight: 1.4 },
+        ]
+      },
       options: {
-        responsive: true, maintainAspectRatio: false, cutout: "60%",
+        responsive: true, maintainAspectRatio: false, cutout: "45%",
         plugins: {
-          legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
-          tooltip: { callbacks: { label: c => {
-            const total = c.dataset.data.reduce((a,b) => a+b, 0);
-            const pct = total ? (c.raw / total * 100).toFixed(1) : 0;
-            return `${c.label}: ${fmt(c.raw)} (${pct}%)`;
-          } } }
+          legend: { display: false },  // 下のデータ詳細リストで表示するため非表示
+          tooltip: {
+            callbacks: {
+              label: c => {
+                const ds = c.dataset;
+                const lbl = (ds._labels || [])[c.dataIndex] || "";
+                const pct = total ? (c.raw / total * 100).toFixed(1) : 0;
+                return `${lbl}: ${fmt(c.raw)} (${pct}%)`;
+              }
+            }
+          }
         }
       }
     });
@@ -3902,6 +3944,25 @@ function renderManagementTab() {
       const custPct = totalCust ? (r.customers / totalCust * 100) : 0;
       const monthPct = r.monthlyTarget ? (r.sales / r.monthlyTarget * 100) : 0;
       const monthPctCls = monthPct >= 100 ? "pct-good" : monthPct >= 80 ? "pct-warn" : "pct-bad";
+      // ELLE 宮古島 のみ部門別 サブ行
+      let deptDetail = "";
+      if (r.sid === "miyakojima" && r.ms) {
+        const deptColors = { "ヘア": "#B71C5C", "アイ": "#D63384", "ネイル": "#E879A4" };
+        const deptRows = ["ヘア", "アイ", "ネイル"].map(d => {
+          const dSales = (r.ms.by_dept[d] || {}).sales || 0;
+          const dPct = r.sales ? (dSales / r.sales * 100) : 0;
+          return `<div class="flex items-center gap-2 pl-5 py-1 text-[11px]">
+            <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${deptColors[d]}"></span>
+            <span class="text-gray-600 w-12">${d}</span>
+            <span class="kpi-num text-gray-900 font-semibold w-24 text-right">${fmt(dSales)}</span>
+            <span class="kpi-num text-gray-400 text-[10px] ml-auto">${dPct.toFixed(1)}%</span>
+          </div>`;
+        }).join("");
+        deptDetail = `<div class="pt-2 mt-2 border-t border-gray-100">
+          <div class="text-[10px] text-gray-400 mb-1 pl-1">└ 部門内訳</div>
+          ${deptRows}
+        </div>`;
+      }
       return `<div class="rounded-lg border border-gray-100 p-3">
         <div class="flex items-center gap-2 mb-2">
           <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:${color}"></span>
@@ -3922,6 +3983,7 @@ function renderManagementTab() {
             <div class="kpi-num font-semibold ${monthPctCls}">${monthPct.toFixed(1)}%</div>
           </div>
         </div>
+        ${deptDetail}
       </div>`;
     }).join("") + `
       <div class="rounded-lg bg-gray-50 p-3 border border-gray-200">
