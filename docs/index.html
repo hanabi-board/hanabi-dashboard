@@ -587,10 +587,22 @@
           <span class="text-xs text-gray-600">役職</span>
           <input type="text" id="sp_role" placeholder="店長 / トップ / アシスタント" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
         </label>
-        <label class="block">
-          <span class="text-xs text-gray-600">写真ファイル名 <span class="text-[11px] text-gray-400">(docs/assets/staff/ 内のファイル名)</span></span>
-          <input type="text" id="sp_photo" placeholder="watanabe.jpg" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
-        </label>
+        <div>
+          <span class="text-xs text-gray-600">写真</span>
+          <div class="flex items-center gap-3 mt-1">
+            <div id="sp_photo_preview" class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 overflow-hidden flex-shrink-0">未設定</div>
+            <div class="flex-1 min-w-0">
+              <input type="text" id="sp_photo" placeholder="watanabe.jpg" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono" />
+              <div class="flex gap-2 mt-1.5">
+                <label class="text-[11px] bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-2 py-1 cursor-pointer">
+                  📷 画像アップロード
+                  <input type="file" id="sp_photo_file" accept="image/*" class="hidden" />
+                </label>
+                <span id="sp_photo_status" class="text-[11px] text-gray-500 self-center"></span>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="flex justify-between items-center pt-3 border-t border-gray-100">
           <button type="button" id="sp_delete" class="hidden text-xs text-red-600 hover:text-red-800 underline">プロフィール削除</button>
           <div class="flex gap-2 ml-auto">
@@ -2254,6 +2266,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // Staff profile modal
   const spForm = document.getElementById("staffProfileForm");
   if (spForm) spForm.addEventListener("submit", saveStaffProfileForm);
+  // 写真アップロード
+  const spPhotoFile = document.getElementById("sp_photo_file");
+  if (spPhotoFile) {
+    spPhotoFile.addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        await uploadStaffPhoto(file);
+        e.target.value = "";  // reset so same file can be re-selected
+      }
+    });
+  }
   const spClose = document.getElementById("spClose");
   if (spClose) spClose.addEventListener("click", closeStaffProfileModal);
   const spCancel = document.getElementById("sp_cancel");
@@ -4140,6 +4163,16 @@ function openStaffProfileModal(staffName, prefill) {
   document.getElementById("sp_retired").value = p.retired || "";
   document.getElementById("sp_role").value = p.role || "";
   document.getElementById("sp_photo").value = p.photo || "";
+  // プレビュー
+  const previewEl = document.getElementById("sp_photo_preview");
+  if (previewEl) {
+    if (p.photo) {
+      previewEl.innerHTML = `<img src="assets/staff/${p.photo}?v=${Date.now()}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='画像なし'"/>`;
+    } else {
+      previewEl.innerHTML = "未設定";
+    }
+  }
+  document.getElementById("sp_photo_status").textContent = "";
   document.getElementById("sp_delete").classList.toggle("hidden", !profiles[staffName]);
   modal.classList.remove("hidden");
 }
@@ -4203,6 +4236,88 @@ async function deleteStaffProfile() {
   }
 }
 window.openStaffProfileModal = openStaffProfileModal;
+
+// 画像をクライアントサイドでリサイズ (最大400px) + base64 encode
+function resizeImageToBase64(file, maxDim = 400) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = Math.min(maxDim / img.width, maxDim / img.height, 1);
+        const w = Math.round(img.width * ratio);
+        const h = Math.round(img.height * ratio);
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        // 出力は JPEG (圧縮率0.85) でファイルサイズ削減
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        resolve({ base64: dataUrl.split(",")[1], ext: "jpg", width: w, height: h });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadStaffPhoto(file) {
+  if (currentRole !== "master") return null;
+  if (!getGhToken()) {
+    showToast("⚠️ GitHub トークン未設定", "error");
+    return null;
+  }
+  // 名前を取得 (現在のフォームから)
+  const name = (document.getElementById("sp_name").value || "").trim();
+  if (!name) {
+    showToast("⚠️ まず氏名を入力してください", "warn");
+    return null;
+  }
+  // ファイル名: 氏名のスラッグ + .jpg
+  const slug = name
+    .replace(/[\s　]+/g, "_")
+    .replace(/[^a-zA-Z0-9぀-ヿ一-龯_]/g, "")
+    .slice(0, 30);
+  const fileName = slug + ".jpg";
+  const path = "docs/assets/staff/" + fileName;
+
+  document.getElementById("sp_photo_status").textContent = "リサイズ中...";
+  const { base64 } = await resizeImageToBase64(file, 400);
+  document.getElementById("sp_photo_status").textContent = "アップロード中...";
+
+  const apiUrl = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+  const token = getGhToken();
+  // Get existing SHA if file exists (overwrite)
+  let sha = "";
+  try {
+    const r = await fetch(apiUrl, { headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json" } });
+    if (r.ok) { const d = await r.json(); sha = d.sha; }
+  } catch (e) {}
+
+  const body = { message: `Upload staff photo: ${name}`, content: base64 };
+  if (sha) body.sha = sha;
+  const res = await fetch(apiUrl, {
+    method: "PUT",
+    headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json", "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    document.getElementById("sp_photo_status").textContent = "❌ 失敗";
+    showToast(`⚠️ 写真アップロード失敗: ${res.status}`, "error");
+    return null;
+  }
+  document.getElementById("sp_photo_status").textContent = "✓ 完了 (1-3分で反映)";
+  showToast("✓ 写真アップロード成功", "good");
+  // フォームの写真ファイル名を更新
+  document.getElementById("sp_photo").value = fileName;
+  // プレビュー更新 (即座)
+  const previewEl = document.getElementById("sp_photo_preview");
+  if (previewEl) {
+    previewEl.innerHTML = `<img src="data:image/jpeg;base64,${base64}" class="w-full h-full object-cover" />`;
+  }
+  return fileName;
+}
 
 // 採用「入社」 → プロフィール登録 のクイックスタート (recruitment データから事前入力)
 function onboardFromRecruit(candidateId) {
