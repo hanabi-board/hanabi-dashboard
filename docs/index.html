@@ -244,11 +244,14 @@
   <div class="tab-panel" data-panel="visits">
     <div class="mb-4">
       <h2 class="text-2xl font-bold">来客分析</h2>
-      <div class="text-sm text-gray-500 mt-1">来店種別 / 指名・フリー比率 / 店舗別</div>
+      <div class="text-sm text-gray-500 mt-1">店舗別に比較 (綱島=ヘア専門 / 宮古島=トータルビューティ。 業態が違うので全社合算しない)</div>
     </div>
-    <div class="grid md:grid-cols-3 gap-3 mb-5" id="visitorBreakdownCards"></div>
-    <div class="grid md:grid-cols-3 gap-3 mb-5" id="nominationCards"></div>
-    <div class="grid md:grid-cols-3 gap-3 mb-5" id="genderCards"></div>
+    <h3 class="section-title mb-2 mt-1">新規 vs リピート <span class="section-sub">店舗別</span></h3>
+    <div class="grid md:grid-cols-2 gap-3 mb-5" id="visitorBreakdownCards"></div>
+    <h3 class="section-title mb-2">指名 vs フリー <span class="section-sub">店舗別</span></h3>
+    <div class="grid md:grid-cols-2 gap-3 mb-5" id="nominationCards"></div>
+    <h3 class="section-title mb-2">男女別 <span class="section-sub">店舗別 (技術ベース)</span></h3>
+    <div class="grid md:grid-cols-2 gap-3 mb-5" id="genderCards"></div>
 
     <!-- 月次推移チャート -->
     <div class="grid lg:grid-cols-2 gap-3 mb-3">
@@ -307,47 +310,88 @@
 
   <!-- =========== Tab: 年度レポート =========== -->
   <div class="tab-panel" data-panel="annual">
-    <div class="mb-4 flex flex-wrap items-baseline gap-3">
-      <div>
-        <h2 class="text-2xl font-bold">年度レポート</h2>
-        <div class="text-sm text-gray-500 mt-1">FY = 5月〜翌4月、HANABIの会計年度</div>
+    <div class="mb-4">
+      <h2 class="text-2xl font-bold">年度レポート</h2>
+      <div class="text-sm text-gray-500 mt-1">FY = 5月〜翌4月 (HANABIの会計年度) · FY22から FY26 (進行中) までの成長推移</div>
+    </div>
+
+    <!-- Multi-year FY summary cards -->
+    <div class="card p-5 mb-5">
+      <h3 class="section-title mb-3">年度別 全社売上 <span class="section-sub">FY22 → FY26 推移</span></h3>
+      <div id="growthFYCards" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+    </div>
+
+    <!-- Annual sales bar chart (multi-FY) -->
+    <div class="card p-5 mb-5">
+      <h3 class="section-title mb-3">年度別 売上推移 <span class="section-sub">店舗別スタック + YoY成長率</span></h3>
+      <div style="height:300px"><canvas id="growthAnnualChart"></canvas></div>
+    </div>
+
+    <!-- Per-store growth + KPI trends -->
+    <div class="grid lg:grid-cols-2 gap-3 mb-5">
+      <div class="card p-5">
+        <h3 class="section-title mb-3">客数 年度推移 <span class="section-sub">店舗別</span></h3>
+        <div style="height:240px"><canvas id="growthCustomersChart"></canvas></div>
       </div>
-      <div class="ml-auto flex items-center gap-2 text-sm">
-        <span class="text-xs text-gray-500">対象</span>
-        <select id="annualTargetFY" class="border border-gray-300 rounded px-2 py-1 text-sm"></select>
-        <span class="text-xs text-gray-500 mx-1">vs</span>
-        <select id="annualCompareFY" class="border border-gray-300 rounded px-2 py-1 text-sm"></select>
+      <div class="card p-5">
+        <h3 class="section-title mb-3">客単価 年度推移 <span class="section-sub">店舗別 (税抜)</span></h3>
+        <div style="height:240px"><canvas id="growthAvgTicketChart"></canvas></div>
       </div>
     </div>
-    <!-- Top KPI -->
-    <div class="grid md:grid-cols-4 gap-3 mb-5" id="annualHeadlineKpi"></div>
 
-    <!-- Store comparison -->
-    <div class="grid md:grid-cols-2 gap-3 mb-5" id="annualStoreCompare"></div>
-
-    <!-- Monthly progression chart -->
+    <!-- Department share over years (miyakojima) -->
     <div class="card p-5 mb-5">
-      <h3 class="section-title mb-3" id="annualMonthlyTitle">月次売上推移</h3>
-      <div style="height:280px"><canvas id="annualMonthlyChart"></canvas></div>
+      <h3 class="section-title mb-3">部門別 年度推移 <span class="section-sub">ELLE 宮古島店 (2025/9 OPEN以降)</span></h3>
+      <div style="height:260px"><canvas id="growthDeptChart"></canvas></div>
     </div>
 
-    <!-- Department comparison (宮古島) -->
-    <div class="card p-5 mb-5">
-      <h3 class="section-title mb-3">部門別 通年比較 <span class="section-sub">ELLE 宮古島店</span></h3>
-      <div id="annualDeptCompare"></div>
-    </div>
+    <!-- Detailed FY-vs-FY comparison (collapsible) -->
+    <details class="card overflow-hidden mb-5">
+      <summary class="px-5 py-3 cursor-pointer flex items-center justify-between hover:bg-gray-50 list-none border-b border-gray-100">
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 transition-transform" style="display:inline-block">▶</span>
+          <h3 class="section-title">2年度比較 (詳細) <span class="section-sub">月次重ね · メニュー TOP10 · 来店指標</span></h3>
+        </div>
+      </summary>
+      <div class="p-5 space-y-5">
+        <div class="flex flex-wrap items-center gap-2 text-sm pb-3 border-b border-gray-100">
+          <span class="text-xs text-gray-500">対象</span>
+          <select id="annualTargetFY" class="border border-gray-300 rounded px-2 py-1 text-sm"></select>
+          <span class="text-xs text-gray-500 mx-1">vs</span>
+          <select id="annualCompareFY" class="border border-gray-300 rounded px-2 py-1 text-sm"></select>
+        </div>
 
-    <!-- Menu top 10 comparison -->
-    <div class="card p-5 mb-5">
-      <h3 class="section-title mb-3" id="annualMenuTitle">メニュー別 TOP 10 比較</h3>
-      <div class="grid md:grid-cols-2 gap-4" id="annualMenuCompare"></div>
-    </div>
+        <!-- Top KPI -->
+        <div class="grid md:grid-cols-4 gap-3" id="annualHeadlineKpi"></div>
 
-    <!-- Visit metrics comparison -->
-    <div class="card p-5 mb-5">
-      <h3 class="section-title mb-3">来店指標 通年比較</h3>
-      <div id="annualVisitCompare"></div>
-    </div>
+        <!-- Store comparison -->
+        <div class="grid md:grid-cols-2 gap-3" id="annualStoreCompare"></div>
+
+        <!-- Monthly progression chart -->
+        <div>
+          <h4 class="section-title mb-3" id="annualMonthlyTitle">月次売上推移</h4>
+          <div style="height:280px"><canvas id="annualMonthlyChart"></canvas></div>
+        </div>
+
+        <!-- Department comparison (宮古島) -->
+        <div>
+          <h4 class="section-title mb-3">部門別 通年比較 <span class="section-sub">ELLE 宮古島店</span></h4>
+          <div id="annualDeptCompare"></div>
+        </div>
+
+        <!-- Menu top 10 comparison -->
+        <div>
+          <h4 class="section-title mb-3" id="annualMenuTitle">メニュー別 TOP 10 比較</h4>
+          <div class="grid md:grid-cols-2 gap-4" id="annualMenuCompare"></div>
+        </div>
+
+        <!-- Visit metrics comparison -->
+        <div>
+          <h4 class="section-title mb-3">来店指標 通年比較</h4>
+          <div id="annualVisitCompare"></div>
+        </div>
+      </div>
+    </details>
   </div>
 
   <!-- =========== Tab 6: 採用 =========== -->
@@ -689,6 +733,7 @@ function render(month) {
   renderTopKpi();
   renderFyProgress();
   renderMenuTab();
+  renderGrowthView();
   renderAnnualReport();
   renderRecruitTab();
   renderStatusPanel();
@@ -736,11 +781,29 @@ function renderTopKpi() {
       main: `<span class="kpi-num">${fmtN(t.customers)}</span><span class="text-base text-gray-400 ml-1">人</span>`,
       sub: `リピート <span class="kpi-num font-semibold">${fmtN(SCOPE.cVis.repeat)}</span> · 指名 <span class="kpi-num font-semibold">${fmtN(SCOPE.cMs.tech_customers_nominated)}</span>`
     },
-    {
-      title: "客単価 (当月)",
-      main: fmt(t.customers ? Math.round(t.sales/t.customers) : 0),
-      sub: `客1人あたり`
-    },
+    (function() {
+      // 客単価 — 店舗別表示 (全社合算は業態違うので避ける)
+      const perStore = SCOPE.storeRows.map(r => ({
+        name: r.store.short || r.store.name,
+        sid: r.sid,
+        avg: r.customers ? Math.round(r.sales / r.customers) : 0
+      })).filter(s => s.avg > 0);
+      if (!perStore.length) {
+        return { title: "客単価", main: "—", sub: "データなし" };
+      }
+      return {
+        title: "客単価 (店舗別)",
+        main: `<div class="space-y-1.5 mt-1">${perStore.map(s => {
+          const color = s.sid === "miyakojima" ? "#D63384" : "#1E88E5";
+          return `<div class="flex items-baseline justify-between">
+            <span class="text-xs text-gray-500">${s.name}</span>
+            <span class="kpi-num text-lg font-bold" style="color:${color}">${fmt(s.avg)}</span>
+          </div>`;
+        }).join("")}</div>`,
+        sub: "綱島=ヘア / 宮古島=トータル",
+        rawMain: true,  // mark to skip default text rendering
+      };
+    })(),
     (function() {
       // Same-store YoY (excludes new stores that didn't exist last year)
       const ssPrev = t.prevMonthSalesSameStore;
@@ -756,16 +819,32 @@ function renderTopKpi() {
       };
     })(),
     (function() {
-      // 指名率 KPI (HANABI重要指標 — リピート文化)
-      const nom = SCOPE.cMs.tech_customers_nominated || 0;
-      const free = SCOPE.cMs.tech_customers_free || 0;
-      const total = nom + free;
-      const rate = total ? (nom / total * 100) : 0;
+      // 指名率 — 店舗別 (業態差で全社合算は誤解を招く)
+      const perStore = SCOPE.storeRows.map(r => {
+        const nom = (r.ms && r.ms.tech_customers_nominated) || 0;
+        const free = (r.ms && r.ms.tech_customers_free) || 0;
+        const tot = nom + free;
+        return {
+          name: r.store.short || r.store.name,
+          sid: r.sid,
+          rate: tot ? (nom / tot * 100) : null
+        };
+      }).filter(s => s.rate != null);
+      if (!perStore.length) {
+        return { title: "指名率", main: "—", sub: "データなし" };
+      }
       return {
-        title: "指名率 (全社)",
-        main: total ? `${rate.toFixed(1)}%` : "—",
-        sub: total ? `指名 ${fmtN(nom)} / フリー ${fmtN(free)}` : "—",
-        mainCls: rate >= 60 ? "pct-good" : rate >= 40 ? "pct-warn" : "pct-bad"
+        title: "指名率 (店舗別)",
+        main: `<div class="space-y-1.5 mt-1">${perStore.map(s => {
+          const color = s.sid === "miyakojima" ? "#D63384" : "#1E88E5";
+          const rateColor = s.rate >= 60 ? "var(--accent-green)" : s.rate >= 40 ? "var(--accent-yellow)" : "var(--accent-red)";
+          return `<div class="flex items-baseline justify-between">
+            <span class="text-xs" style="color:${color}">${s.name}</span>
+            <span class="kpi-num text-lg font-bold" style="color:${rateColor}">${s.rate.toFixed(1)}%</span>
+          </div>`;
+        }).join("")}</div>`,
+        sub: "リピート文化の指標",
+        rawMain: true,
       };
     })(),
   ];
@@ -773,11 +852,281 @@ function renderTopKpi() {
   document.getElementById("topKpi").innerHTML = cards.map(c => `
     <div class="card p-4 card-hover">
       <div class="text-xs text-gray-500 mb-1.5">${c.title}</div>
-      <div class="text-2xl font-bold kpi-num ${c.mainCls || ''}">${c.main}</div>
-      <div class="text-xs mt-1.5">${c.sub}</div>
+      ${c.rawMain ? c.main : `<div class="text-2xl font-bold kpi-num ${c.mainCls || ''}">${c.main}</div>`}
+      <div class="text-xs ${c.rawMain ? 'mt-2' : 'mt-1.5'} text-gray-500">${c.sub}</div>
       ${c.bar ? `<div class="progress-track mt-2"><div class="progress-fill" style="width:${Math.min(100,c.bar.val)}%; background:${c.bar.color}"></div></div>` : ""}
     </div>
   `).join("");
+}
+
+// === 年度別 成長推移ビュー (multi-FY) ===
+// 設計方針: 全社合算は売上・客数のみ。 客単価・部門別等は店舗別表示 (業態差で混ぜると誤解を招くため)
+function renderGrowthView() {
+  if (!document.getElementById("growthFYCards")) return;
+  const fys = getAvailableFYs();
+  if (!fys.length) return;
+
+  // Helper: sum sales/customers for a (sid, fy)
+  const salesFor = (sid, ym) => {
+    const ds = (DATA.daily_by_store[sid] || {})[ym] || [];
+    const s = ds.reduce((a,d) => a + d.sales, 0);
+    if (s > 0) return s;
+    const ms = (DATA.monthly_by_store[sid] || {})[ym];
+    return ms ? (ms.total_sales || 0) : 0;
+  };
+  const customersFor = (sid, ym) => {
+    const ds = (DATA.daily_by_store[sid] || {})[ym] || [];
+    const c = ds.reduce((a,d) => a + d.customers, 0);
+    if (c > 0) return c;
+    const ms = (DATA.monthly_by_store[sid] || {})[ym];
+    return ms ? (ms.customers || 0) : 0;
+  };
+  const fySales = (fy, sid) => getFYMonths(fy).reduce((a,m) => a + salesFor(sid, m), 0);
+  const fyCust = (fy, sid) => getFYMonths(fy).reduce((a,m) => a + customersFor(sid, m), 0);
+
+  // Determine if a given FY is in-progress (some months have no data yet)
+  const isFYInProgress = (fy) => {
+    const months = getFYMonths(fy);
+    // In-progress if any month has zero sales (for the latest store with data)
+    return months.some(m => salesFor("tsunashima", m) + salesFor("miyakojima", m) === 0);
+  };
+
+  const curFY = getCurrentFY();
+
+  // === Card 1: 年度別 KPI cards ===
+  const cardsRoot = document.getElementById("growthFYCards");
+  const lastFiveFys = fys.slice(-5);  // show up to 5 most recent FYs
+  cardsRoot.innerHTML = lastFiveFys.map(fy => {
+    const tsu = fySales(fy, "tsunashima");
+    const ele = fySales(fy, "miyakojima");
+    const total = tsu + ele;
+    const cust = fyCust(fy, "tsunashima") + fyCust(fy, "miyakojima");
+    const prevFy = fy - 1;
+    const prevTotal = fys.includes(prevFy) ? (fySales(prevFy, "tsunashima") + fySales(prevFy, "miyakojima")) : 0;
+    const inProgress = isFYInProgress(fy);
+    // For in-progress FYs, YoY uses partial-elapsed comparison
+    let yoyPct = null, yoyLabel = "";
+    if (prevTotal > 0) {
+      if (inProgress) {
+        // Count elapsed months in target FY
+        const tgtMonths = getFYMonths(fy);
+        let elapsedMonths = 0, partialFraction = 0;
+        for (let i = 0; i < tgtMonths.length; i++) {
+          const m = tgtMonths[i];
+          const s = salesFor("tsunashima", m) + salesFor("miyakojima", m);
+          if (s === 0) { partialFraction = 0; break; }
+          // Check if this month is fully elapsed by counting actual days
+          const ds = ((DATA.daily_by_store["tsunashima"] || {})[m] || []).concat((DATA.daily_by_store["miyakojima"] || {})[m] || []);
+          const uniqueDates = new Set(ds.filter(d => d.sales > 0).map(d => d.date));
+          const daysInM = (DATA.days_in_month || {})[m] || 30;
+          if (uniqueDates.size >= daysInM) { elapsedMonths++; }
+          else { elapsedMonths++; partialFraction = uniqueDates.size / daysInM - 1; break; }
+        }
+        const elapsedFraction = elapsedMonths + partialFraction;  // can be fractional
+        const prevPro = elapsedFraction > 0 ? prevTotal * (elapsedFraction / 12) : prevTotal;
+        yoyPct = prevPro > 0 ? (total / prevPro * 100) : null;
+        yoyLabel = `vs FY${prevFy} 同期`;
+      } else {
+        yoyPct = total / prevTotal * 100;
+        yoyLabel = `vs FY${prevFy}`;
+      }
+    }
+    const yoyColor = yoyPct == null ? "#9CA3AF" : yoyPct >= 110 ? "var(--accent-green)" : yoyPct >= 95 ? "#6B7280" : "var(--accent-red)";
+    const yoyArrow = yoyPct == null ? "" : yoyPct >= 100 ? "▲" : "▼";
+    const isCurrentRing = fy === curFY ? "ring-2 ring-black/30" : "";
+    const opacity = total === 0 ? "opacity-50" : "";
+    return `
+      <div class="card p-3 ${isCurrentRing} ${opacity}">
+        <div class="flex items-baseline justify-between mb-1">
+          <div class="font-bold text-sm">FY${fy}</div>
+          ${inProgress ? `<span class="text-[10px] text-gray-400">進行中</span>` : ""}
+        </div>
+        <div class="kpi-num text-xl font-bold">${total ? fmtM(total) : "—"}</div>
+        <div class="text-[11px] text-gray-500">${cust.toLocaleString()}名</div>
+        ${yoyPct != null ? `<div class="text-xs mt-1.5 font-semibold" style="color:${yoyColor}">${yoyArrow} ${yoyPct.toFixed(0)}% <span class="text-[10px] font-normal text-gray-500">${yoyLabel}</span></div>` : `<div class="text-[10px] mt-1.5 text-gray-400">—</div>`}
+      </div>`;
+  }).join("");
+
+  // === Chart 2: 年度別 売上推移 (stacked bar + YoY% labels) ===
+  drawGrowthAnnualChart(fys, fySales, isFYInProgress);
+
+  // === Chart 3: 店舗別 客数 年度推移 ===
+  drawGrowthCustomersChart(fys, fyCust, isFYInProgress);
+
+  // === Chart 4: 店舗別 客単価 年度推移 ===
+  drawGrowthAvgTicketChart(fys, fySales, fyCust, isFYInProgress);
+
+  // === Chart 5: 宮古島 部門別 年度推移 ===
+  drawGrowthDeptChart(fys, isFYInProgress);
+}
+
+function drawGrowthAnnualChart(fys, fySales, isFYInProgress) {
+  const el = document.getElementById("growthAnnualChart");
+  if (!el) return;
+  if (window._chartGA) window._chartGA.destroy();
+  const labels = fys.map(fy => `FY${fy}${isFYInProgress(fy) ? "*" : ""}`);
+  const tsu = fys.map(fy => Math.round(fySales(fy, "tsunashima") / 1000));  // K円
+  const ele = fys.map(fy => Math.round(fySales(fy, "miyakojima") / 1000));
+  // YoY% labels (displayed above bars) — skip in-progress FY (partial year comparison misleads)
+  const yoyLabels = fys.map((fy, i) => {
+    if (i === 0) return "";
+    if (isFYInProgress(fy)) return "";  // hide for partial-year (KPI card shows elapsed-adjusted version)
+    const cur = tsu[i] + ele[i], prev = tsu[i-1] + ele[i-1];
+    if (!prev || !cur) return "";
+    const pct = (cur / prev * 100 - 100);
+    return (pct >= 0 ? "+" : "") + pct.toFixed(0) + "%";
+  });
+  const yoyPlugin = {
+    id: "yoyLabels",
+    afterDatasetsDraw(chart) {
+      const { ctx, data, scales: { x, y } } = chart;
+      ctx.save();
+      ctx.font = "bold 11px -apple-system, system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      data.labels.forEach((lbl, i) => {
+        const total = (data.datasets[0].data[i] || 0) + (data.datasets[1].data[i] || 0);
+        if (!total || !yoyLabels[i]) return;
+        const px = x.getPixelForValue(i);
+        const py = y.getPixelForValue(total);
+        const pct = parseFloat(yoyLabels[i]);
+        ctx.fillStyle = pct >= 0 ? "#059669" : "#DC2626";
+        ctx.fillText(yoyLabels[i], px, py - 6);
+      });
+      ctx.restore();
+    }
+  };
+  window._chartGA = new Chart(el.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Hanabi 綱島店", data: tsu, backgroundColor: "#1E88E5", stack: "s", borderRadius: 4 },
+        { label: "ELLE 宮古島店", data: ele, backgroundColor: "#D63384", stack: "s", borderRadius: 4 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 24 } },
+      scales: {
+        y: { stacked: true, beginAtZero: true, ticks: { callback: v => "¥" + v.toLocaleString() + "K" } },
+        x: { stacked: true }
+      },
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ¥${(ctx.raw || 0).toLocaleString()}K` } }
+      }
+    },
+    plugins: [yoyPlugin]
+  });
+}
+
+function drawGrowthCustomersChart(fys, fyCust, isFYInProgress) {
+  const el = document.getElementById("growthCustomersChart");
+  if (!el) return;
+  if (window._chartGC) window._chartGC.destroy();
+  // Exclude in-progress FY (partial-year point makes trend line plunge)
+  const completedFys = fys.filter(fy => !isFYInProgress(fy));
+  const labels = completedFys.map(fy => `FY${fy}`);
+  const tsu = completedFys.map(fy => fyCust(fy, "tsunashima"));
+  const ele = completedFys.map(fy => fyCust(fy, "miyakojima"));
+  window._chartGC = new Chart(el.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "Hanabi 綱島店", data: tsu, borderColor: "#1E88E5", backgroundColor: "rgba(30,136,229,0.1)", tension: 0.3, pointRadius: 5, fill: false },
+        { label: "ELLE 宮古島店", data: ele.map(v => v || null), borderColor: "#D63384", backgroundColor: "rgba(214,51,132,0.1)", tension: 0.3, pointRadius: 5, fill: false, spanGaps: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString() + "名" } } },
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${(c.parsed.y || 0).toLocaleString()}名` } }
+      }
+    }
+  });
+}
+
+function drawGrowthAvgTicketChart(fys, fySales, fyCust, isFYInProgress) {
+  const el = document.getElementById("growthAvgTicketChart");
+  if (!el) return;
+  if (window._chartGT) window._chartGT.destroy();
+  const completedFys = fys.filter(fy => !isFYInProgress(fy));
+  const labels = completedFys.map(fy => `FY${fy}`);
+  // 客単価 = 売上 / 客数。 全社平均は出さない (業態違うので無意味)
+  const ticketFor = (fy, sid) => {
+    const sales = fySales(fy, sid);
+    const cust = fyCust(fy, sid);
+    return cust > 0 ? Math.round(sales / cust) : null;
+  };
+  const tsu = completedFys.map(fy => ticketFor(fy, "tsunashima"));
+  const ele = completedFys.map(fy => ticketFor(fy, "miyakojima"));
+  window._chartGT = new Chart(el.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "Hanabi 綱島店 (ヘア)", data: tsu, borderColor: "#1E88E5", backgroundColor: "rgba(30,136,229,0.1)", tension: 0.3, pointRadius: 5, fill: false },
+        { label: "ELLE 宮古島店 (トータルビューティ)", data: ele, borderColor: "#D63384", backgroundColor: "rgba(214,51,132,0.1)", tension: 0.3, pointRadius: 5, fill: false, spanGaps: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero: false, ticks: { callback: v => "¥" + v.toLocaleString() } } },
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y == null ? "—" : "¥" + c.parsed.y.toLocaleString()}` } }
+      }
+    }
+  });
+}
+
+function drawGrowthDeptChart(fys, isFYInProgress) {
+  const el = document.getElementById("growthDeptChart");
+  if (!el) return;
+  if (window._chartGD) window._chartGD.destroy();
+  const completedFys = fys.filter(fy => !isFYInProgress(fy));
+  const labels = completedFys.map(fy => `FY${fy}`);
+  const deptFor = (fy, dept) => {
+    return getFYMonths(fy).reduce((acc, m) => {
+      const ms = (DATA.monthly_by_store["miyakojima"] || {})[m];
+      return acc + (ms ? (ms.by_dept[dept]?.sales || 0) : 0);
+    }, 0);
+  };
+  const hair = completedFys.map(fy => Math.round(deptFor(fy, "ヘア") / 1000));
+  const eye = completedFys.map(fy => Math.round(deptFor(fy, "アイ") / 1000));
+  const nail = completedFys.map(fy => Math.round(deptFor(fy, "ネイル") / 1000));
+  window._chartGD = new Chart(el.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "ヘア", data: hair, backgroundColor: "#E91E63", stack: "d", borderRadius: 3 },
+        { label: "アイ", data: eye, backgroundColor: "#1E88E5", stack: "d", borderRadius: 3 },
+        { label: "ネイル", data: nail, backgroundColor: "#F59E0B", stack: "d", borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { stacked: true, beginAtZero: true, ticks: { callback: v => "¥" + v.toLocaleString() + "K" } },
+        x: { stacked: true }
+      },
+      plugins: {
+        legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { callbacks: {
+          label: c => `${c.dataset.label}: ¥${(c.raw || 0).toLocaleString()}K`,
+          footer: items => {
+            const tot = items.reduce((a, it) => a + (it.raw || 0), 0);
+            return `合計: ¥${tot.toLocaleString()}K`;
+          }
+        } }
+      }
+    }
+  });
 }
 
 function renderAnnualReport() {
@@ -2394,7 +2743,7 @@ function renderVisitsTab() {
     </div>`;
   };
   let v1 = "";
-  v1 += buildVisCard("全社", SCOPE.cVis.customers ? SCOPE.cVis : null, "");
+  // 設計方針: 全社合算は新規/リピート比率では意味が薄い (業態差) → 店舗別のみ
   for (const r of SCOPE.storeRows) {
     v1 += buildVisCard(r.store.name, r.vis, r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient");
   }
@@ -2435,7 +2784,7 @@ function renderVisitsTab() {
     </div>`;
   };
   let n2 = "";
-  n2 += buildNomCard("全社", SCOPE.cMs, "");
+  // 設計方針: 指名率は店舗別で見るほうが意味ある (業態違いで混ぜると誤解)
   for (const r of SCOPE.storeRows) {
     n2 += buildNomCard(r.store.name, r.ms, r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient");
   }
@@ -2484,7 +2833,7 @@ function renderVisitsTab() {
       </div>`;
     };
     let g3 = "";
-    g3 += buildGenderCard("全社", SCOPE.cMs, "");
+    // 設計方針: 男女別の比率は店舗別で見るほうが意味ある (業態違いで混ぜると誤解)
     for (const r of SCOPE.storeRows) {
       g3 += buildGenderCard(r.store.name, r.ms, r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient");
     }
