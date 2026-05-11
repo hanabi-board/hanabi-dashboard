@@ -1,9 +1,10 @@
 {
   "source": "hotpepper",
-  "scraped_at": "2026-05-11T20:37:06",
+  "scraped_at": "2026-05-11T21:11:08",
   "stores": {
     "tsunashima": {
       "rating": 4.79,
+      "review_count": 366,
       "salon_name": "ハナビ(Hanabi)",
       "recent_reviews": [
         {
@@ -12,10 +13,12 @@
           "rating": null
         }
       ],
-      "url": "https://beauty.hotpepper.jp/slnH000578577/"
+      "url": "https://beauty.hotpepper.jp/slnH000578577/",
+      "category": "ヘア"
     },
     "miyakojima": {
       "rating": 3.97,
+      "review_count": 85,
       "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
       "recent_reviews": [
         {
@@ -25,9 +28,11 @@
         }
       ],
       "url": "https://beauty.hotpepper.jp/slnH000546153/",
+      "category": "ヘア",
       "listings": [
         {
           "rating": 3.97,
+          "review_count": 85,
           "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
           "recent_reviews": [
             {
@@ -36,16 +41,19 @@
               "rating": null
             }
           ],
-          "url": "https://beauty.hotpepper.jp/slnH000546153/"
+          "url": "https://beauty.hotpepper.jp/slnH000546153/",
+          "category": "ヘア"
         },
         {
           "rating": 4.48,
+          "review_count": 74,
           "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
           "recent_reviews": [],
-          "url": "https://beauty.hotpepper.jp/kr/slnH000551943/"
+          "url": "https://beauty.hotpepper.jp/kr/slnH000551943/",
+          "category": "アイラッシュ・ネイル"
         }
       ],
-      "total_review_count": 0,
+      "total_review_count": 159,
       "avg_rating": 4.2250000000000005
     }
   }

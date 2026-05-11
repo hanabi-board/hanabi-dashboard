@@ -310,11 +310,24 @@
 
   <!-- =========== Tab 4: スタッフ =========== -->
   <div class="tab-panel" data-panel="staff">
-    <div class="mb-4">
-      <h2 class="text-2xl font-bold">スタッフ実績</h2>
-      <div class="text-sm text-gray-500 mt-1">店舗別 / 並び順を選択して切替</div>
+    <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+      <div>
+        <h2 class="text-2xl font-bold">スタッフ実績</h2>
+        <div class="text-sm text-gray-500 mt-1">店舗別 / 並び順を選択して切替 / 行クリックで個別詳細</div>
+      </div>
+      <div id="staffTabActions" class="flex items-center gap-2"></div>
     </div>
     <div class="space-y-4" id="staffRankings"></div>
+    <!-- 退職者リスト (master toggle) -->
+    <div id="retiredStaffSection" class="hidden mt-6">
+      <div class="card overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <h3 class="section-title">退職スタッフ <span class="section-sub">プロフィール編集のみ</span></h3>
+          <span class="text-xs text-gray-400" id="retiredStaffCount"></span>
+        </div>
+        <div class="p-4" id="retiredStaffList"></div>
+      </div>
+    </div>
   </div>
 
   <!-- =========== Tab 5: メニュー別 =========== -->
@@ -3557,6 +3570,74 @@ function renderStaffTab() {
       document.getElementById(`rankBody_${sid}`).innerHTML = rankTable(rows, sel.value);
     });
   });
+
+  // master のみ: 全スタッフ管理 (退職者含む) トグル
+  const actionsEl = document.getElementById("staffTabActions");
+  if (actionsEl && currentRole === "master") {
+    const isShown = !document.getElementById("retiredStaffSection").classList.contains("hidden");
+    actionsEl.innerHTML = `<button id="toggleRetiredBtn" class="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-3 py-1.5">${isShown ? "退職者を隠す" : "退職者も表示 (本部のみ)"}</button>`;
+    document.getElementById("toggleRetiredBtn").onclick = () => {
+      const sec = document.getElementById("retiredStaffSection");
+      sec.classList.toggle("hidden");
+      renderRetiredStaffList();
+      renderStaffTab();  // re-render to update button label
+    };
+    renderRetiredStaffList();  // refresh list if visible
+  } else if (actionsEl) {
+    actionsEl.innerHTML = "";
+  }
+}
+
+// 退職スタッフリスト (master only)
+function renderRetiredStaffList() {
+  const sec = document.getElementById("retiredStaffSection");
+  if (!sec || sec.classList.contains("hidden")) return;
+  const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
+  const retiredEntries = Object.entries(profiles).filter(([_, p]) => p.retired);
+  // 過去出現した全スタッフ + 現在月にいない人 (CSV ベース で退職判定)
+  const currentNames = new Set((DATA.staff_rows || []).filter(s => s.month === currentMonth).map(s => s.name));
+  const allHistoricalNames = new Set((DATA.staff_rows || []).map(s => s.name));
+  const csvRetired = [...allHistoricalNames].filter(n => !currentNames.has(n)).filter(n => !(profiles[n] && profiles[n].hidden));
+
+  // 統合: profiles に retired があるもの + CSV で消えてるもの (重複は排除)
+  const allRetired = new Map();
+  for (const [name, p] of retiredEntries) {
+    allRetired.set(name, { name, profile: p, source: "profile" });
+  }
+  for (const name of csvRetired) {
+    if (!allRetired.has(name)) {
+      allRetired.set(name, { name, profile: profiles[name] || {}, source: "csv" });
+    }
+  }
+  // 退職日が新しい順にソート
+  const list = [...allRetired.values()].sort((a, b) => (b.profile.retired || "").localeCompare(a.profile.retired || ""));
+
+  document.getElementById("retiredStaffCount").textContent = `${list.length}名`;
+  const listEl = document.getElementById("retiredStaffList");
+  if (!list.length) {
+    listEl.innerHTML = `<div class="text-sm text-gray-400 text-center py-6">退職スタッフなし</div>`;
+    return;
+  }
+  // 過去出現の最終月 + 店舗 を取得
+  const lastInfo = (name) => {
+    const rows = (DATA.staff_rows || []).filter(s => s.name === name).sort((a, b) => b.month.localeCompare(a.month));
+    return rows[0] || null;
+  };
+  listEl.innerHTML = `<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">${list.map(({ name, profile }) => {
+    const info = lastInfo(name);
+    const storeName = info ? DATA.stores[info.store]?.name : "—";
+    const deptColor = info?.primary_dept === "ヘア" ? "var(--dept-hair)" : info?.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+    const avatar = info ? staffAvatar(info, 48) : `<div class="rounded-full bg-gray-300" style="width:48px;height:48px"></div>`;
+    return `<div class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+      ${avatar}
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-sm truncate">${name}${profile.display_name && profile.display_name !== name ? ` <span class="text-xs text-gray-400">(${profile.display_name})</span>` : ""}</div>
+        <div class="text-[11px] text-gray-500 truncate">${storeName} ${info?.primary_dept ? `· ${info.primary_dept}` : ""}</div>
+        <div class="text-[11px] text-gray-400">退職 ${profile.retired || "(日付不明)"}</div>
+      </div>
+      <button class="text-xs text-blue-600 hover:text-blue-800" onclick="openStaffProfileModal('${name.replace(/'/g,"\\'")}')">編集</button>
+    </div>`;
+  }).join("")}</div>`;
 }
 
 function staffInitial(name) {
@@ -3853,30 +3934,51 @@ function renderManagementTab() {
         const igCur = (lastIG?.stores || {})[r.sid] || {};
         const igPrev = (prevIG?.stores || {})[r.sid] || {};
         const gradient = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
-        const ratingDelta = hpCur.rating != null && hpPrev.rating != null ? (hpCur.rating - hpPrev.rating).toFixed(2) : null;
-        const reviewDelta = hpCur.review_count != null && hpPrev.review_count != null ? (hpCur.review_count - hpPrev.review_count) : null;
+        // 複数 listing 対応: avg_rating があれば優先、 なければ単一 rating
+        const displayRating = hpCur.avg_rating != null ? hpCur.avg_rating : hpCur.rating;
+        const displayReviewCount = hpCur.total_review_count != null ? hpCur.total_review_count : hpCur.review_count;
+        const prevDisplayRating = hpPrev.avg_rating != null ? hpPrev.avg_rating : hpPrev.rating;
+        const prevDisplayReviewCount = hpPrev.total_review_count != null ? hpPrev.total_review_count : hpPrev.review_count;
+        const ratingDelta = displayRating != null && prevDisplayRating != null ? (displayRating - prevDisplayRating).toFixed(2) : null;
+        const reviewDelta = displayReviewCount != null && prevDisplayReviewCount != null ? (displayReviewCount - prevDisplayReviewCount) : null;
         const followDelta = igCur.followers != null && igPrev.followers != null ? (igCur.followers - igPrev.followers) : null;
-        const recentReviews = (hpCur.recent_reviews || []).slice(0, 3);
+        // 個別 listing (宮古島は2件あり)
+        const listings = hpCur.listings || (hpCur.url ? [hpCur] : []);
+        // 全 listing の口コミを統合 (新しい順)
+        const allReviews = [];
+        for (const l of listings) {
+          for (const rv of (l.recent_reviews || [])) {
+            allReviews.push({ ...rv, _source: l.salon_name || "" });
+          }
+        }
+        const topReviews = allReviews.slice(0, 5);
         return `<div class="card overflow-hidden">
           <div class="${gradient} text-white px-4 py-2 text-sm font-bold">${r.store.name}</div>
           <div class="p-4">
             <div class="grid grid-cols-2 gap-3 text-sm mb-3">
               <div>
-                <div class="text-[11px] text-gray-500">HotPepper 評価</div>
-                <div class="mt-1">${renderStars(hpCur.rating, { size: "1.3em" })}</div>
-                <div class="text-[11px] text-gray-500 mt-1.5">口コミ ${hpCur.review_count != null ? hpCur.review_count + "件" : "—"} ${reviewDelta != null && reviewDelta > 0 ? `<span class="text-green-600">+${reviewDelta}</span>` : ""}</div>
-                ${ratingDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${parseFloat(ratingDelta) >= 0 ? '#10B981' : '#DC2626'}">${parseFloat(ratingDelta) >= 0 ? '+' : ''}${ratingDelta} (前回比)</div>` : ""}
+                <div class="text-[11px] text-gray-500">HotPepper 評価${listings.length > 1 ? ` (${listings.length}件平均)` : ""}</div>
+                <div class="mt-1">${renderStars(displayRating, { size: "1.3em" })}</div>
+                <div class="text-[11px] text-gray-500 mt-1.5">${displayReviewCount != null ? "口コミ " + displayReviewCount + "件" : "口コミ —"} ${reviewDelta != null && reviewDelta > 0 ? `<span class="text-green-600">+${reviewDelta}</span>` : ""}</div>
+                ${ratingDelta != null && parseFloat(ratingDelta) !== 0 ? `<div class="text-[10px] mt-0.5" style="color:${parseFloat(ratingDelta) >= 0 ? '#10B981' : '#DC2626'}">${parseFloat(ratingDelta) >= 0 ? '+' : ''}${ratingDelta} (前回比)</div>` : ""}
+                ${listings.length > 1 ? `<div class="mt-2 space-y-1">${listings.map(l => `
+                  <div class="text-[11px] flex items-center gap-1.5">
+                    <span class="text-gray-600 font-semibold">${l.category || "—"}</span>
+                    ${renderStars(l.rating, { size: "0.7em", showValue: true })}
+                    ${l.review_count != null ? `<span class="text-gray-500">(${l.review_count}件)</span>` : ""}
+                  </div>`).join("")}</div>` : ""}
               </div>
               <div>
                 <div class="text-[11px] text-gray-500">Instagram</div>
                 <div class="kpi-num text-xl font-bold mt-0.5">${igCur.followers != null ? igCur.followers.toLocaleString() : "—"}</div>
                 <div class="text-[11px] text-gray-500 mt-1">フォロワー ${igCur.posts != null ? "· 投稿 " + igCur.posts : ""}</div>
                 ${followDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${followDelta >= 0 ? '#10B981' : '#DC2626'}">${followDelta >= 0 ? '+' : ''}${followDelta} (前回比)</div>` : ""}
+                ${igCur.username ? `<div class="text-[10px] text-gray-400 mt-0.5"><a href="https://www.instagram.com/${igCur.username}/" target="_blank" class="hover:underline">@${igCur.username}</a></div>` : ""}
               </div>
             </div>
-            ${recentReviews.length ? `<div class="border-t border-gray-100 pt-3">
-              <div class="text-[11px] text-gray-500 mb-2 font-semibold">最近の口コミ ${recentReviews.length}件</div>
-              <div class="space-y-2">${recentReviews.map(rv => `
+            ${topReviews.length ? `<div class="border-t border-gray-100 pt-3">
+              <div class="text-[11px] text-gray-500 mb-2 font-semibold">最近の口コミ ${topReviews.length}件</div>
+              <div class="space-y-2">${topReviews.map(rv => `
                 <div class="text-[11px] bg-gray-50 rounded p-2">
                   <div class="flex items-center gap-2">
                     ${rv.rating != null ? renderStars(rv.rating, { size: "0.85em", showValue: false }) : ""}

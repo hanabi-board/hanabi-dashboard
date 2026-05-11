@@ -73,13 +73,30 @@ def scrape_hotpepper(page, url: str) -> dict:
                 const m = rateEl.textContent.match(/[\d.]+/);
                 if (m) out.rating = parseFloat(m[0]);
             }
-            // 口コミ件数 — HPB は '口コミ ◯件' フォーマット (ページ全体から探す)
+            // 口コミ件数 - 複数パターン対応
             const fullText = document.body.innerText;
-            const m1 = fullText.match(/口コミ[\s]*([0-9,]+)\s*件/);
+            // Pattern 1: '（366件）' (HPB main: rating 横の小カウント、 全角カッコ)
+            let m1 = fullText.match(/[（(]\s*([0-9,]+)\s*件\s*[)）]/);
+            if (!m1) {
+              // Pattern 2: 'X件のお客様の声'
+              m1 = fullText.match(/([0-9,]+)\s*件\s*の\s*お客様の声/);
+            }
+            if (!m1) {
+              // Pattern 3: '口コミ X件'
+              m1 = fullText.match(/口コミ[\s]*([0-9,]+)\s*件/);
+            }
             if (m1) out.review_count = parseInt(m1[1].replace(/,/g, ''));
             // ブログ件数 (参考)
-            const m2 = fullText.match(/ブログ[\s]*([0-9,]+)\s*件/);
+            const m2 = fullText.match(/ブログ\s*([0-9,]+)\s*件/);
             if (m2) out.blog_count = parseInt(m2[1].replace(/,/g, ''));
+            // セレクタ直接アクセス (rating-count class や slnHeaderKuchikomiCount)
+            if (!out.review_count) {
+              const cntEl = document.querySelector('.rating-count, .slnHeaderKuchikomiCount, [class*="kuchikomi"][class*="ount"]');
+              if (cntEl) {
+                const m = cntEl.textContent.match(/([0-9,]+)/);
+                if (m) out.review_count = parseInt(m[1].replace(/,/g, ''));
+              }
+            }
             // 店舗名
             const nameEl = document.querySelector('h1, .salon-name, [class*="salonName"]');
             if (nameEl) out.salon_name = nameEl.textContent.trim().slice(0, 50);
@@ -212,19 +229,24 @@ def main():
                 if store_id.startswith("_"):
                     continue
                 url_field = urls.get(source, "")
-                # 配列 or 文字列の両方対応 (hotpepper は複数掲載 listing 想定)
-                url_list = []
+                # 形式: 文字列 / 文字列配列 / オブジェクト配列 [{url, category}] のいずれかをサポート
+                entries = []  # [{url, category}]
                 if isinstance(url_field, list):
-                    url_list = [u.strip() for u in url_field if u and isinstance(u, str)]
+                    for item in url_field:
+                        if isinstance(item, dict) and item.get("url"):
+                            entries.append({"url": item["url"].strip(), "category": item.get("category", "")})
+                        elif isinstance(item, str) and item.strip():
+                            entries.append({"url": item.strip(), "category": ""})
                 elif isinstance(url_field, str) and url_field.strip():
-                    url_list = [url_field.strip()]
-                if not url_list:
+                    entries.append({"url": url_field.strip(), "category": ""})
+                if not entries:
                     print(f"  {store_id}: skip (URL未設定)")
                     continue
-                # 1店舗で複数URL ある場合は全件 scrape して 配列で保存
+                # 1店舗で複数URL ある場合は全件 scrape
                 listings = []
-                for i, url in enumerate(url_list):
-                    print(f"  {store_id}[{i}]: {url}")
+                for i, e in enumerate(entries):
+                    url = e["url"]
+                    print(f"  {store_id}[{i}] {e.get('category') or '(no cat)'}: {url}")
                     try:
                         if source == "hotpepper":
                             data = scrape_hotpepper(page, url)
@@ -233,12 +255,14 @@ def main():
                         else:
                             data = {}
                         data["url"] = url
+                        if e.get("category"):
+                            data["category"] = e["category"]
                         print(f"    → rating={data.get('rating')}, reviews={data.get('review_count')}, reviews_fetched={len(data.get('recent_reviews',[]))}" if source == "hotpepper" else f"    → {data}")
                         listings.append(data)
                         page.screenshot(path=str(log_dir / f"{source}_{store_id}_{i}.png"), full_page=False)
-                    except Exception as e:
-                        print(f"    ⚠️ failed: {e}")
-                        listings.append({"url": url, "error": str(e)})
+                    except Exception as e2:
+                        print(f"    ⚠️ failed: {e2}")
+                        listings.append({"url": url, "category": e.get("category", ""), "error": str(e2)})
                 # 後方互換: 1件なら dict, 複数なら 1件目をベース + listings 配列
                 if len(listings) == 1:
                     result["stores"][store_id] = listings[0]
