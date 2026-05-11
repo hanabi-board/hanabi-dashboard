@@ -503,6 +503,59 @@
   </div>
 
   <!-- Recruit candidate modal -->
+  <!-- Staff profile edit modal (master only) -->
+  <div id="staffProfileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+        <h3 class="font-bold" id="spModalTitle">スタッフ プロフィール編集</h3>
+        <button id="spClose" class="text-gray-400 hover:text-gray-700 text-xl leading-none">&times;</button>
+      </div>
+      <form id="staffProfileForm" class="p-5 space-y-3 text-sm">
+        <input type="hidden" id="sp_originalName" />
+        <label class="block">
+          <span class="text-xs text-gray-600">スタッフ名 (CSV表記) <span class="text-red-500">*</span></span>
+          <input type="text" id="sp_name" required placeholder="例: 渡辺 真也" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+          <span class="text-[11px] text-gray-500 mt-1 inline-block">スタッフランキングCSVに表示される名前と完全一致させる必要があります</span>
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-gray-600">表示名 (短縮)</span>
+            <input type="text" id="sp_displayName" placeholder="マサヤ" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+          </label>
+          <label class="block">
+            <span class="text-xs text-gray-600">フリガナ</span>
+            <input type="text" id="sp_kana" placeholder="ワタナベ シンヤ" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-gray-600">入社日</span>
+            <input type="date" id="sp_joined" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+          </label>
+          <label class="block">
+            <span class="text-xs text-gray-600">退職日 (退職時のみ)</span>
+            <input type="date" id="sp_retired" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-xs text-gray-600">役職</span>
+          <input type="text" id="sp_role" placeholder="店長 / トップ / アシスタント" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+        </label>
+        <label class="block">
+          <span class="text-xs text-gray-600">写真ファイル名 <span class="text-[11px] text-gray-400">(docs/assets/staff/ 内のファイル名)</span></span>
+          <input type="text" id="sp_photo" placeholder="watanabe.jpg" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
+        </label>
+        <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+          <button type="button" id="sp_delete" class="hidden text-xs text-red-600 hover:text-red-800 underline">プロフィール削除</button>
+          <div class="flex gap-2 ml-auto">
+            <button type="button" id="sp_cancel" class="text-xs border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">キャンセル</button>
+            <button type="submit" class="text-xs bg-black text-white rounded px-4 py-1.5 hover:bg-gray-800">GitHubに保存</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Budget edit modal (master only) -->
   <div id="budgetModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -803,6 +856,14 @@ async function fetchRemoteRecruitment() {
     return await r.json();
   } catch (e) { return null; }
 }
+async function fetchRemoteStaffProfiles() {
+  try {
+    const url = `https://raw.githubusercontent.com/${GH_REPO}/main/data/staff_profiles.json?ts=${Date.now()}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
 
 function isSessionValid() {
   try {
@@ -936,18 +997,24 @@ async function loadData() {
   const savedTab = localStorage.getItem("hanabi_tab") || "summary";
   activateTab(savedTab);
 
-  // Background: fetch latest recruitment.json from GitHub raw to catch edits made by others
+  // Background: fetch latest recruitment.json and staff_profiles.json from GitHub raw
   // (data.json is regenerated daily; this picks up same-day edits)
   setTimeout(async () => {
-    const remote = await fetchRemoteRecruitment();
-    if (!remote) return;
-    const localStr = JSON.stringify(DATA.recruitment || {});
-    const remoteStr = JSON.stringify(remote);
-    if (localStr === remoteStr) return;  // no change
-    DATA.recruitment = remote;
-    mergeLocalRecruitOverrides();
-    if (document.querySelector('[data-panel="recruit"].active')) {
-      renderRecruitTab();
+    const [remoteRec, remoteSp] = await Promise.all([fetchRemoteRecruitment(), fetchRemoteStaffProfiles()]);
+    if (remoteRec) {
+      const localStr = JSON.stringify(DATA.recruitment || {});
+      if (JSON.stringify(remoteRec) !== localStr) {
+        DATA.recruitment = remoteRec;
+        mergeLocalRecruitOverrides();
+        if (document.querySelector('[data-panel="recruit"].active')) renderRecruitTab();
+      }
+    }
+    if (remoteSp) {
+      const localStr = JSON.stringify(DATA.staff_profiles || {});
+      if (JSON.stringify(remoteSp) !== localStr) {
+        DATA.staff_profiles = remoteSp;
+        if (document.querySelector('[data-panel="staff"].active')) renderStaffTab();
+      }
     }
   }, 1500);
 }
@@ -1872,16 +1939,21 @@ function renderRecruitTab() {
           <th class="text-left py-2 px-3">備考</th>
         </tr>
       </thead>
-      <tbody>${filtered.map(c => `<tr class="border-b border-gray-50 hover:bg-gray-50 ${currentRole === 'master' ? 'cursor-pointer' : ''}" data-rid="${c.id || ''}">
+      <tbody>${filtered.map(c => {
+        // 「入社」 ステータスかつプロフィール未登録の場合 「プロフィール登録」ボタンを表示
+        const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
+        const hasProfile = c.name && profiles[c.name];
+        const onboarding = currentRole === "master" && c.status === "入社" && c.name && !hasProfile;
+        return `<tr class="border-b border-gray-50 hover:bg-gray-50 ${currentRole === 'master' ? 'cursor-pointer' : ''}" data-rid="${c.id || ''}">
         <td class="py-2 px-3 text-xs text-gray-600 whitespace-nowrap">${c.applied_date || "—"}</td>
-        <td class="py-2 px-3 font-semibold whitespace-nowrap">${c.name || "—"}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}</td>
+        <td class="py-2 px-3 font-semibold whitespace-nowrap">${c.name || "—"}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}${hasProfile ? ` <span class="text-[10px] text-green-600 ml-1" title="プロフィール登録済">●</span>` : ""}</td>
         <td class="py-2 px-3 text-xs">${c.role || "—"}</td>
         <td class="py-2 px-3 text-xs">${c.store_pref || "—"}</td>
         <td class="py-2 px-3 text-xs">${c.experience_years != null ? c.experience_years + "年" : "—"}</td>
         <td class="py-2 px-3 text-xs">${c.source || "—"}</td>
-        <td class="py-2 px-3">${statusBadge(c.status)}</td>
+        <td class="py-2 px-3">${statusBadge(c.status)}${onboarding ? `<button class="ml-2 text-[10px] bg-green-600 text-white rounded px-2 py-0.5" onclick="event.stopPropagation(); onboardFromRecruit('${(c.id || '').replace(/'/g,"\\'")}')">→ プロフィール登録</button>` : ""}</td>
         <td class="py-2 px-3 text-xs text-gray-600 truncate" style="max-width:200px">${c.notes || ""}</td>
-      </tr>`).join("")}</tbody>
+      </tr>`;}).join("")}</tbody>
     </table>`;
     if (currentRole === "master") {
       root.querySelectorAll("tr[data-rid]").forEach(tr => {
@@ -2122,6 +2194,18 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sdClose) sdClose.addEventListener("click", closeStaffDetail);
   const sdModal = document.getElementById("staffDetailModal");
   if (sdModal) sdModal.addEventListener("click", (e) => { if (e.target === sdModal) closeStaffDetail(); });
+
+  // Staff profile modal
+  const spForm = document.getElementById("staffProfileForm");
+  if (spForm) spForm.addEventListener("submit", saveStaffProfileForm);
+  const spClose = document.getElementById("spClose");
+  if (spClose) spClose.addEventListener("click", closeStaffProfileModal);
+  const spCancel = document.getElementById("sp_cancel");
+  if (spCancel) spCancel.addEventListener("click", closeStaffProfileModal);
+  const spDel = document.getElementById("sp_delete");
+  if (spDel) spDel.addEventListener("click", deleteStaffProfile);
+  const spModal = document.getElementById("staffProfileModal");
+  if (spModal) spModal.addEventListener("click", (e) => { if (e.target === spModal) closeStaffProfileModal(); });
 
   // Budget edit modal
   const bClose = document.getElementById("budgetModalClose");
@@ -3376,12 +3460,15 @@ function rankTable(rows, sortKey) {
       ${sorted.map((s, i) => {
         const deptColor = s.primary_dept === "ヘア" ? "var(--dept-hair)" : s.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
         const cell = (key) => `<td class="py-2 px-2 text-right kpi-num whitespace-nowrap ${key === sortKey ? 'font-bold text-gray-900' : 'text-gray-600'}">${valFmt(s, key)}</td>`;
+        const editBtn = currentRole === "master"
+          ? `<button class="text-gray-300 hover:text-gray-700 ml-1.5 text-xs" title="プロフィール編集" onclick="event.stopPropagation(); openStaffProfileModal('${s.name.replace(/'/g,"\\'")}')">✎</button>`
+          : "";
         return `<tr class="border-row hover:bg-gray-50 cursor-pointer" data-staff-name="${s.name.replace(/"/g,'&quot;')}" data-staff-store="${s.store}" onclick="openStaffDetail(this.dataset.staffStore, this.dataset.staffName)">
           <td class="py-2 pr-2 rank-num ${rankCls(i)} text-center">${i+1}</td>
           <td class="py-2 pr-2">
             <div class="flex items-center gap-2 min-w-0">
               ${staffAvatar(s, 28)}
-              <span class="truncate">${s.name}</span>
+              <span class="truncate">${s.name}</span>${editBtn}
             </div>
           </td>
           <td class="py-2 pr-2"><span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wider" style="background:${deptColor}; color:#fff; min-width:48px; justify-content:center;">${s.primary_dept}</span></td>
@@ -3651,6 +3738,110 @@ function drawMgmtCompanyTrend() {
     }
   });
 }
+
+// === Staff profile edit (master only, GitHub direct push) ===
+function openStaffProfileModal(staffName, prefill) {
+  if (currentRole !== "master") return;
+  const modal = document.getElementById("staffProfileModal");
+  if (!modal) return;
+  const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
+  const existing = profiles[staffName] || {};
+  const p = prefill || existing;
+  document.getElementById("spModalTitle").textContent = profiles[staffName] ? "スタッフ プロフィール編集" : "スタッフ プロフィール登録";
+  document.getElementById("sp_originalName").value = staffName || "";
+  document.getElementById("sp_name").value = staffName || p.name || "";
+  document.getElementById("sp_displayName").value = p.display_name || "";
+  document.getElementById("sp_kana").value = p.kana || "";
+  document.getElementById("sp_joined").value = p.joined || "";
+  document.getElementById("sp_retired").value = p.retired || "";
+  document.getElementById("sp_role").value = p.role || "";
+  document.getElementById("sp_photo").value = p.photo || "";
+  document.getElementById("sp_delete").classList.toggle("hidden", !profiles[staffName]);
+  modal.classList.remove("hidden");
+}
+function closeStaffProfileModal() {
+  document.getElementById("staffProfileModal").classList.add("hidden");
+}
+async function saveStaffProfileForm(e) {
+  e.preventDefault();
+  if (currentRole !== "master") return;
+  if (!getGhToken()) {
+    showToast("⚠️ GitHub トークン未設定", "error");
+    return;
+  }
+  const originalName = document.getElementById("sp_originalName").value;
+  const newName = document.getElementById("sp_name").value.trim();
+  if (!newName) return;
+  const profile = {
+    photo: document.getElementById("sp_photo").value.trim() || undefined,
+    display_name: document.getElementById("sp_displayName").value.trim() || undefined,
+    kana: document.getElementById("sp_kana").value.trim() || undefined,
+    joined: document.getElementById("sp_joined").value || undefined,
+    retired: document.getElementById("sp_retired").value || undefined,
+    role: document.getElementById("sp_role").value.trim() || undefined,
+  };
+  // Remove undefined keys
+  Object.keys(profile).forEach(k => profile[k] === undefined && delete profile[k]);
+
+  // Update DATA.staff_profiles
+  DATA.staff_profiles = DATA.staff_profiles || { _comment: "", _format: {}, profiles: {} };
+  DATA.staff_profiles.profiles = DATA.staff_profiles.profiles || {};
+  // If renamed, remove old entry
+  if (originalName && originalName !== newName && DATA.staff_profiles.profiles[originalName]) {
+    delete DATA.staff_profiles.profiles[originalName];
+  }
+  DATA.staff_profiles.profiles[newName] = profile;
+
+  showToast("保存中 → GitHub反映...", "info");
+  try {
+    await pushJsonToGitHub("data/staff_profiles.json", DATA.staff_profiles, `Update staff profile (${newName})`);
+    showToast("✓ プロフィール保存", "good");
+    closeStaffProfileModal();
+    renderStaffTab();
+  } catch (err) {
+    showToast("⚠️ 失敗: " + err.message, "error");
+  }
+}
+async function deleteStaffProfile() {
+  if (currentRole !== "master") return;
+  const name = document.getElementById("sp_originalName").value;
+  if (!name) return;
+  if (!confirm(`「${name}」 のプロフィールを削除しますか?`)) return;
+  if (!getGhToken()) { showToast("⚠️ GitHub トークン未設定", "error"); return; }
+  delete DATA.staff_profiles.profiles[name];
+  try {
+    await pushJsonToGitHub("data/staff_profiles.json", DATA.staff_profiles, `Delete staff profile (${name})`);
+    showToast("✓ 削除完了", "good");
+    closeStaffProfileModal();
+    renderStaffTab();
+  } catch (err) {
+    showToast("⚠️ 失敗: " + err.message, "error");
+  }
+}
+window.openStaffProfileModal = openStaffProfileModal;
+
+// 採用「入社」 → プロフィール登録 のクイックスタート (recruitment データから事前入力)
+function onboardFromRecruit(candidateId) {
+  if (currentRole !== "master") return;
+  const candidate = (DATA.recruitment.candidates || []).find(c => c.id === candidateId);
+  if (!candidate) return;
+  // Map recruitment role label → staff CSV role.
+  // 採用フォームの「希望職種」 (例: ヘア (スタイリスト) / アイ / ネイル / 受付) を簡略マッピング
+  const roleMap = {
+    "ヘア (スタイリスト)": "ヘアスタイリスト",
+    "ヘア (アシスタント)": "ヘアアシスタント",
+    "アイ": "アイリスト",
+    "ネイル": "ネイリスト",
+    "受付": "受付",
+    "管理者": "マネージャー",
+  };
+  openStaffProfileModal(candidate.name, {
+    kana: candidate.kana || "",
+    joined: new Date().toISOString().slice(0, 10),  // today as default
+    role: roleMap[candidate.role] || candidate.role || "",
+  });
+}
+window.onboardFromRecruit = onboardFromRecruit;
 
 // === Budget edit modal (master only) ===
 function openBudgetModal() {

@@ -376,6 +376,15 @@ def main():
         except Exception:
             pass
 
+    # Load staff profiles data
+    staff_profiles = None
+    sp_path = DATA / "staff_profiles.json"
+    if sp_path.exists():
+        try:
+            staff_profiles = json.loads(sp_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     out = {
         "generated_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
         "stores": STORES,
@@ -393,6 +402,7 @@ def main():
         "uregi_top_snapshot": snapshot,
         "menu_data": menu_data,
         "recruitment": recruitment,
+        "staff_profiles": staff_profiles,
     }
 
     out_path = DOCS / "data.json"
