@@ -61,10 +61,10 @@ def load_targets() -> dict:
 
 
 def scrape_hotpepper(page, url: str) -> dict:
-    """HotPepper Beauty の店舗ページから評価 (星/件数/掲載順) を取得。"""
+    """HotPepper Beauty の店舗ページから 評価 + 口コミ件数 + 直近口コミ を取得。"""
     page.goto(url, wait_until="domcontentloaded")
     time.sleep(2)
-    return page.evaluate(r"""
+    result = page.evaluate(r"""
         () => {
             const out = {};
             // 評価点 (例: 4.7)
@@ -85,6 +85,38 @@ def scrape_hotpepper(page, url: str) -> dict:
             return out;
         }
     """)
+    # 口コミタブへ移動して最新口コミ N件取得 (URL末尾に /review/ を付ければレビュータブ)
+    try:
+        review_url = url.rstrip("/") + "/review/"
+        page.goto(review_url, wait_until="domcontentloaded", timeout=15000)
+        time.sleep(2)
+        reviews = page.evaluate(r"""
+            () => {
+                // 口コミブロック (HotPepperのHTML構造に依存)
+                const blocks = document.querySelectorAll('[class*="review"], .reviewBlock, .cFix > section');
+                const out = [];
+                for (const b of blocks) {
+                    const textEl = b.querySelector('p, .reviewBody, [class*="reviewText"]');
+                    const dateEl = b.querySelector('time, [class*="date"], .reviewDate');
+                    const ratingEl = b.querySelector('[class*="rating"], .reviewRate');
+                    if (!textEl) continue;
+                    const text = textEl.textContent.trim().slice(0, 200);
+                    if (!text || text.length < 10) continue;
+                    out.push({
+                        text,
+                        date: dateEl ? dateEl.textContent.trim().slice(0, 20) : "",
+                        rating: ratingEl ? parseFloat((ratingEl.textContent.match(/[\d.]+/) || [""])[0]) || null : null,
+                    });
+                    if (out.length >= 10) break;
+                }
+                return out;
+            }
+        """)
+        result["recent_reviews"] = reviews
+    except Exception as e:
+        print(f"    warn: reviews fetch failed: {e}")
+        result["recent_reviews"] = []
+    return result
 
 
 def scrape_instagram(page, url: str) -> dict:

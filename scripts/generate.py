@@ -144,6 +144,15 @@ def load_staff_ranking(path: Path, store_id: str, year_month: str) -> list[dict]
     for i in range(26, len(headers)):
         cat_dept.append((i, headers[i], classify_department(headers[i])))
 
+    # HPB / クーポン関連カラムのインデックスを動的検出
+    hpb_col_indices = []
+    coupon_col_indices = []
+    for i, h in enumerate(headers):
+        if "HPBクーポン" in h:  # (グランドメニュー)HPBクーポン, (クーポン)HPBクーポン, (ネイル)NHPBクーポン, (アイメニュー)IHPBクーポン
+            hpb_col_indices.append(i)
+        if "クーポン" in h and "HPB" not in h:  # BMクーポン等 HPB以外のクーポン
+            coupon_col_indices.append(i)
+
     for row in rows[1:]:
         if len(row) < 26:
             continue
@@ -155,6 +164,10 @@ def load_staff_ranking(path: Path, store_id: str, year_month: str) -> list[dict]
         for idx, _col, dept in cat_dept:
             if idx < len(row):
                 dept_sales[dept] += parse_int(row[idx])
+
+        # HPB / 他クーポン売上を集計
+        hpb_sales = sum(parse_int(row[i]) for i in hpb_col_indices if i < len(row))
+        other_coupon_sales = sum(parse_int(row[i]) for i in coupon_col_indices if i < len(row))
 
         # Determine primary dept = max sales
         primary = max(dept_sales.items(), key=lambda x: x[1])[0] if any(dept_sales.values()) else "ヘア"
@@ -182,6 +195,8 @@ def load_staff_ranking(path: Path, store_id: str, year_month: str) -> list[dict]
             "shop_customers": parse_int(row[23]),
             "shop_pct": parse_pct(row[24]),
             "purchase_pct": parse_pct(row[25]),
+            "hpb_sales": hpb_sales,
+            "other_coupon_sales": other_coupon_sales,
             "dept_sales": dept_sales,
             "primary_dept": primary,
             "hidden": staff_name in HIDDEN_STAFF_NAMES,
@@ -216,6 +231,8 @@ def aggregate_monthly_by_store(staff_rows: list[dict]) -> dict:
         "tech_customers_male": 0,
         "tech_customers_female": 0,
         "shop_sales": 0,
+        "hpb_sales": 0,
+        "other_coupon_sales": 0,
         "customers": 0,
         "tech_customers": 0,
         "tech_customers_nominated": 0,
@@ -240,6 +257,8 @@ def aggregate_monthly_by_store(staff_rows: list[dict]) -> dict:
         bucket["tech_sales_female"] += s.get("tech_sales_female", 0)
         bucket["tech_customers_male"] += s.get("tech_customers_male", 0)
         bucket["tech_customers_female"] += s.get("tech_customers_female", 0)
+        bucket["hpb_sales"] += s.get("hpb_sales", 0)
+        bucket["other_coupon_sales"] += s.get("other_coupon_sales", 0)
         bucket["staff_count"] += 1
         bucket["staff"].append(s["name"])
         # by department: assign to primary dept

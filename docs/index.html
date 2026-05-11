@@ -459,6 +459,12 @@
       <div id="mgmtStaffProductivity" class="space-y-3"></div>
     </div>
 
+    <!-- HPB依存度 / クーポン使用率 -->
+    <div class="card p-5 mb-5">
+      <h3 class="section-title mb-3">HPB依存度 <span class="section-sub">HPBクーポン経由売上 / 技術売上</span></h3>
+      <div id="mgmtHpbDep"></div>
+    </div>
+
     <!-- 外部メディア (HotPepper / Instagram) -->
     <div class="card p-5 mb-5">
       <h3 class="section-title mb-3">外部メディア指標 <span class="section-sub">HotPepper Beauty 評価 / Instagram フォロワー</span></h3>
@@ -1033,6 +1039,26 @@ Chart.defaults.color = "#6B7280";
 Chart.defaults.borderColor = "#E5E7EB";
 Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", system-ui';
 
+// 退職スタッフのhidden flagを動的に適用 (profile.retired_date >= staff_row.month なら hidden)
+function applyRetiredStaffFlag() {
+  const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
+  const retiredMap = {};  // name → retired YYYYMM
+  for (const [name, p] of Object.entries(profiles)) {
+    if (p.retired) {
+      // retired は YYYY-MM-DD 形式。 YYYYMM に変換
+      const m = p.retired.match(/^(\d{4})-(\d{2})/);
+      if (m) retiredMap[name] = m[1] + m[2];
+    }
+  }
+  if (!Object.keys(retiredMap).length) return;
+  for (const s of (DATA.staff_rows || [])) {
+    const retYM = retiredMap[s.name];
+    if (retYM && s.month > retYM) {  // retired月の翌月以降は非表示
+      s.hidden = true;
+    }
+  }
+}
+
 async function loadData() {
   if (_dataLoaded) return;
   _dataLoaded = true;
@@ -1040,6 +1066,7 @@ async function loadData() {
   const d = await r.json();
   DATA = d;
   mergeLocalRecruitOverrides();
+  applyRetiredStaffFlag();
   document.getElementById("generatedAt").textContent = "generated " + d.generated_at;
   const pgen = document.getElementById("printGeneratedAt");
   if (pgen) pgen.textContent = d.generated_at;
@@ -1072,6 +1099,7 @@ async function loadData() {
       const localStr = JSON.stringify(DATA.staff_profiles || {});
       if (JSON.stringify(remoteSp) !== localStr) {
         DATA.staff_profiles = remoteSp;
+        applyRetiredStaffFlag();  // 退職フラグ再適用
         if (document.querySelector('[data-panel="staff"].active')) renderStaffTab();
       }
     }
@@ -2136,7 +2164,13 @@ async function saveRecruitForm(e) {
       const o2 = _loadRecruitOverrides();
       delete o2[id];
       _saveRecruitOverrides(o2);
-      showToast("✓ GitHub反映成功 (1-3分で全員に表示)", "good");
+      showToast("✓ GitHub反映成功 · 他端末にも順次反映 (1-3分)", "good");
+      // 即時 sync: 保存後すぐ raw から fetch して整合性確認 (キャッシュ無視)
+      setTimeout(async () => {
+        const remote = await fetchRemoteRecruitment();
+        if (remote) DATA.recruitment = remote;
+        renderRecruitTab();
+      }, 2000);
     } catch (err) {
       showToast("⚠️ GitHub反映失敗: " + err.message + " (ローカル保存は維持)", "error");
     }
@@ -3713,6 +3747,62 @@ function renderManagementTab() {
     <div class="text-[11px] text-gray-500 mt-3">※ 業態違い (綱島=ヘア専門 / 宮古島=トータルビューティ) のため、 客単価/指名率/リピート率の絶対比較は注意。 各店舗のトレンドを見ること推奨。</div>`;
   }
 
+  // HPB依存度: 当月の HPB クーポン売上 / 技術売上 + 前月比 (店舗別)
+  const hpbEl = document.getElementById("mgmtHpbDep");
+  if (hpbEl) {
+    const prevMonth = (() => {
+      const y = parseInt(SCOPE.month.slice(0,4));
+      const m = parseInt(SCOPE.month.slice(4,6));
+      const py = m === 1 ? y - 1 : y;
+      const pm = m === 1 ? 12 : m - 1;
+      return `${py}${String(pm).padStart(2,"0")}`;
+    })();
+    hpbEl.innerHTML = `<div class="grid lg:grid-cols-2 gap-3">${SCOPE.storeRows.map(r => {
+      const ms = r.ms;
+      const techSales = ms ? (ms.tech_sales || 0) : 0;
+      const hpbSales = ms ? (ms.hpb_sales || 0) : 0;
+      const otherCoupon = ms ? (ms.other_coupon_sales || 0) : 0;
+      const hpbRate = techSales ? (hpbSales / techSales * 100) : 0;
+      // 前月比
+      const prevMs = (DATA.monthly_by_store[r.sid] || {})[prevMonth];
+      let prevRate = null, deltaRate = null;
+      if (prevMs && prevMs.tech_sales) {
+        prevRate = (prevMs.hpb_sales || 0) / prevMs.tech_sales * 100;
+        deltaRate = hpbRate - prevRate;
+      }
+      const gradient = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+      const rateColor = hpbRate < 30 ? "var(--accent-green)" : hpbRate < 50 ? "var(--accent-yellow)" : "var(--accent-red)";
+      return `<div class="card overflow-hidden">
+        <div class="${gradient} text-white px-4 py-2 text-sm font-bold">${r.store.name}</div>
+        <div class="p-4">
+          <div class="flex items-baseline justify-between mb-3">
+            <span class="text-xs text-gray-500">HPB依存度</span>
+            <span class="kpi-num text-2xl font-bold" style="color:${rateColor}">${hpbRate.toFixed(1)}%</span>
+          </div>
+          <div class="progress-track mb-2" style="height:8px"><div class="progress-fill" style="width:${Math.min(100, hpbRate)}%; background:${rateColor}"></div></div>
+          <div class="grid grid-cols-3 gap-2 text-xs mt-3">
+            <div>
+              <div class="text-gray-500">HPB売上</div>
+              <div class="kpi-num font-semibold">${fmt(hpbSales)}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">他クーポン</div>
+              <div class="kpi-num font-semibold">${fmt(otherCoupon)}</div>
+            </div>
+            <div>
+              <div class="text-gray-500">技術売上 全</div>
+              <div class="kpi-num font-semibold">${fmt(techSales)}</div>
+            </div>
+          </div>
+          ${deltaRate != null ? `<div class="text-[11px] mt-2" style="color:${deltaRate <= 0 ? '#10B981' : '#DC2626'}; font-weight:600">
+            ${deltaRate >= 0 ? '▲' : '▼'} ${Math.abs(deltaRate).toFixed(1)}pt (前月 ${prevRate.toFixed(1)}%)
+          </div>` : ""}
+        </div>
+      </div>`;
+    }).join("")}</div>
+    <div class="text-[11px] text-gray-400 mt-3">※ HPB依存度は低いほど自社集客力が高い。 30%未満=◯ / 30-50%=注意 / 50%以上=要対策</div>`;
+  }
+
   // 外部メディア (HotPepper / Instagram) - 履歴データから最新+前回の比較
   const extEl = document.getElementById("mgmtExternal");
   if (extEl) {
@@ -3736,21 +3826,34 @@ function renderManagementTab() {
         const ratingDelta = hpCur.rating != null && hpPrev.rating != null ? (hpCur.rating - hpPrev.rating).toFixed(2) : null;
         const reviewDelta = hpCur.review_count != null && hpPrev.review_count != null ? (hpCur.review_count - hpPrev.review_count) : null;
         const followDelta = igCur.followers != null && igPrev.followers != null ? (igCur.followers - igPrev.followers) : null;
+        const recentReviews = (hpCur.recent_reviews || []).slice(0, 3);
         return `<div class="card overflow-hidden">
           <div class="${gradient} text-white px-4 py-2 text-sm font-bold">${r.store.name}</div>
-          <div class="p-4 grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div class="text-[11px] text-gray-500">HotPepper 評価</div>
-              <div class="kpi-num text-xl font-bold mt-0.5">${hpCur.rating != null ? "★ " + hpCur.rating.toFixed(2) : "—"}</div>
-              <div class="text-[11px] text-gray-500 mt-1">口コミ ${hpCur.review_count != null ? hpCur.review_count + "件" : "—"} ${reviewDelta != null && reviewDelta > 0 ? `<span class="text-green-600">+${reviewDelta}</span>` : ""}</div>
-              ${ratingDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${parseFloat(ratingDelta) >= 0 ? '#10B981' : '#DC2626'}">${parseFloat(ratingDelta) >= 0 ? '+' : ''}${ratingDelta} (前回比)</div>` : ""}
+          <div class="p-4">
+            <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+              <div>
+                <div class="text-[11px] text-gray-500">HotPepper 評価</div>
+                <div class="kpi-num text-xl font-bold mt-0.5">${hpCur.rating != null ? "★ " + hpCur.rating.toFixed(2) : "—"}</div>
+                <div class="text-[11px] text-gray-500 mt-1">口コミ ${hpCur.review_count != null ? hpCur.review_count + "件" : "—"} ${reviewDelta != null && reviewDelta > 0 ? `<span class="text-green-600">+${reviewDelta}</span>` : ""}</div>
+                ${ratingDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${parseFloat(ratingDelta) >= 0 ? '#10B981' : '#DC2626'}">${parseFloat(ratingDelta) >= 0 ? '+' : ''}${ratingDelta} (前回比)</div>` : ""}
+              </div>
+              <div>
+                <div class="text-[11px] text-gray-500">Instagram</div>
+                <div class="kpi-num text-xl font-bold mt-0.5">${igCur.followers != null ? igCur.followers.toLocaleString() : "—"}</div>
+                <div class="text-[11px] text-gray-500 mt-1">フォロワー ${igCur.posts != null ? "· 投稿 " + igCur.posts : ""}</div>
+                ${followDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${followDelta >= 0 ? '#10B981' : '#DC2626'}">${followDelta >= 0 ? '+' : ''}${followDelta} (前回比)</div>` : ""}
+              </div>
             </div>
-            <div>
-              <div class="text-[11px] text-gray-500">Instagram</div>
-              <div class="kpi-num text-xl font-bold mt-0.5">${igCur.followers != null ? igCur.followers.toLocaleString() : "—"}</div>
-              <div class="text-[11px] text-gray-500 mt-1">フォロワー ${igCur.posts != null ? "· 投稿 " + igCur.posts : ""}</div>
-              ${followDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${followDelta >= 0 ? '#10B981' : '#DC2626'}">${followDelta >= 0 ? '+' : ''}${followDelta} (前回比)</div>` : ""}
-            </div>
+            ${recentReviews.length ? `<div class="border-t border-gray-100 pt-3">
+              <div class="text-[11px] text-gray-500 mb-2 font-semibold">最近の口コミ ${recentReviews.length}件</div>
+              <div class="space-y-2">${recentReviews.map(rv => `
+                <div class="text-[11px] bg-gray-50 rounded p-2">
+                  ${rv.rating != null ? `<span class="font-bold text-yellow-600">★ ${rv.rating}</span> ` : ""}
+                  ${rv.date ? `<span class="text-gray-400">${rv.date}</span>` : ""}
+                  <div class="text-gray-700 mt-1">${rv.text}</div>
+                </div>
+              `).join("")}</div>
+            </div>` : ""}
           </div>
         </div>`;
       }).join("");
