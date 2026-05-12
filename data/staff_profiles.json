@@ -8,7 +8,8 @@
     "joined": "YYYY-MM-DD",
     "retired": "YYYY-MM-DD (退職日, 任意)",
     "role": "店長 / トップ / アシスタント etc",
-    "employment_type": "正社員 / 業務委託 / パート / アルバイト / インターン"
+    "employment_type": "正社員 / 業務委託 / パート / アルバイト / インターン",
+    "irregular": "true (不定期出勤の業務委託、 退職とは区別、 任意)"
   },
   "profiles": {
     "渡辺 真也": {
@@ -103,14 +104,20 @@
     "ふせ ほのか": {
       "display_name": "ふせほのか",
       "photo": "ふせほのか.jpg",
-      "retired": "2024-07-01",
-      "_note": "綱島ヘア、 退職済 (CSV最終 202406)。 退職日は推定値"
+      "kana": "フセ ホノカ",
+      "role": "スタイリスト",
+      "employment_type": "業務委託",
+      "irregular": true,
+      "_note": "綱島ヘア、 不定期出勤の業務委託 (CSV最終 202406)"
     },
     "小栗 麻衣": {
       "display_name": "小栗",
       "photo": "小栗.jpg",
-      "retired": "2025-04-01",
-      "_note": "綱島ヘア、 退職済 (CSV最終 202503)。 退職日は推定値"
+      "kana": "オグリ マイ",
+      "role": "スタイリスト",
+      "employment_type": "業務委託",
+      "irregular": true,
+      "_note": "綱島ヘア、 不定期出勤の業務委託 (CSV最終 202503)"
     },
     "金山 隆介": {
       "display_name": "KAMA",

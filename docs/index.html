@@ -318,6 +318,16 @@
       <div id="staffTabActions" class="flex items-center gap-2"></div>
     </div>
     <div class="space-y-4" id="staffRankings"></div>
+    <!-- 業務委託・不定期 (master toggle) -->
+    <div id="irregularStaffSection" class="hidden mt-6">
+      <div class="card overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between" style="background:#FFFBEB">
+          <h3 class="section-title">業務委託・不定期スタッフ <span class="section-sub">退職ではない / 不定期出勤</span></h3>
+          <span class="text-xs text-gray-400" id="irregularStaffCount"></span>
+        </div>
+        <div class="p-4" id="irregularStaffList"></div>
+      </div>
+    </div>
     <!-- 退職者リスト (master toggle) -->
     <div id="retiredStaffSection" class="hidden mt-6">
       <div class="card overflow-hidden">
@@ -644,6 +654,13 @@
             </select>
           </label>
         </div>
+        <label class="block bg-amber-50 border border-amber-200 rounded p-2.5">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="sp_irregular" class="w-4 h-4" />
+            <span class="text-xs font-semibold text-amber-800">業務委託・不定期</span>
+          </div>
+          <div class="text-[11px] text-gray-600 mt-1 ml-6">退職ではないが、 不定期出勤の業務委託の場合にチェック。 退職スタッフリストには出ない</div>
+        </label>
         <div>
           <span class="text-xs text-gray-600">写真</span>
           <div class="flex items-center gap-3 mt-1">
@@ -3631,18 +3648,28 @@ function renderStaffTab() {
     });
   });
 
-  // master のみ: 全スタッフ管理 (退職者含む) トグル
+  // master のみ: 全スタッフ管理 (業務委託・退職者含む) トグル
   const actionsEl = document.getElementById("staffTabActions");
   if (actionsEl && currentRole === "master") {
-    const isShown = !document.getElementById("retiredStaffSection").classList.contains("hidden");
-    actionsEl.innerHTML = `<button id="toggleRetiredBtn" class="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-3 py-1.5">${isShown ? "退職者を隠す" : "退職者も表示 (本部のみ)"}</button>`;
+    const irrShown = !document.getElementById("irregularStaffSection").classList.contains("hidden");
+    const retShown = !document.getElementById("retiredStaffSection").classList.contains("hidden");
+    actionsEl.innerHTML = `
+      <button id="toggleIrregularBtn" class="text-xs bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded px-3 py-1.5">${irrShown ? "業務委託を隠す" : "業務委託・不定期 (本部のみ)"}</button>
+      <button id="toggleRetiredBtn" class="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded px-3 py-1.5">${retShown ? "退職者を隠す" : "退職者も表示 (本部のみ)"}</button>`;
+    document.getElementById("toggleIrregularBtn").onclick = () => {
+      const sec = document.getElementById("irregularStaffSection");
+      sec.classList.toggle("hidden");
+      renderIrregularStaffList();
+      renderStaffTab();
+    };
     document.getElementById("toggleRetiredBtn").onclick = () => {
       const sec = document.getElementById("retiredStaffSection");
       sec.classList.toggle("hidden");
       renderRetiredStaffList();
-      renderStaffTab();  // re-render to update button label
+      renderStaffTab();
     };
-    renderRetiredStaffList();  // refresh list if visible
+    renderIrregularStaffList();
+    renderRetiredStaffList();
   } else if (actionsEl) {
     actionsEl.innerHTML = "";
   }
@@ -3653,11 +3680,20 @@ function renderRetiredStaffList() {
   const sec = document.getElementById("retiredStaffSection");
   if (!sec || sec.classList.contains("hidden")) return;
   const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
-  const retiredEntries = Object.entries(profiles).filter(([_, p]) => p.retired);
+  // 退職判定: retired 日付が今日以前 (未来日付なら現役扱い)
+  const todayYMD = new Date().toISOString().slice(0, 10);
+  const retiredEntries = Object.entries(profiles).filter(([_, p]) => p.retired && p.retired <= todayYMD && !p.irregular);
   // 過去出現した全スタッフ + 現在月にいない人 (CSV ベース で退職判定)
   const currentNames = new Set((DATA.staff_rows || []).filter(s => s.month === currentMonth).map(s => s.name));
   const allHistoricalNames = new Set((DATA.staff_rows || []).map(s => s.name));
-  const csvRetired = [...allHistoricalNames].filter(n => !currentNames.has(n)).filter(n => !(profiles[n] && profiles[n].hidden));
+  // 業務委託・不定期 や hidden は退職とみなさない
+  const csvRetired = [...allHistoricalNames].filter(n => !currentNames.has(n)).filter(n => {
+    const p = profiles[n];
+    if (!p) return true;
+    if (p.hidden) return false;
+    if (p.irregular) return false;
+    return true;
+  });
 
   // 統合: profiles に retired があるもの + CSV で消えてるもの (重複は排除)
   const allRetired = new Map();
@@ -3694,6 +3730,49 @@ function renderRetiredStaffList() {
         <div class="font-semibold text-sm truncate">${name}${profile.display_name && profile.display_name !== name ? ` <span class="text-xs text-gray-400">(${profile.display_name})</span>` : ""}</div>
         <div class="text-[11px] text-gray-500 truncate">${storeName} ${info?.primary_dept ? `· ${info.primary_dept}` : ""}</div>
         <div class="text-[11px] text-gray-400">退職 ${profile.retired || "(日付不明)"}</div>
+      </div>
+      <button class="text-xs text-blue-600 hover:text-blue-800" onclick="openStaffProfileModal('${name.replace(/'/g,"\\'")}')">編集</button>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+// 業務委託・不定期スタッフリスト (master only)
+function renderIrregularStaffList() {
+  const sec = document.getElementById("irregularStaffSection");
+  if (!sec || sec.classList.contains("hidden")) return;
+  const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
+  const list = Object.entries(profiles)
+    .filter(([_, p]) => p.irregular)
+    .map(([name, p]) => ({ name, profile: p }));
+
+  document.getElementById("irregularStaffCount").textContent = `${list.length}名`;
+  const listEl = document.getElementById("irregularStaffList");
+  if (!list.length) {
+    listEl.innerHTML = `<div class="text-sm text-gray-400 text-center py-6">業務委託・不定期スタッフなし</div>`;
+    return;
+  }
+  // 過去出現の最終月 + 店舗 を取得
+  const lastInfo = (name) => {
+    const rows = (DATA.staff_rows || []).filter(s => s.name === name).sort((a, b) => b.month.localeCompare(a.month));
+    return rows[0] || null;
+  };
+  // 最終出勤月の新しい順
+  list.sort((a, b) => {
+    const la = lastInfo(a.name)?.month || "000000";
+    const lb = lastInfo(b.name)?.month || "000000";
+    return lb.localeCompare(la);
+  });
+  listEl.innerHTML = `<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">${list.map(({ name, profile }) => {
+    const info = lastInfo(name);
+    const storeName = info ? DATA.stores[info.store]?.name : "—";
+    const avatar = info ? staffAvatar(info, 48) : `<div class="rounded-full bg-gray-300" style="width:48px;height:48px"></div>`;
+    const lastMonth = info ? `${info.month.slice(0,4)}/${info.month.slice(4,6)}` : "—";
+    return `<div class="flex items-center gap-3 p-3 border border-amber-200 rounded-lg hover:bg-amber-50" style="background:#FFFBF0">
+      ${avatar}
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-sm truncate">${name}${profile.display_name && profile.display_name !== name ? ` <span class="text-xs text-gray-400">(${profile.display_name})</span>` : ""}</div>
+        <div class="text-[11px] text-gray-500 truncate">${storeName} ${info?.primary_dept ? `· ${info.primary_dept}` : ""}${profile.role ? ` · ${profile.role}` : ""}</div>
+        <div class="text-[11px] text-amber-700 font-semibold">業務委託 · 最終出勤 ${lastMonth}</div>
       </div>
       <button class="text-xs text-blue-600 hover:text-blue-800" onclick="openStaffProfileModal('${name.replace(/'/g,"\\'")}')">編集</button>
     </div>`;
@@ -4693,6 +4772,7 @@ function openStaffProfileModal(staffName, prefill) {
   document.getElementById("sp_retired").value = p.retired || "";
   document.getElementById("sp_role").value = p.role || "";
   document.getElementById("sp_employment_type").value = p.employment_type || "";
+  document.getElementById("sp_irregular").checked = !!p.irregular;
   document.getElementById("sp_photo").value = p.photo || "";
   // プレビュー
   const previewEl = document.getElementById("sp_photo_preview");
@@ -4728,6 +4808,7 @@ async function saveStaffProfileForm(e) {
     retired: document.getElementById("sp_retired").value || undefined,
     role: document.getElementById("sp_role").value.trim() || undefined,
     employment_type: document.getElementById("sp_employment_type").value || undefined,
+    irregular: document.getElementById("sp_irregular").checked || undefined,
   };
   // Remove undefined keys
   Object.keys(profile).forEach(k => profile[k] === undefined && delete profile[k]);
