@@ -544,9 +544,13 @@
 
   <!-- =========== Tab 6: 採用 =========== -->
   <div class="tab-panel" data-panel="recruit">
-    <div class="mb-4">
-      <h2 class="text-2xl font-bold">採用</h2>
-      <div class="text-sm text-gray-500 mt-1">候補者管理 / ファネル / 募集経路 分析</div>
+    <div class="mb-4 flex items-baseline justify-between flex-wrap gap-2">
+      <div>
+        <h2 class="text-2xl font-bold">採用</h2>
+        <div class="text-sm text-gray-500 mt-1">候補者管理 / ファネル / 募集経路 分析</div>
+      </div>
+      <!-- FY タブ -->
+      <div id="recruitFYTabs" class="flex gap-1 bg-gray-100 rounded-lg p-1"></div>
     </div>
 
     <!-- KPIs -->
@@ -573,11 +577,11 @@
         <h3 class="section-title">候補者リスト</h3>
         <div class="flex gap-2 items-center">
           <select id="recruitStatusFilter" class="border border-gray-300 rounded px-2 py-1 text-xs">
+            <option value="all">全て</option>
             <option value="active_plus_hired">進行中 + 入社済</option>
             <option value="active">進行中のみ</option>
             <option value="hired">入社済のみ</option>
             <option value="closed_negative">辞退・不採用</option>
-            <option value="all">全て</option>
           </select>
           <button id="recruitAddBtn" class="hidden text-xs bg-black text-white rounded px-3 py-1 hover:bg-gray-800 transition">+ 候補者を追加</button>
           <button id="recruitExportBtn" class="hidden text-xs bg-gray-100 border border-gray-300 rounded px-3 py-1 hover:bg-gray-200 transition" title="recruitment.json をダウンロード">JSON出力</button>
@@ -2101,15 +2105,64 @@ function renderRecruitTab() {
     }
   }
 
-  // Filter for KPIs (this month applied count etc.)
+  // FY計算ヘルパー (HANABI 会計年度 = 5月開始 → 翌4月)
+  const fyOfDate = (dateStr) => {
+    if (!dateStr) return null;
+    const m = dateStr.match(/^(\d{4})-(\d{2})/);
+    if (!m) return null;
+    const y = parseInt(m[1]), mo = parseInt(m[2]);
+    return mo >= 5 ? y : y - 1;  // 5月以降は当年FY、 1-4月は前年FY
+  };
+  // 候補者の FY 分布
+  const fySet = new Set();
+  for (const c of candidates) {
+    const fy = fyOfDate(c.applied_date);
+    if (fy != null) fySet.add(fy);
+  }
+  const today = new Date();
+  const curFY = today.getMonth() + 1 >= 5 ? today.getFullYear() : today.getFullYear() - 1;
+  fySet.add(curFY);  // 現在FY は常に表示
+  const fyList = Array.from(fySet).sort((a,b) => b - a);  // 新しい順
+
+  // 選択中の FY (グローバル変数 + localStorage)
+  if (window._recruitSelectedFY === undefined) {
+    const savedStr = localStorage.getItem("hanabi_recruit_fy_v1") || "";
+    if (savedStr === "ALL") {
+      window._recruitSelectedFY = "ALL";
+    } else {
+      const saved = parseInt(savedStr);
+      window._recruitSelectedFY = isNaN(saved) ? curFY : saved;
+    }
+  }
+  const selectedFY = window._recruitSelectedFY;
+
+  // FY tabs UI
+  const fyTabsEl = document.getElementById("recruitFYTabs");
+  if (fyTabsEl) {
+    const tabBtn = (label, value, isActive) => `
+      <button class="text-xs font-semibold px-3 py-1.5 rounded-md transition ${isActive ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-800'}" onclick="selectRecruitFY('${value}')">${label}</button>`;
+    let tabs = "";
+    for (const fy of fyList) {
+      tabs += tabBtn(`FY${fy}`, String(fy), String(selectedFY) === String(fy));
+    }
+    tabs += tabBtn("全FY", "ALL", selectedFY === "ALL");
+    fyTabsEl.innerHTML = tabs;
+  }
+
+  // FY フィルタ適用後の候補者
+  const fyCandidates = selectedFY === "ALL"
+    ? candidates
+    : candidates.filter(c => fyOfDate(c.applied_date) === parseInt(selectedFY));
+
+  // Filter for KPIs (FY 内)
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const thisMonthApplied = candidates.filter(c => (c.applied_date || "").startsWith(thisMonth));
-  const totalActive = candidates.filter(c => (settings.active_statuses || []).includes(c.status)).length;
-  const interviewed = candidates.filter(c => ["面接調整中","面接日確定","面接1","面接2","内定","入社"].includes(c.status)).length;
-  const offered = candidates.filter(c => ["内定","入社"].includes(c.status)).length;
-  const hired = candidates.filter(c => c.status === "入社").length;
-  const totalApplied = candidates.length;
+  const thisMonthApplied = fyCandidates.filter(c => (c.applied_date || "").startsWith(thisMonth));
+  const totalActive = fyCandidates.filter(c => (settings.active_statuses || []).includes(c.status)).length;
+  const interviewed = fyCandidates.filter(c => ["面接調整中","面接日確定","面接1","面接2","内定","入社"].includes(c.status)).length;
+  const offered = fyCandidates.filter(c => ["内定","入社"].includes(c.status)).length;
+  const hired = fyCandidates.filter(c => c.status === "入社").length;
+  const totalApplied = fyCandidates.length;
   const offerRate = interviewed ? (offered/interviewed*100).toFixed(0) : 0;
   const hireRate = totalApplied ? (hired/totalApplied*100).toFixed(0) : 0;
 
@@ -2140,17 +2193,17 @@ function renderRecruitTab() {
       <div class="text-[11px] text-gray-500">採用率 ${totalApplied ? hireRate+"%" : "—"}</div>
     </div>`;
 
-  // Funnel
+  // Funnel (FY内)
   const stages = ["応募", "書類選考", "面接調整中", "面接日確定", "内定", "入社"];
   const funnel = stages.map(s => {
-    const reachedCount = candidates.filter(c => {
+    const reachedCount = fyCandidates.filter(c => {
       const idx = stages.indexOf(c.status);
       return idx >= stages.indexOf(s) || ["辞退","不採用"].includes(c.status) && stages.indexOf(s) === 0;
     }).length;
     return { stage: s, count: reachedCount };
   });
   const maxFunnel = Math.max(...funnel.map(f => f.count), 1);
-  document.getElementById("recruitFunnel").innerHTML = funnel.length === 0 || candidates.length === 0
+  document.getElementById("recruitFunnel").innerHTML = funnel.length === 0 || fyCandidates.length === 0
     ? `<div class="text-center text-sm text-gray-400 py-6">候補者データなし</div>`
     : funnel.map(f => {
         const w = (f.count / maxFunnel * 100).toFixed(1);
@@ -2163,9 +2216,9 @@ function renderRecruitTab() {
         </div>`;
       }).join("");
 
-  // Source
+  // Source (FY内)
   const sources = {};
-  for (const c of candidates) {
+  for (const c of fyCandidates) {
     const src = c.source || "未指定";
     sources[src] = (sources[src] || 0) + 1;
   }
@@ -2175,7 +2228,7 @@ function renderRecruitTab() {
     ? `<div class="text-center text-sm text-gray-400 py-6">候補者データなし</div>`
     : sortedSrc.map(([src, count]) => {
         const w = (count / srcMax * 100).toFixed(1);
-        const pct = candidates.length ? (count / candidates.length * 100).toFixed(1) : 0;
+        const pct = fyCandidates.length ? (count / fyCandidates.length * 100).toFixed(1) : 0;
         return `<div class="flex items-center gap-3 text-sm">
           <div class="w-24 text-gray-700 truncate">${src}</div>
           <div class="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
@@ -2186,17 +2239,23 @@ function renderRecruitTab() {
         </div>`;
       }).join("");
 
-  // Candidate list
+  // Candidate list (FY 内 + ステータスフィルタ + 応募日 DESC ソート)
   const filterSel = document.getElementById("recruitStatusFilter");
   const drawList = () => {
     const filter = filterSel.value;
-    let filtered = candidates;
+    let filtered = fyCandidates;
     const activeStatuses = settings.active_statuses || [];
-    if (filter === "active") filtered = candidates.filter(c => activeStatuses.includes(c.status));
-    else if (filter === "active_plus_hired") filtered = candidates.filter(c => activeStatuses.includes(c.status) || c.status === "入社");
-    else if (filter === "hired") filtered = candidates.filter(c => c.status === "入社");
-    else if (filter === "closed_negative") filtered = candidates.filter(c => c.status === "辞退" || c.status === "不採用");
-    else if (filter === "closed") filtered = candidates.filter(c => (settings.closed_statuses || []).includes(c.status));  // 後方互換
+    if (filter === "active") filtered = fyCandidates.filter(c => activeStatuses.includes(c.status));
+    else if (filter === "active_plus_hired") filtered = fyCandidates.filter(c => activeStatuses.includes(c.status) || c.status === "入社");
+    else if (filter === "hired") filtered = fyCandidates.filter(c => c.status === "入社");
+    else if (filter === "closed_negative") filtered = fyCandidates.filter(c => c.status === "辞退" || c.status === "不採用");
+    else if (filter === "closed") filtered = fyCandidates.filter(c => (settings.closed_statuses || []).includes(c.status));  // 後方互換
+    // 応募日 新しい順 でソート (空 applied_date は最後)
+    filtered = [...filtered].sort((a, b) => {
+      const da = a.applied_date || "0000-00-00";
+      const db = b.applied_date || "0000-00-00";
+      return db.localeCompare(da);  // DESC
+    });
     const root = document.getElementById("recruitList");
     if (!filtered.length) {
       root.innerHTML = `<div class="text-center text-sm text-gray-400 py-12">該当候補者なし<br><span class="text-[11px]">data/recruitment.json に候補者を追加してください</span></div>`;
@@ -5185,6 +5244,11 @@ async function retryUnsyncedStaffProfile() {
 window.openStaffProfileModal = openStaffProfileModal;
 window.retryUnsyncedRecruit = retryUnsyncedRecruit;
 window.retryUnsyncedStaffProfile = retryUnsyncedStaffProfile;
+window.selectRecruitFY = function(fy) {
+  window._recruitSelectedFY = fy === "ALL" ? "ALL" : parseInt(fy);
+  try { localStorage.setItem("hanabi_recruit_fy_v1", String(window._recruitSelectedFY)); } catch {}
+  renderRecruitTab();
+};
 
 // 画像をクライアントサイドでリサイズ (最大400px) + base64 encode
 function resizeImageToBase64(file, maxDim = 400) {
