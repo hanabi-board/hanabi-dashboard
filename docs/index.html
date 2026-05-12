@@ -562,6 +562,9 @@
       </div>
     </div>
 
+    <!-- 未同期警告 (GitHub に push されていないローカル変更がある場合) -->
+    <div id="recruitUnsyncedBanner" class="hidden mb-3"></div>
+
     <!-- Candidate list -->
     <div class="card overflow-hidden mb-5">
       <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
@@ -2058,6 +2061,40 @@ function renderRecruitTab() {
   const settings = data._settings || {};
   const candidates = data.candidates || [];
 
+  // 未同期 (ローカル変更が GitHub に push されてない) の警告バナー
+  const unsyncedBanner = document.getElementById("recruitUnsyncedBanner");
+  if (unsyncedBanner) {
+    const overrides = _loadRecruitOverrides();
+    const unsyncedCount = Object.keys(overrides).length;
+    const hasToken = !!getGhToken();
+    if (unsyncedCount > 0 && currentRole === "master") {
+      unsyncedBanner.classList.remove("hidden");
+      unsyncedBanner.innerHTML = `
+        <div class="rounded-lg border-2 border-red-300 bg-red-50 p-4">
+          <div class="flex items-start gap-3">
+            <span class="text-2xl flex-shrink-0">⚠️</span>
+            <div class="flex-1">
+              <div class="font-bold text-red-900 mb-1">${unsyncedCount}件の編集が GitHub に保存されていません</div>
+              <div class="text-sm text-red-800 mb-2">
+                ${!hasToken
+                  ? "GitHubトークンが未設定です。 ヘッダーの「GH」 ボタンからトークンを入力してください。"
+                  : "GitHub反映に失敗してる可能性があります。 トークンが期限切れの可能性も。"}
+                <br>下の「再送信」 ボタンで再試行できます。
+              </div>
+              <div class="flex gap-2 flex-wrap">
+                <button onclick="retryUnsyncedRecruit()" class="text-xs bg-red-600 text-white rounded px-3 py-1.5 hover:bg-red-700">🔄 GitHub に再送信</button>
+                ${!hasToken ? `<button onclick="document.getElementById('ghTokenBtn').click()" class="text-xs bg-gray-100 border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-200">⚙ GHトークン設定</button>` : ""}
+                <button onclick="if(confirm('ローカル変更を破棄します。 よろしいですか?')) { localStorage.removeItem('hanabi_recruit_overrides_v1'); location.reload(); }" class="text-xs bg-white border border-red-300 text-red-700 rounded px-3 py-1.5 hover:bg-red-100">変更を破棄</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      unsyncedBanner.classList.add("hidden");
+      unsyncedBanner.innerHTML = "";
+    }
+  }
+
   // Filter for KPIs (this month applied count etc.)
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -2356,6 +2393,37 @@ async function deleteRecruitCurrent() {
     showToast("✓ 削除しました (ローカルのみ)", "warn");
   }
 }
+// 未同期の変更を再送信 (バナーから呼ばれる)
+async function retryUnsyncedRecruit() {
+  if (currentRole !== "master") return;
+  if (!getGhToken()) {
+    showToast("⚠️ GitHubトークンが未設定です。 ヘッダーの「GH」 ボタンから設定してください", "error");
+    return;
+  }
+  const overrides = _loadRecruitOverrides();
+  const count = Object.keys(overrides).length;
+  if (count === 0) {
+    showToast("未同期の変更はありません", "info");
+    return;
+  }
+  showToast(`${count}件の変更を GitHub に再送信中...`, "info");
+  try {
+    const cleaned = { ...DATA.recruitment };
+    cleaned.candidates = (cleaned.candidates || []).filter(c => c);
+    await pushJsonToGitHub("data/recruitment.json", cleaned, `Resync recruitment.json (${count} unsynced changes)`);
+    // Success → clear all overrides
+    localStorage.removeItem("hanabi_recruit_overrides_v1");
+    showToast(`✓ ${count}件 GitHub反映成功`, "good");
+    setTimeout(async () => {
+      const remote = await fetchRemoteRecruitment();
+      if (remote) DATA.recruitment = remote;
+      renderRecruitTab();
+    }, 2000);
+  } catch (err) {
+    showToast("⚠️ 再送信失敗: " + err.message + "\nトークンが期限切れの可能性があります。 GHボタンから再発行してください", "error");
+  }
+}
+
 function exportRecruitJson() {
   if (currentRole !== "master") return;
   const out = JSON.stringify(DATA.recruitment, null, 2);
@@ -4998,6 +5066,7 @@ async function deleteStaffProfile() {
   }
 }
 window.openStaffProfileModal = openStaffProfileModal;
+window.retryUnsyncedRecruit = retryUnsyncedRecruit;
 
 // 画像をクライアントサイドでリサイズ (最大400px) + base64 encode
 function resizeImageToBase64(file, maxDim = 400) {
