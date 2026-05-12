@@ -5794,11 +5794,8 @@ function drawDailySalesChart(month) {
 // Donut charts for each scope (全社/綱島/宮古島)
 function drawVisitDonut() {
   if (!SCOPE) return;
-  const scopes = [
-    { id: "company", vis: SCOPE.cVis },
-    { id: "tsunashima", vis: SCOPE.storeRows.find(r=>r.sid==="tsunashima")?.vis },
-    { id: "miyakojima", vis: SCOPE.storeRows.find(r=>r.sid==="miyakojima")?.vis },
-  ];
+  // 全店舗を動的に (新店舗 OPEN対応)
+  const scopes = SCOPE.storeRows.map(r => ({ id: r.sid, vis: r.vis }));
   for (const s of scopes) {
     const el = document.getElementById("vDonut_" + s.id);
     if (!el || !s.vis || !s.vis.customers) continue;
