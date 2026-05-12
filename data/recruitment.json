@@ -32,16 +32,15 @@
       "その他"
     ],
     "roles": [
-      "ヘア (スタイリスト)",
-      "ヘア (アシスタント)",
-      "アイ",
-      "ネイル",
-      "受付",
-      "管理者"
+      "ヘア（スタイリスト）",
+      "ヘア（アシスタント）",
+      "アイリスト",
+      "ネイリスト"
     ],
     "stores": [
       "Hanabi 綱島店",
       "ELLE by Hanabi 宮古島店",
+      "アイラッシュ新店舗",
       "未定"
     ]
   },
@@ -51,7 +50,7 @@
       "applied_date": "2026-05-11",
       "name": "伊集 月菜",
       "kana": "イジュ　ルナ",
-      "role": "ネイル",
+      "role": "ネイリスト",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 2,
       "source": "リファラル",
@@ -63,8 +62,8 @@
       "applied_date": "2026-02-02",
       "name": "牛久保 麻衣",
       "kana": "ウシクボ　マイ",
-      "role": "",
-      "store_pref": "ELLE by Hanabi 宮古島店",
+      "role": "アイリスト",
+      "store_pref": "アイラッシュ新店舗",
       "experience_years": 0,
       "source": "リジョブ",
       "status": "応募",
@@ -75,7 +74,7 @@
       "applied_date": "2026-04-01",
       "name": "廣原 理乃",
       "kana": "ヒロハラ アヤノ",
-      "role": "ネイル",
+      "role": "ネイリスト",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 2,
       "source": "リファラル",
@@ -87,7 +86,7 @@
       "applied_date": "2026-03-01",
       "name": "大浜 綺麗羅",
       "kana": "オオハマ キララ",
-      "role": "ネイル",
+      "role": "ネイリスト",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 1,
       "source": "リファラル",
