@@ -573,9 +573,11 @@
         <h3 class="section-title">候補者リスト</h3>
         <div class="flex gap-2 items-center">
           <select id="recruitStatusFilter" class="border border-gray-300 rounded px-2 py-1 text-xs">
+            <option value="active_plus_hired">進行中 + 入社済</option>
             <option value="active">進行中のみ</option>
+            <option value="hired">入社済のみ</option>
+            <option value="closed_negative">辞退・不採用</option>
             <option value="all">全て</option>
-            <option value="closed">クローズ済 (入社/辞退/不採用)</option>
           </select>
           <button id="recruitAddBtn" class="hidden text-xs bg-black text-white rounded px-3 py-1 hover:bg-gray-800 transition">+ 候補者を追加</button>
           <button id="recruitExportBtn" class="hidden text-xs bg-gray-100 border border-gray-300 rounded px-3 py-1 hover:bg-gray-200 transition" title="recruitment.json をダウンロード">JSON出力</button>
@@ -2189,8 +2191,12 @@ function renderRecruitTab() {
   const drawList = () => {
     const filter = filterSel.value;
     let filtered = candidates;
-    if (filter === "active") filtered = candidates.filter(c => (settings.active_statuses || []).includes(c.status));
-    else if (filter === "closed") filtered = candidates.filter(c => (settings.closed_statuses || []).includes(c.status));
+    const activeStatuses = settings.active_statuses || [];
+    if (filter === "active") filtered = candidates.filter(c => activeStatuses.includes(c.status));
+    else if (filter === "active_plus_hired") filtered = candidates.filter(c => activeStatuses.includes(c.status) || c.status === "入社");
+    else if (filter === "hired") filtered = candidates.filter(c => c.status === "入社");
+    else if (filter === "closed_negative") filtered = candidates.filter(c => c.status === "辞退" || c.status === "不採用");
+    else if (filter === "closed") filtered = candidates.filter(c => (settings.closed_statuses || []).includes(c.status));  // 後方互換
     const root = document.getElementById("recruitList");
     if (!filtered.length) {
       root.innerHTML = `<div class="text-center text-sm text-gray-400 py-12">該当候補者なし<br><span class="text-[11px]">data/recruitment.json に候補者を追加してください</span></div>`;
