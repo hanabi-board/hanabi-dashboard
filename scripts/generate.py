@@ -41,6 +41,18 @@ STORES = {
         "open_date": "2025-09-01",  # ELLE by Hanabi 宮古島店 開店
         "photos": ["miyakojima_1.jpg", "miyakojima_2.jpg"],
     },
+    "shinyokohama": {
+        "name": "ナイスネイル新横浜店",
+        "short": "新横浜",
+        "brand": "nicenail",
+        "departments": ["ネイル"],
+        "open_date": "2026-05-29",  # ナイスネイル新横浜店 OPEN (FY26)
+        "photos": [],  # 店舗写真は開店後アップロード予定
+        # ナイスネイル運営、 DENKO 出向スタッフ、 HANABI 予算管理
+        # 部門別合算からは独立扱い (ELLE宮古島の「ネイル」と混ぜない)
+        "independent_dept": True,  # True: 部門別合算から除外、 単独スライス扱い
+        "ui_color": "#9333EA",  # 紫系 (綱島ピンク / 宮古島ティール と被らない)
+    },
 }
 
 DEPARTMENTS = ("ヘア", "アイ", "ネイル")
@@ -143,14 +155,24 @@ def load_staff_ranking(path: Path, store_id: str, year_month: str) -> list[dict]
     headers = rows[0]
     out = []
     # Determine department per category column once
+    # _ で始まるカラムは NN拡張のためカテゴリ判定から除外
     cat_dept = []
     for i in range(26, len(headers)):
+        if headers[i].startswith("_"):
+            continue
         cat_dept.append((i, headers[i], classify_department(headers[i])))
+
+    # NN 拡張カラム (_nn_*) のインデックス
+    nn_op_count_idx = next((i for i, h in enumerate(headers) if h == "_nn_op_count"), None)
+    nn_op_rate_idx = next((i for i, h in enumerate(headers) if h == "_nn_op_rate"), None)
+    nn_work_days_idx = next((i for i, h in enumerate(headers) if h == "_nn_work_days"), None)
 
     # HPB / クーポン関連カラムのインデックスを動的検出
     hpb_col_indices = []
     coupon_col_indices = []
     for i, h in enumerate(headers):
+        if h.startswith("_"):
+            continue
         if "HPBクーポン" in h:  # (グランドメニュー)HPBクーポン, (クーポン)HPBクーポン, (ネイル)NHPBクーポン, (アイメニュー)IHPBクーポン
             hpb_col_indices.append(i)
         if "クーポン" in h and "HPB" not in h:  # BMクーポン等 HPB以外のクーポン
@@ -175,12 +197,17 @@ def load_staff_ranking(path: Path, store_id: str, year_month: str) -> list[dict]
         # Determine primary dept = max sales
         primary = max(dept_sales.items(), key=lambda x: x[1])[0] if any(dept_sales.values()) else "ヘア"
 
+        # NN拡張フィールド
+        nn_op_count = parse_int(row[nn_op_count_idx]) if nn_op_count_idx is not None and nn_op_count_idx < len(row) else 0
+        nn_op_rate = parse_pct(row[nn_op_rate_idx]) if nn_op_rate_idx is not None and nn_op_rate_idx < len(row) else 0
+        nn_work_days_val = parse_int(row[nn_work_days_idx]) if nn_work_days_idx is not None and nn_work_days_idx < len(row) else 0
+
         out.append({
             "store": store_id,
             "month": year_month,
             "name": staff_name,
             "category": row[1].strip(),
-            "work_days": parse_int(row[3]),
+            "work_days": parse_int(row[3]) if not nn_work_days_val else nn_work_days_val,
             "total_sales": parse_int(row[4]),
             "customers": parse_int(row[5]),
             "spend_per_customer": parse_int(row[6]),
@@ -202,9 +229,40 @@ def load_staff_ranking(path: Path, store_id: str, year_month: str) -> list[dict]
             "other_coupon_sales": other_coupon_sales,
             "dept_sales": dept_sales,
             "primary_dept": primary,
+            "_nn_op_count": nn_op_count,
+            "_nn_op_rate": nn_op_rate,
             "hidden": staff_name in HIDDEN_STAFF_NAMES,
         })
     return out
+
+
+def load_external_targets() -> dict:
+    """external_targets.json を読み込んで { store_id: { hotpepper, instagram } } 形式に"""
+    p = DATA / "external_targets.json"
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"  warn: failed to load external_targets.json: {e}")
+        return {}
+
+
+def load_nicenail_extras() -> dict:
+    """nicenail_extras_YYYYMM_<store>.json を全部読んで { store: { month: {...} } } 形式に集約"""
+    out = defaultdict(dict)
+    for p in DATA.glob("nicenail_extras_*.json"):
+        m = re.match(r"nicenail_extras_(\d{6})_([a-z]+)\.json", p.name)
+        if not m:
+            continue
+        ym, store_id = m.group(1), m.group(2)
+        if store_id not in STORES:
+            continue
+        try:
+            out[store_id][ym] = json.loads(p.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"  warn: failed to load {p.name}: {e}")
+    return dict(out)
 
 
 def discover_csvs() -> tuple[list[tuple[Path, str, str]], list[tuple[Path, str, str]]]:
@@ -497,6 +555,8 @@ def main():
         "jouhou_data": jouhou_data,
         "external": external,
         "denpyo_summary": denpyo_summary,
+        "nicenail_extras": load_nicenail_extras(),  # 新横浜店等の NN固有 KPI (OP率, 稼働率, 1日1名)
+        "external_targets": load_external_targets(),  # 店舗別 HPB/IG URL 設定
     }
 
     out_path = DOCS / "data.json"

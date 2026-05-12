@@ -70,6 +70,11 @@ YM=$(date +%Y%m)
 log "[1/5] Uレジ自動DL ($YM)"
 python3 scripts/auto_download.py "$YM" 2>&1 | tee -a "$LOG_FILE"
 
+# 1c. ナイスネイル → HANABI 集約変換 (新横浜店等、 ナイスネイル運営 HANABI 予算管理の店舗)
+# ナイスネイル auto-deploy が 8:00 に meisai_*.csv を更新済の前提
+log "[1c/5] ナイスネイル → HANABI 集約変換 ($YM)"
+python3 scripts/aggregate_nicenail_to_hanabi.py "$YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ ナイスネイル変換失敗 — 続行 (前回データ使用)"
+
 # 2. 月初日 (1日) なら前月の最終日も補完取得 (前月CSVが空のままにならないように)
 DAY=$(date +%d)
 if [ "$DAY" = "01" ]; then

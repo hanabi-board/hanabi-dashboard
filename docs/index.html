@@ -32,6 +32,7 @@
   .firework-gradient { background: linear-gradient(90deg, #E53935 0%, #FF6B35 14%, #FFC107 28%, #43A047 42%, #29B6F6 56%, #1E88E5 70%, #8E24AA 84%, #E91E63 100%); }
   .elle-gradient { background: linear-gradient(135deg, #6E5BA8 0%, #D63384 100%); }
   .hanabi-gradient { background: linear-gradient(135deg, #000 0%, #1a0d2e 35%, #3d1845 70%, #5a1f4a 100%); }
+  .nicenail-gradient { background: linear-gradient(135deg, #5B21B6 0%, #9333EA 50%, #C084FC 100%); }
   .kpi-num { font-feature-settings: "tnum" 1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
   .pct-good { color: var(--accent-green); }
   .pct-warn { color: var(--accent-yellow); }
@@ -1211,7 +1212,15 @@ function computeScope(month) {
   if (globalElapsedDays === 0) globalElapsedDays = daysInMonth;
 
   const storeRows = [];
+  // open_date 以前の月では店舗を全UIから除外 (新店舗開店前の安全ガード)
+  const monthFirstDay = `${month.slice(0,4)}-${month.slice(4,6)}-01`;
   for (const sid of Object.keys(stores)) {
+    const st = stores[sid];
+    if (st.open_date) {
+      // 表示月の月末まで に open_date が来てなければ完全非表示
+      const lastDayOfMonth = `${month.slice(0,4)}-${month.slice(4,6)}-${String(daysInMonth).padStart(2,'0')}`;
+      if (st.open_date > lastDayOfMonth) continue;
+    }
     const ms = (DATA.monthly_by_store[sid] || {})[month];
     const ds = (DATA.daily_by_store[sid] || {})[month] || [];
     const vis = ((DATA.visitors_by_store || {})[sid] || {})[month] || null;
@@ -1267,7 +1276,10 @@ function computeScope(month) {
       cMs.tech_sales_female += r.ms.tech_sales_female || 0;
       cMs.customers += r.ms.customers || 0;
       cMs.total_sales += r.ms.total_sales || 0;
-      for (const d of ["ヘア","アイ","ネイル"]) cMs.by_dept[d].sales += r.ms.by_dept[d].sales;
+      // 部門別合算: independent_dept フラグが立ってる店舗 (ナイスネイル新横浜等) は独立扱いで合算除外
+      if (!(r.store && r.store.independent_dept)) {
+        for (const d of ["ヘア","アイ","ネイル"]) cMs.by_dept[d].sales += r.ms.by_dept[d].sales;
+      }
     }
   }
 
@@ -2666,7 +2678,7 @@ function drawMenu() {
   const searchBox = document.getElementById("menuSearchBox");
   const query = (searchBox && searchBox.value || "").trim().toLowerCase();
 
-  // 5 scopes
+  // 動的に scope を組み立て (店舗追加に対応)
   const scopes = [
     { title: "Hanabi 綱島店", subtitle: "ヘア専門", sid: "tsunashima", dept: null, headerCls: "hanabi-gradient" },
     { title: "ELLE by Hanabi 宮古島店", subtitle: "全部門合算", sid: "miyakojima", dept: null, headerCls: "elle-gradient" },
@@ -2674,6 +2686,16 @@ function drawMenu() {
     { title: "ELLE by Hanabi 宮古島店 — アイ部門", subtitle: "アイメニュー商品のみ", sid: "miyakojima", dept: "アイ", headerCls: "elle-gradient" },
     { title: "ELLE by Hanabi 宮古島店 — ネイル部門", subtitle: "ネイル商品のみ", sid: "miyakojima", dept: "ネイル", headerCls: "elle-gradient" },
   ];
+  // ナイスネイル運営店 (新横浜等) は独立スコープで追加 (open_date チェック)
+  const monthYM = period.replace(/MTD$/, "").slice(0, 6);
+  const monthDays = (DATA.days_in_month || {})[monthYM] || 31;
+  const monthLastDay = monthYM ? `${monthYM.slice(0,4)}-${monthYM.slice(4,6)}-${String(monthDays).padStart(2,'0')}` : "9999-99-99";
+  for (const sid of Object.keys(DATA.stores || {})) {
+    const st = DATA.stores[sid];
+    if (st.brand === "nicenail" && (!st.open_date || st.open_date <= monthLastDay)) {
+      scopes.push({ title: st.name, subtitle: (st.departments || []).join("/") + (st.departments.length === 1 ? "専門" : ""), sid, dept: null, headerCls: "nicenail-gradient" });
+    }
+  }
 
   const root = document.getElementById("menuSections");
   const mom_available = !!prevMonthOf(period);
@@ -3014,7 +3036,7 @@ function renderStatusPanel() {
 function renderStoreCompare() {
   const root = document.getElementById("storeCompare");
   root.innerHTML = SCOPE.storeRows.map(r => {
-    const headerCls = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+    const headerCls = storeGradient(r.sid);
     const monthPct = r.monthlyTarget ? (r.sales / r.monthlyTarget * 100) : 0;
     const pacePctV = r.elapsedTarget ? (r.sales / r.elapsedTarget * 100) : 0;
     const projection = SCOPE.globalElapsedDays ? Math.round(r.sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
@@ -3257,10 +3279,10 @@ function renderVisitDonut() {
   const root = document.getElementById("visitDonutRow");
   if (!root) return;
   // 設計方針: リピート率は業態違いで混ぜると誤解 → 店舗別のみ
-  const scopes = [
-    { id: "tsunashima", title: "Hanabi 綱島店", vis: SCOPE.storeRows.find(r=>r.sid==="tsunashima")?.vis, headerCls: "hanabi-gradient" },
-    { id: "miyakojima", title: "ELLE by Hanabi 宮古島店", vis: SCOPE.storeRows.find(r=>r.sid==="miyakojima")?.vis, headerCls: "elle-gradient" },
-  ];
+  // SCOPE.storeRows は既に open_date guard 済 (新店舗 OPEN前は含まれない)
+  const scopes = SCOPE.storeRows.map(r => ({
+    id: r.sid, title: r.store.name, vis: r.vis, headerCls: storeGradient(r.sid),
+  }));
   root.innerHTML = scopes.map(s => `
     <div class="rounded-lg overflow-hidden border border-gray-200">
       <div class="${s.headerCls || 'bg-gray-50'} ${s.headerCls ? 'text-white' : 'text-gray-700'} px-3 py-2 text-xs font-bold">${s.title}</div>
@@ -3286,7 +3308,7 @@ function renderVisitDonut() {
 function renderSalesTab() {
   const root = document.getElementById("salesStoreCards");
   root.innerHTML = SCOPE.storeRows.map(r => {
-    const headerCls = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+    const headerCls = storeGradient(r.sid);
     const ms = r.ms;
     const departments = r.store.departments;
     const showDept = departments.length > 1 && ms;
@@ -3508,7 +3530,7 @@ function renderVisitsTab() {
   let v1 = "";
   // 設計方針: 全社合算は新規/リピート比率では意味が薄い (業態差) → 店舗別のみ
   for (const r of SCOPE.storeRows) {
-    v1 += buildVisCard(r.store.name, r.vis, r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient");
+    v1 += buildVisCard(r.store.name, r.vis, storeGradient(r.sid));
   }
   root1.innerHTML = v1;
 
@@ -3549,7 +3571,7 @@ function renderVisitsTab() {
   let n2 = "";
   // 設計方針: 指名率は店舗別で見るほうが意味ある (業態違いで混ぜると誤解)
   for (const r of SCOPE.storeRows) {
-    n2 += buildNomCard(r.store.name, r.ms, r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient");
+    n2 += buildNomCard(r.store.name, r.ms, storeGradient(r.sid));
   }
   root2.innerHTML = n2;
 
@@ -3598,13 +3620,22 @@ function renderVisitsTab() {
     let g3 = "";
     // 設計方針: 男女別の比率は店舗別で見るほうが意味ある (業態違いで混ぜると誤解)
     for (const r of SCOPE.storeRows) {
-      g3 += buildGenderCard(r.store.name, r.ms, r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient");
+      g3 += buildGenderCard(r.store.name, r.ms, storeGradient(r.sid));
     }
     root3.innerHTML = g3;
   }
 }
 
 // ========== Tab 4: Staff ==========
+// 店舗ID → CSS gradient class (店舗ヘッダー/カード等のグラデーション)
+function storeGradient(sid) {
+  const s = (DATA && DATA.stores) ? DATA.stores[sid] : null;
+  if (!s) return "hanabi-gradient";
+  if (s.brand === "nicenail") return "nicenail-gradient";
+  if (s.brand === "elle") return "elle-gradient";
+  return "hanabi-gradient";
+}
+
 const SORT_OPTIONS = [
   { key: "total_sales", label: "総売上" },
   { key: "tech_sales_nominated", label: "指名売上" },
@@ -3615,11 +3646,26 @@ const SORT_OPTIONS = [
   { key: "nomination_rate", label: "指名比率" },
   { key: "spend_per_customer", label: "客単価" },
 ];
+// ナイスネイル運営店舗 (shinyokohama 等) は OP率を加えた専用ソート項目
+const SORT_OPTIONS_NICENAIL = [
+  { key: "total_sales", label: "売上" },
+  { key: "tech_customers_nominated", label: "指名数" },
+  { key: "nomination_rate", label: "指名率" },
+  { key: "spend_per_customer", label: "客単価" },
+  { key: "_nn_op_rate", label: "OP率" },
+  { key: "shop_sales", label: "店販" },
+  { key: "customers", label: "来客数" },
+];
+function getSortOptions(storeId) {
+  const s = (DATA.stores || {})[storeId];
+  if (s && s.brand === "nicenail") return SORT_OPTIONS_NICENAIL;
+  return SORT_OPTIONS;
+}
 
 function renderStaffTab() {
   const root = document.getElementById("staffRankings");
   root.innerHTML = SCOPE.storeRows.map(r => {
-    const headerCls = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+    const headerCls = storeGradient(r.sid);
     const rows = (DATA.staff_rows || []).filter(s => s.store === r.sid && s.month === currentMonth && !s.hidden);
     if (!rows.length) return `<div class="card p-6 text-center text-gray-500">${r.store.name}: データなし</div>`;
     return `
@@ -3632,11 +3678,11 @@ function renderStaffTab() {
           <div class="flex items-center gap-2">
             <span class="text-xs opacity-80">並び順</span>
             <select class="rankSort bg-white/15 border border-white/30 rounded px-2 py-1 text-xs text-white" data-store="${r.sid}">
-              ${SORT_OPTIONS.map(o => `<option value="${o.key}">${o.label}</option>`).join("")}
+              ${getSortOptions(r.sid).map(o => `<option value="${o.key}">${o.label}</option>`).join("")}
             </select>
           </div>
         </div>
-        <div class="p-4 overflow-x-auto" id="rankBody_${r.sid}">${rankTable(rows, "total_sales")}</div>
+        <div class="p-4 overflow-x-auto" id="rankBody_${r.sid}">${rankTable(rows, "total_sales", r.sid)}</div>
       </div>`;
   }).join("");
 
@@ -3644,7 +3690,7 @@ function renderStaffTab() {
     sel.addEventListener("change", () => {
       const sid = sel.dataset.store;
       const rows = (DATA.staff_rows || []).filter(s => s.store === sid && s.month === currentMonth && !s.hidden);
-      document.getElementById(`rankBody_${sid}`).innerHTML = rankTable(rows, sel.value);
+      document.getElementById(`rankBody_${sid}`).innerHTML = rankTable(rows, sel.value, sid);
     });
   });
 
@@ -3828,7 +3874,7 @@ function staffAvatar(s, size = 24) {
   return `<div class="rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style="${sz};background:${deptColor}">${initial}</div>`;
 }
 
-function rankTable(rows, sortKey) {
+function rankTable(rows, sortKey, storeId) {
   const rankCls = i => i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "text-gray-400";
   const rankMedal = i => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "";
   // 各row に指名比率を動的計算で付与 — 指名客数 / 総来店客数 ベース
@@ -3843,12 +3889,37 @@ function rankTable(rows, sortKey) {
   // フォーマッタ: 全て完全な ¥ 数字、 %、 件数
   const moneyCols = new Set(["total_sales","tech_sales","tech_sales_nominated","shop_sales","spend_per_customer"]);
   const countCols = new Set(["customers","tech_customers_nominated"]);
+  const pctCols = new Set(["nomination_rate", "_nn_op_rate"]);
   const valFmt = (s, key) => {
-    if (key === "nomination_rate") return (s[key] || 0).toFixed(1) + "%";
+    if (pctCols.has(key)) return (s[key] || 0).toFixed(1) + "%";
     if (moneyCols.has(key)) return fmt(s[key] || 0);
     if (countCols.has(key)) return fmtN(s[key] || 0);
     return s[key] || 0;
   };
+
+  // 店舗ブランド別カラム構成 — ナイスネイル店舗 (新横浜等) は OP率を含む NN仕様
+  const storeInfo = (DATA.stores || {})[storeId];
+  const isNicenail = storeInfo && storeInfo.brand === "nicenail";
+  const columns = isNicenail
+    ? [
+        { key: "total_sales", label: "売上" },
+        { key: "tech_customers_nominated", label: "指名数" },
+        { key: "nomination_rate", label: "指名率" },
+        { key: "spend_per_customer", label: "客単価" },
+        { key: "_nn_op_rate", label: "OP率" },
+        { key: "shop_sales", label: "店販" },
+        { key: "customers", label: "来客数" },
+      ]
+    : [
+        { key: "total_sales", label: "総売上" },
+        { key: "tech_sales", label: "技術" },
+        { key: "tech_sales_nominated", label: "指名売上" },
+        { key: "shop_sales", label: "店販" },
+        { key: "customers", label: "客数" },
+        { key: "tech_customers_nominated", label: "指名" },
+        { key: "nomination_rate", label: "指名比率" },
+        { key: "spend_per_customer", label: "客単価" },
+      ];
   // ヘッダー: ソート対象は青ハイライト
   const headerCls = (key) => key === sortKey
     ? "bg-blue-50 text-blue-900 font-bold border-b-2 border-blue-500"
@@ -3859,20 +3930,13 @@ function rankTable(rows, sortKey) {
     : "text-gray-700 font-medium";
   const cellPadX = "px-3";
 
-  return `<table class="w-full" style="min-width:920px">
+  return `<table class="w-full" style="min-width:${isNicenail ? 800 : 920}px">
     <thead class="text-xs">
       <tr>
         <th class="text-center py-3 pr-2 ${headerCls('rank')} w-12">#</th>
         <th class="text-left py-3 pr-2 font-medium text-gray-500 border-b border-gray-200">スタッフ</th>
-        <th class="text-center py-3 ${cellPadX} font-medium text-gray-500 border-b border-gray-200">部門</th>
-        <th class="text-right py-3 ${cellPadX} ${headerCls('total_sales')} whitespace-nowrap">総売上</th>
-        <th class="text-right py-3 ${cellPadX} ${headerCls('tech_sales')} whitespace-nowrap">技術</th>
-        <th class="text-right py-3 ${cellPadX} ${headerCls('tech_sales_nominated')} whitespace-nowrap">指名売上</th>
-        <th class="text-right py-3 ${cellPadX} ${headerCls('shop_sales')} whitespace-nowrap">店販</th>
-        <th class="text-right py-3 ${cellPadX} ${headerCls('customers')} whitespace-nowrap">客数</th>
-        <th class="text-right py-3 ${cellPadX} ${headerCls('tech_customers_nominated')} whitespace-nowrap">指名</th>
-        <th class="text-right py-3 ${cellPadX} ${headerCls('nomination_rate')} whitespace-nowrap">指名比率</th>
-        <th class="text-right py-3 pl-2 ${headerCls('spend_per_customer')} whitespace-nowrap">客単価</th>
+        ${isNicenail ? "" : `<th class="text-center py-3 ${cellPadX} font-medium text-gray-500 border-b border-gray-200">部門</th>`}
+        ${columns.map((c, idx) => `<th class="text-right py-3 ${idx === columns.length-1 ? 'pl-2' : cellPadX} ${headerCls(c.key)} whitespace-nowrap">${c.label}</th>`).join("")}
       </tr>
     </thead>
     <tbody>
@@ -3912,15 +3976,8 @@ function rankTable(rows, sortKey) {
               </div>
             </div>
           </td>
-          <td class="py-3 ${cellPadX} text-center">${deptBadge}</td>
-          ${cellFor('total_sales')}
-          ${cellFor('tech_sales')}
-          ${cellFor('tech_sales_nominated')}
-          ${cellFor('shop_sales')}
-          ${cellFor('customers')}
-          ${cellFor('tech_customers_nominated')}
-          ${cellFor('nomination_rate')}
-          ${cellFor('spend_per_customer')}
+          ${isNicenail ? "" : `<td class="py-3 ${cellPadX} text-center">${deptBadge}</td>`}
+          ${columns.map(c => cellFor(c.key)).join("")}
         </tr>`;
       }).join("")}
     </tbody>
@@ -4113,7 +4170,7 @@ function renderManagementTab() {
         : months < 12 ? `<span class="badge badge-info">立ち上げ期 (${months}ヶ月)</span>`
         : months < 36 ? `<span class="badge badge-good">成長期 (${Math.floor(months/12)}年${months%12}ヶ月)</span>`
         : `<span class="badge badge-warn">成熟期 (${Math.floor(months/12)}年)</span>`;
-      const gradient = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+      const gradient = storeGradient(r.sid);
       const photos = r.store.photos || [];
       // ヒーロー写真 (先頭1枚) + サムネ (残り)
       const heroPhoto = photos[0];
@@ -4238,7 +4295,7 @@ function renderManagementTab() {
         const hpPrev = (prevHP?.stores || {})[r.sid] || {};
         const igCur = (lastIG?.stores || {})[r.sid] || {};
         const igPrev = (prevIG?.stores || {})[r.sid] || {};
-        const gradient = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+        const gradient = storeGradient(r.sid);
         // 複数 listing 対応: avg_rating があれば優先、 なければ単一 rating
         const displayRating = hpCur.avg_rating != null ? hpCur.avg_rating : hpCur.rating;
         const displayReviewCount = hpCur.total_review_count != null ? hpCur.total_review_count : hpCur.review_count;
@@ -4257,12 +4314,15 @@ function renderManagementTab() {
           }
         }
         const topReviews = allReviews.slice(0, 5);
+        // IG を運用してない店舗 (ナイスネイル新横浜等) は HPB単独レイアウト
+        const targets = (DATA.external_targets || {})[r.sid] || {};
+        const hasIG = targets.instagram !== null && targets.instagram !== undefined && targets.instagram !== "";
         return `<div class="card overflow-hidden">
           <div class="${gradient} text-white px-4 py-2 text-sm font-bold">${r.store.name}</div>
           <div class="p-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-0 mb-3">
+            <div class="${hasIG ? 'grid grid-cols-1 md:grid-cols-2 gap-0' : ''} mb-3">
               <!-- HPB セクション -->
-              <div class="md:pr-4 md:border-r border-gray-200 pb-3 md:pb-0 border-b md:border-b-0">
+              <div class="${hasIG ? 'md:pr-4 md:border-r border-gray-200 pb-3 md:pb-0 border-b md:border-b-0' : ''}">
                 <div class="flex items-center gap-1.5 mb-2">
                   <span class="px-1.5 py-0.5 rounded text-[10px] font-bold text-white" style="background:#EA5550">HPB</span>
                   <span class="text-[11px] font-semibold text-gray-700">HotPepper Beauty</span>
@@ -4277,7 +4337,9 @@ function renderManagementTab() {
                     ${renderStars(l.rating, { size: "0.7em", showValue: true })}
                     ${l.review_count != null ? `<span class="text-gray-500">(${l.review_count}件)</span>` : ""}
                   </div>`).join("")}</div>` : ""}
+                ${(listings.length === 0 && !displayRating) ? `<div class="text-[11px] text-gray-400 italic mt-1">HPB URL 未登録 (開店後設定予定)</div>` : ""}
               </div>
+              ${hasIG ? `
               <!-- Instagram セクション -->
               <div class="md:pl-4 pt-3 md:pt-0">
                 <div class="flex items-center gap-1.5 mb-2">
@@ -4288,7 +4350,7 @@ function renderManagementTab() {
                 <div class="text-[11px] text-gray-500 mt-1">${igCur.posts != null ? "投稿 " + igCur.posts.toLocaleString() + " 件" : ""}</div>
                 ${followDelta != null ? `<div class="text-[10px] mt-0.5" style="color:${followDelta >= 0 ? '#10B981' : '#DC2626'}">${followDelta >= 0 ? '+' : ''}${followDelta} (前月比)</div>` : ""}
                 ${igCur.username ? `<div class="text-[10px] text-gray-400 mt-1"><a href="https://www.instagram.com/${igCur.username}/" target="_blank" class="hover:underline">@${igCur.username}</a></div>` : ""}
-              </div>
+              </div>` : ""}
             </div>
             ${topReviews.length ? `<div class="border-t border-gray-100 pt-3">
               <div class="flex items-center gap-1.5 mb-2">
@@ -4346,13 +4408,26 @@ function renderManagementTab() {
       }
       const arrow = momPct == null ? "—" : momPct >= 100 ? "▲" : "▼";
       const momColor = momPct == null ? "#9CA3AF" : momPct >= 105 ? "var(--accent-green)" : momPct >= 95 ? "#6B7280" : "var(--accent-red)";
-      const gradient = r.sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+      const gradient = storeGradient(r.sid);
+      // ナイスネイル店舗は NN式 稼働率 (人/日) を追加表示
+      const isNicenailStore = r.store.brand === "nicenail";
+      const nnExtras = isNicenailStore ? ((DATA.nicenail_extras || {})[r.sid] || {})[SCOPE.month] : null;
+      const kadouRate = nnExtras ? nnExtras.kadou_rate : null;  // 人/日
+      const nnDailyPerStaff = nnExtras ? nnExtras.daily_per_staff : null;  // ¥
+      const nnOpRate = nnExtras ? nnExtras.op_rate : null;  // %
+      const gridCols = isNicenailStore ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3";
+      const extraCell = isNicenailStore ? `
+          <div>
+            <div class="text-[11px] text-gray-500">稼働率 (NN式)</div>
+            <div class="kpi-num text-lg font-bold mt-0.5">${kadouRate != null ? kadouRate.toFixed(1) + ' <span class="text-xs font-normal text-gray-500">人/日</span>' : '—'}</div>
+            <div class="text-[11px] text-gray-400 mt-1">${nnOpRate != null ? 'OP率 ' + nnOpRate.toFixed(1) + '%' : ''}</div>
+          </div>` : "";
       return `<div class="card overflow-hidden">
         <div class="${gradient} text-white px-4 py-2 text-sm font-bold flex justify-between items-center">
           <span>${r.store.name}</span>
           <span class="text-xs opacity-80">${staffCount}名 (稼働)</span>
         </div>
-        <div class="p-4 grid grid-cols-3 gap-3">
+        <div class="p-4 grid ${gridCols} gap-3">
           <div>
             <div class="text-[11px] text-gray-500">1人月売 (着地予測)</div>
             <div class="kpi-num text-lg font-bold mt-0.5">${fmt(perStaffProj)}</div>
@@ -4360,8 +4435,8 @@ function renderManagementTab() {
             ${momPct != null ? `<div class="text-[10px] text-gray-400">前月 ${fmt(prevPerStaff)}</div>` : ""}
           </div>
           <div>
-            <div class="text-[11px] text-gray-500">1人1日売</div>
-            <div class="kpi-num text-lg font-bold mt-0.5">${fmt(perStaffPerDay)}</div>
+            <div class="text-[11px] text-gray-500">1日1名 売上</div>
+            <div class="kpi-num text-lg font-bold mt-0.5">${fmt(isNicenailStore && nnDailyPerStaff != null ? nnDailyPerStaff : perStaffPerDay)}</div>
             <div class="text-[11px] text-gray-400 mt-1">${SCOPE.globalElapsedDays}日 経過実績</div>
           </div>
           <div>
@@ -4369,6 +4444,7 @@ function renderManagementTab() {
             <div class="kpi-num text-lg font-bold mt-0.5">${fmt(staffCount ? r.sales / staffCount : 0)}</div>
             <div class="text-[11px] text-gray-400 mt-1">店舗売 ${fmtM(r.sales)}</div>
           </div>
+          ${extraCell}
         </div>
       </div>`;
     }).join("");
@@ -4687,7 +4763,7 @@ function renderCustomersSubtab(subtab) {
       let rows = tabData.rows || [];
       // Fallback: if _default not in by_tab but rows exists at top level
       if (activeTab === "_default" && !rows.length && data.rows) rows = data.rows;
-      const headerCls = sid === "miyakojima" ? "elle-gradient" : "hanabi-gradient";
+      const headerCls = storeGradient(sid);
       if (!rows.length) {
         return `<div class="card overflow-hidden">
           <div class="${headerCls} text-white px-4 py-3 font-bold">${store.name}</div>
