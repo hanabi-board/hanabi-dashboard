@@ -4,8 +4,8 @@
     "statuses": [
       "応募",
       "書類選考",
-      "面接1",
-      "面接2",
+      "面接調整中",
+      "面接日確定",
       "内定",
       "入社",
       "辞退",
@@ -14,8 +14,8 @@
     "active_statuses": [
       "応募",
       "書類選考",
-      "面接1",
-      "面接2",
+      "面接調整中",
+      "面接日確定",
       "内定"
     ],
     "closed_statuses": [
@@ -24,10 +24,9 @@
       "不採用"
     ],
     "sources": [
-      "HotPepper",
-      "Indeed",
-      "ハローワーク",
-      "紹介",
+      "Beauty Work",
+      "リジョブ",
+      "リファラル",
       "Instagram",
       "公式HP",
       "その他"
@@ -55,8 +54,8 @@
       "role": "ネイル",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 2,
-      "source": "",
-      "status": "面接1",
+      "source": "リファラル",
+      "status": "面接日確定",
       "notes": "ひなきリファラル"
     },
     {
@@ -67,9 +66,9 @@
       "role": "",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 0,
-      "source": "その他",
+      "source": "リジョブ",
       "status": "応募",
-      "notes": "リジョブ"
+      "notes": ""
     },
     {
       "id": "c_mp2etbe1fkd0",
@@ -79,7 +78,7 @@
       "role": "ネイル",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 2,
-      "source": "",
+      "source": "リファラル",
       "status": "不採用",
       "notes": "奈穂さんリファラル"
     },
@@ -91,7 +90,7 @@
       "role": "ネイル",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 1,
-      "source": "紹介",
+      "source": "リファラル",
       "status": "入社",
       "notes": "のの子さんリファラル"
     }

@@ -546,7 +546,7 @@
   <div class="tab-panel" data-panel="recruit">
     <div class="mb-4">
       <h2 class="text-2xl font-bold">採用</h2>
-      <div class="text-sm text-gray-500 mt-1">候補者管理 / ファネル / ソース分析</div>
+      <div class="text-sm text-gray-500 mt-1">候補者管理 / ファネル / 募集経路 分析</div>
     </div>
 
     <!-- KPIs -->
@@ -559,7 +559,7 @@
         <div id="recruitFunnel" class="space-y-2"></div>
       </div>
       <div class="card p-5">
-        <h3 class="section-title mb-3">ソース別 <span class="section-sub">流入経路</span></h3>
+        <h3 class="section-title mb-3">募集経路別 <span class="section-sub">候補者の流入経路</span></h3>
         <div id="recruitSource" class="space-y-2"></div>
       </div>
     </div>
@@ -877,7 +877,7 @@
             <input type="number" id="rf_experience_years" min="0" max="60" step="1" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1" />
           </label>
           <label class="block">
-            <span class="text-xs text-gray-600">ソース</span>
+            <span class="text-xs text-gray-600">募集経路</span>
             <select id="rf_source" class="w-full border border-gray-300 rounded px-2 py-1.5 mt-1"></select>
           </label>
         </div>
@@ -2106,7 +2106,7 @@ function renderRecruitTab() {
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const thisMonthApplied = candidates.filter(c => (c.applied_date || "").startsWith(thisMonth));
   const totalActive = candidates.filter(c => (settings.active_statuses || []).includes(c.status)).length;
-  const interviewed = candidates.filter(c => ["面接1","面接2","内定","入社"].includes(c.status)).length;
+  const interviewed = candidates.filter(c => ["面接調整中","面接日確定","面接1","面接2","内定","入社"].includes(c.status)).length;
   const offered = candidates.filter(c => ["内定","入社"].includes(c.status)).length;
   const hired = candidates.filter(c => c.status === "入社").length;
   const totalApplied = candidates.length;
@@ -2141,7 +2141,7 @@ function renderRecruitTab() {
     </div>`;
 
   // Funnel
-  const stages = ["応募", "書類選考", "面接1", "面接2", "内定", "入社"];
+  const stages = ["応募", "書類選考", "面接調整中", "面接日確定", "内定", "入社"];
   const funnel = stages.map(s => {
     const reachedCount = candidates.filter(c => {
       const idx = stages.indexOf(c.status);
@@ -2204,8 +2204,11 @@ function renderRecruitTab() {
     }
     const statusBadge = (s) => {
       const colors = {
-        "応募": "#1E88E5", "書類選考": "#60A5FA", "面接1": "#F59E0B", "面接2": "#FB923C",
-        "内定": "#10B981", "入社": "#43A047", "辞退": "#9CA3AF", "不採用": "#EF4444"
+        "応募": "#1E88E5", "書類選考": "#60A5FA",
+        "面接調整中": "#F59E0B", "面接日確定": "#FB923C",
+        "内定": "#10B981", "入社": "#43A047", "辞退": "#9CA3AF", "不採用": "#EF4444",
+        // 後方互換 (旧データ用)
+        "面接1": "#F59E0B", "面接2": "#FB923C"
       };
       const c = colors[s] || "#6B7280";
       return `<span class="badge" style="background:${c}22; color:${c}; border:1px solid ${c}50">${s}</span>`;
@@ -2218,7 +2221,7 @@ function renderRecruitTab() {
           <th class="text-left py-2 px-3">希望職種</th>
           <th class="text-left py-2 px-3">希望店舗</th>
           <th class="text-left py-2 px-3">経験年数</th>
-          <th class="text-left py-2 px-3">ソース</th>
+          <th class="text-left py-2 px-3">募集経路</th>
           <th class="text-left py-2 px-3">ステータス</th>
           <th class="text-left py-2 px-3">備考</th>
         </tr>
