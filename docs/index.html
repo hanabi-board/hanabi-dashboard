@@ -556,7 +556,7 @@
     <div class="mb-4 flex items-baseline justify-between flex-wrap gap-2">
       <div>
         <h2 class="text-2xl font-bold">採用</h2>
-        <div class="text-sm text-gray-500 mt-1">候補者管理 / ファネル / 募集経路 分析 ・ 詳細記録は <a href="https://www.notion.so/45cab31f37ef830ea331017ecbfd1da6?v=726ab31f37ef83fcb2440870c640db9c" target="_blank" class="text-blue-600 hover:underline font-semibold">📝 Notion 採用管理 ↗</a></div>
+        <div class="text-sm text-gray-500 mt-1">応募者管理 / ファネル / 募集経路 分析</div>
       </div>
       <!-- FY タブ -->
       <div id="recruitFYTabs" class="flex gap-1 bg-gray-100 rounded-lg p-1"></div>
@@ -568,11 +568,11 @@
     <!-- Funnel + Source side by side -->
     <div class="grid lg:grid-cols-2 gap-3 mb-5">
       <div class="card p-5">
-        <h3 class="section-title mb-3">ステータスファネル <span class="section-sub">進行中の候補者</span></h3>
+        <h3 class="section-title mb-3">ステータスファネル <span class="section-sub">進行中の応募者</span></h3>
         <div id="recruitFunnel" class="space-y-2"></div>
       </div>
       <div class="card p-5">
-        <h3 class="section-title mb-3">募集経路別 <span class="section-sub">候補者の流入経路</span></h3>
+        <h3 class="section-title mb-3">募集経路別 <span class="section-sub">応募者の流入経路</span></h3>
         <div id="recruitSource" class="space-y-2"></div>
       </div>
     </div>
@@ -580,24 +580,39 @@
     <!-- 未同期警告 (GitHub に push されていないローカル変更がある場合) -->
     <div id="recruitUnsyncedBanner" class="hidden mb-3"></div>
 
+    <!-- Notion 採用管理 リンクバナー -->
+    <a href="https://www.notion.so/45cab31f37ef830ea331017ecbfd1da6?v=726ab31f37ef83fcb2440870c640db9c" target="_blank"
+       class="block mb-3 px-5 py-3 rounded-lg border-2 border-gray-200 hover:border-gray-900 bg-white hover:bg-gray-50 transition group">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">📝</span>
+          <div>
+            <div class="font-bold text-sm text-gray-900">Notion 採用管理表</div>
+            <div class="text-xs text-gray-500">面接日時・場所・質問事項・採用判断は Notion で詳細管理</div>
+          </div>
+        </div>
+        <span class="text-xs text-gray-400 group-hover:text-gray-900 whitespace-nowrap">開く ↗</span>
+      </div>
+    </a>
+
     <!-- Candidate list -->
     <div class="card overflow-hidden mb-5">
       <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-        <h3 class="section-title">候補者リスト</h3>
+        <h3 class="section-title">応募者リスト</h3>
         <div class="flex gap-2 items-center">
           <select id="recruitStatusFilter" class="border border-gray-300 rounded px-2 py-1 text-xs">
             <option value="all">全て</option>
             <option value="active">進行中</option>
             <option value="hired">入社済</option>
           </select>
-          <button id="recruitAddBtn" class="hidden text-xs bg-black text-white rounded px-3 py-1 hover:bg-gray-800 transition">+ 候補者を追加</button>
+          <button id="recruitAddBtn" class="hidden text-xs bg-black text-white rounded px-3 py-1 hover:bg-gray-800 transition">+ 応募者を追加</button>
         </div>
       </div>
       <div class="overflow-x-auto" id="recruitList"></div>
     </div>
 
     <div class="text-[11px] text-gray-400 text-center" id="recruitFooterNote">
-      候補者の追加・編集は本部権限のみ。 編集内容は GitHub に自動保存されます。
+      応募者の追加・編集は本部権限のみ。 編集内容は GitHub に自動保存されます。
     </div>
   </div>
 
@@ -823,7 +838,7 @@
       <div class="p-5 space-y-3 text-sm">
         <div id="ghTokenStatus" class="px-3 py-2 rounded bg-gray-100 text-xs"></div>
         <div class="text-xs text-gray-600 leading-relaxed">
-          採用候補者などの編集を GitHub に直接反映するためのトークンです。
+          採用応募者などの編集を GitHub に直接反映するためのトークンです。
           設定すると麗花さん含む全員がブラウザだけで完結できるようになります。
         </div>
         <label class="block">
@@ -848,7 +863,7 @@
   <div id="recruitModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
       <div class="border-b border-gray-200 px-5 py-3 flex items-center justify-between sticky top-0 bg-white z-10">
-        <h3 class="font-bold" id="recruitModalTitle">候補者を追加</h3>
+        <h3 class="font-bold" id="recruitModalTitle">応募者を追加</h3>
         <button id="recruitModalClose" class="text-gray-400 hover:text-gray-700 text-xl leading-none">&times;</button>
       </div>
       <form id="recruitForm" class="p-5 space-y-3 text-sm">
@@ -2228,7 +2243,7 @@ function renderRecruitTab() {
   });
   const maxFunnel = Math.max(...funnel.map(f => f.count), 1);
   document.getElementById("recruitFunnel").innerHTML = funnel.length === 0 || fyCandidates.length === 0
-    ? `<div class="text-center text-sm text-gray-400 py-6">候補者データなし</div>`
+    ? `<div class="text-center text-sm text-gray-400 py-6">応募者データなし</div>`
     : funnel.map(f => {
         const w = (f.count / maxFunnel * 100).toFixed(1);
         return `<div class="flex items-center gap-3 text-sm">
@@ -2249,7 +2264,7 @@ function renderRecruitTab() {
   const sortedSrc = Object.entries(sources).sort((a,b) => b[1] - a[1]);
   const srcMax = Math.max(...sortedSrc.map(([_,v]) => v), 1);
   document.getElementById("recruitSource").innerHTML = sortedSrc.length === 0
-    ? `<div class="text-center text-sm text-gray-400 py-6">候補者データなし</div>`
+    ? `<div class="text-center text-sm text-gray-400 py-6">応募者データなし</div>`
     : sortedSrc.map(([src, count]) => {
         const w = (count / srcMax * 100).toFixed(1);
         const pct = fyCandidates.length ? (count / fyCandidates.length * 100).toFixed(1) : 0;
@@ -2282,7 +2297,7 @@ function renderRecruitTab() {
     });
     const root = document.getElementById("recruitList");
     if (!filtered.length) {
-      root.innerHTML = `<div class="text-center text-sm text-gray-400 py-12">該当候補者なし<br><span class="text-[11px]">右上の「+ 候補者を追加」 から登録できます (本部のみ)</span></div>`;
+      root.innerHTML = `<div class="text-center text-sm text-gray-400 py-12">該当応募者なし<br><span class="text-[11px]">右上の「+ 応募者を追加」 から登録できます (本部のみ)</span></div>`;
       return;
     }
     const statusBadge = (s) => {
@@ -2412,7 +2427,7 @@ function openRecruitModal(id) {
     sel.innerHTML = `<option value="">—</option>` + options.map(o => `<option value="${o}" ${o === cur ? 'selected' : ''}>${o}</option>`).join("");
   };
   const cur = id ? (DATA.recruitment.candidates || []).find(c => c.id === id) : null;
-  title.textContent = cur ? "候補者を編集" : "候補者を追加";
+  title.textContent = cur ? "応募者を編集" : "応募者を追加";
   document.getElementById("rf_id").value = id || "";
   document.getElementById("rf_applied_date").value = cur && cur.applied_date ? cur.applied_date : new Date().toISOString().slice(0,10);
   document.getElementById("rf_name").value = (cur && cur.name) || "";
@@ -2491,7 +2506,7 @@ async function deleteRecruitCurrent() {
   if (currentRole !== "master") return;
   const id = document.getElementById("rf_id").value;
   if (!id) return;
-  if (!confirm("この候補者を削除しますか？")) return;
+  if (!confirm("この応募者を削除しますか？")) return;
   const deletedName = (DATA.recruitment.candidates || []).find(c => c.id === id)?.name || "(名前不明)";
   const o = _loadRecruitOverrides();
   o[id] = "__deleted__";
@@ -4898,7 +4913,7 @@ function buildSearchIndex() {
   // Admin actions (master only)
   if (currentRole === "master") {
     items.push({ type: "action", icon: "💰", label: "予算編集", sub: "本部のみ", action: () => { activateTab("management"); setTimeout(openBudgetModal, 300); } });
-    items.push({ type: "action", icon: "👥", label: "候補者を追加", sub: "採用", action: () => { activateTab("recruit"); setTimeout(() => openRecruitModal(null), 300); } });
+    items.push({ type: "action", icon: "👥", label: "応募者を追加", sub: "採用", action: () => { activateTab("recruit"); setTimeout(() => openRecruitModal(null), 300); } });
     items.push({ type: "action", icon: "⚙", label: "GitHub接続設定", sub: "本部のみ", action: () => document.getElementById("ghTokenBtn").click() });
   }
   return items;
