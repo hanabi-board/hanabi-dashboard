@@ -129,7 +129,26 @@ def configure_and_download(page: Page, report: str, year_month: str, store_code:
     """
     print(f"→ {report}: store={store_code}, ym={year_month}")
     url = REPORT_URLS[report]
-    page.goto(url, wait_until="networkidle", timeout=30000)
+    # Uレジ側の一時的な遅延に備えてリトライ機構 (最大3回、 指数バックオフ)
+    last_error = None
+    for attempt in range(3):
+        try:
+            timeout_ms = 30000 + attempt * 20000  # 30s / 50s / 70s
+            wait_strategy = "networkidle" if attempt == 0 else "domcontentloaded"  # 2回目以降は緩める
+            page.goto(url, wait_until=wait_strategy, timeout=timeout_ms)
+            last_error = None
+            break
+        except Exception as e:
+            last_error = e
+            backoff = (attempt + 1) * 5  # 5s, 10s
+            print(f"  ⚠️ page.goto attempt {attempt+1}/3 failed: {type(e).__name__}. Waiting {backoff}s before retry...")
+            time.sleep(backoff)
+            try:
+                page.reload(wait_until="domcontentloaded", timeout=10000)
+            except Exception:
+                pass
+    if last_error is not None:
+        raise last_error
     time.sleep(2)
 
     # Configure year + month
