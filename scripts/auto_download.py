@@ -258,20 +258,55 @@ def main():
             (log_dir / "top_snapshot.json").write_text(json.dumps(top, ensure_ascii=False, indent=2), encoding="utf-8")
             (DATA / "uregi_top_snapshot.json").write_text(json.dumps(top, ensure_ascii=False, indent=2), encoding="utf-8")
 
-            # Download all 4 CSVs
+            # Download all 4 CSVs (各 store × report ペアに最大3回リトライ)
+            failures = []  # 最終的に失敗した (store, report) のリスト
             for store in STORES:
                 for report in ["uriage", "staff"]:
-                    saved = configure_and_download(page, report, ym, store["code"], log_dir)
+                    saved = None
+                    last_err = None
+                    for attempt in range(3):
+                        try:
+                            saved = configure_and_download(page, report, ym, store["code"], log_dir)
+                            if saved:
+                                break  # 成功 → リトライループ脱出
+                            else:
+                                last_err = "configure_and_download returned None"
+                                print(f"  ⚠️ {store['id']}/{report} 試行 {attempt+1}/3 失敗 (None 返却)")
+                        except Exception as e:
+                            last_err = str(e)[:200]
+                            print(f"  ⚠️ {store['id']}/{report} 試行 {attempt+1}/3 例外: {type(e).__name__}: {last_err}")
+                        if attempt < 2:
+                            # ページ再ロード + 短い待機でリトライ
+                            backoff = 5 + attempt * 5  # 5s, 10s
+                            print(f"  ⏳ {backoff}秒 待機して再試行...")
+                            time.sleep(backoff)
+                            try:
+                                page.reload(wait_until="domcontentloaded", timeout=15000)
+                            except Exception:
+                                pass
                     if saved:
-                        # rename to canonical
                         dest_name = f"daily_sales_{ym}_{store['id']}.csv" if report == "uriage" else f"staff_ranking_{ym}_{store['id']}.csv"
                         dest = DATA / dest_name
                         shutil.copy(saved, dest)
                         print(f"  → data/{dest_name}")
+                    else:
+                        failures.append({
+                            "store": store['id'],
+                            "report": report,
+                            "error": last_err or "不明",
+                        })
+                        print(f"  ❌ {store['id']}/{report} 最終的に失敗 (3回試行)")
         finally:
             time.sleep(2)
             browser.close()
-    print("\n✅ done")
+    # 部分失敗があれば exit 1 + 詳細出力 → deploy_auto.sh が失敗扱いで処理
+    if failures:
+        print(f"\n❌ 部分失敗あり ({len(failures)}件):")
+        for f in failures:
+            print(f"  - {f['store']} / {f['report']}: {f['error']}")
+        print("\nデータが古いままダッシュボードが更新される事故を防ぐため、 exit 1 で終了します")
+        sys.exit(1)
+    print("\n✅ done (全 CSV 取得成功)")
 
 
 if __name__ == "__main__":

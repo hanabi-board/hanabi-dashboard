@@ -68,7 +68,12 @@ fi
 # 1. Uレジから最新CSV DL (current month)
 YM=$(date +%Y%m)
 log "[1/5] Uレジ自動DL ($YM)"
-python3 scripts/auto_download.py "$YM" 2>&1 | tee -a "$LOG_FILE"
+if ! python3 scripts/auto_download.py "$YM" 2>&1 | tee -a "$LOG_FILE"; then
+  log "❌ Uレジ自動DL に失敗 (部分失敗 or 全失敗)。 過去データのまま続行せず、 ここで終了"
+  notify "HANABI Dashboard 自動更新 失敗" "Uレジ DL 失敗"
+  mail_failure "Uレジ自動DL に失敗。 logs/deploy_$(date +%Y%m%d)_*.log で詳細確認 (どの店舗・レポートが失敗したか出力されてます)"
+  exit 1
+fi
 
 # 1c. ナイスネイル → HANABI 集約変換 (新横浜店等、 ナイスネイル運営 HANABI 予算管理の店舗)
 # ナイスネイル auto-deploy が 8:00 に meisai_*.csv を更新済の前提
@@ -80,7 +85,12 @@ DAY=$(date +%d)
 if [ "$DAY" = "01" ]; then
   PREV_YM=$(date -v -1m +%Y%m 2>/dev/null || date -d "-1 month" +%Y%m)
   log "[1b/5] 月初なので前月($PREV_YM)も補完取得"
-  python3 scripts/auto_download.py "$PREV_YM" 2>&1 | tee -a "$LOG_FILE"
+  if ! python3 scripts/auto_download.py "$PREV_YM" 2>&1 | tee -a "$LOG_FILE"; then
+    log "❌ 前月分 Uレジ自動DL に失敗 — 当月分は更新済なので続行 (前月確定値は手動再実行で補完してください)"
+    notify "HANABI Dashboard 月初補完 失敗" "前月分 DL 失敗"
+    mail_failure "月初の前月分 ($PREV_YM) 補完取得に失敗。 翌日朝 or 手動で再実行が必要"
+    # 致命ではないので exit せず続行 (当月データはあるので)
+  fi
 fi
 
 # 3. メニュー別実績 (情報分析→技術の実績) スクレイプ
