@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-25T08:32:11",
+  "generated_at": "2026-05-26T08:32:08",
   "stores": {
     "tsunashima": {
       "name": "Hanabi 綱島店",
@@ -151,26 +151,26 @@
     "by_store": {
       "tsunashima": {
         "monthly": {
-          "total_sales": 3085644,
-          "tech_sales": 2821115,
-          "tech_sales_nominated": 2072427,
-          "tech_sales_free": 748688,
-          "tech_sales_male": 509542,
-          "tech_sales_female": 2219083,
-          "tech_customers_male": 67,
-          "tech_customers_female": 179,
-          "shop_sales": 264529,
-          "hpb_sales": 1670507,
-          "other_coupon_sales": 688570,
-          "customers": 277,
-          "tech_customers": 266,
-          "tech_customers_nominated": 199,
-          "tech_customers_free": 67,
+          "total_sales": 3221733,
+          "tech_sales": 2948513,
+          "tech_sales_nominated": 2177589,
+          "tech_sales_free": 770924,
+          "tech_sales_male": 515887,
+          "tech_sales_female": 2340136,
+          "tech_customers_male": 68,
+          "tech_customers_female": 188,
+          "shop_sales": 273220,
+          "hpb_sales": 1737793,
+          "other_coupon_sales": 705360,
+          "customers": 288,
+          "tech_customers": 276,
+          "tech_customers_nominated": 206,
+          "tech_customers_free": 70,
           "staff_count": 7,
           "by_dept": {
             "ヘア": {
-              "sales": 3085644,
-              "customers": 277,
+              "sales": 3221733,
+              "customers": 288,
               "staff_count": 7
             },
             "アイ": {
@@ -194,27 +194,27 @@
             "未設定"
           ]
         },
-        "daily_sum_sales": 3085644,
+        "daily_sum_sales": 3221733,
         "daily_sum_target": 4280000,
-        "days_recorded": 24
+        "days_recorded": 25
       },
       "miyakojima": {
         "monthly": {
-          "total_sales": 4333453,
-          "tech_sales": 4192535,
-          "tech_sales_nominated": 1716723,
-          "tech_sales_free": 2475812,
+          "total_sales": 4421489,
+          "tech_sales": 4280571,
+          "tech_sales_nominated": 1748859,
+          "tech_sales_free": 2531712,
           "tech_sales_male": 228309,
-          "tech_sales_female": 2745168,
+          "tech_sales_female": 2789604,
           "tech_customers_male": 33,
-          "tech_customers_female": 355,
+          "tech_customers_female": 361,
           "shop_sales": 140918,
-          "hpb_sales": 2511367,
+          "hpb_sales": 2592048,
           "other_coupon_sales": 0,
-          "customers": 573,
-          "tech_customers": 565,
-          "tech_customers_nominated": 221,
-          "tech_customers_free": 344,
+          "customers": 586,
+          "tech_customers": 578,
+          "tech_customers_nominated": 226,
+          "tech_customers_free": 352,
           "staff_count": 8,
           "by_dept": {
             "ヘア": {
@@ -223,13 +223,13 @@
               "staff_count": 3
             },
             "アイ": {
-              "sales": 1883057,
-              "customers": 262,
+              "sales": 1916257,
+              "customers": 267,
               "staff_count": 3
             },
             "ネイル": {
-              "sales": 1021734,
-              "customers": 160,
+              "sales": 1076570,
+              "customers": 168,
               "staff_count": 2
             }
           },
@@ -244,9 +244,9 @@
             "未設定"
           ]
         },
-        "daily_sum_sales": 4333453,
+        "daily_sum_sales": 4421489,
         "daily_sum_target": 5200000,
-        "days_recorded": 24
+        "days_recorded": 25
       },
       "shinyokohama": {
         "monthly": null,
@@ -256,7 +256,7 @@
       }
     },
     "company_total": {
-      "total_sales": 7419097,
+      "total_sales": 7643222,
       "customers": 0,
       "target": 9480000
     }
@@ -1867,26 +1867,26 @@
         ]
       },
       "202605": {
-        "total_sales": 3085644,
-        "tech_sales": 2821115,
-        "tech_sales_nominated": 2072427,
-        "tech_sales_free": 748688,
-        "tech_sales_male": 509542,
-        "tech_sales_female": 2219083,
-        "tech_customers_male": 67,
-        "tech_customers_female": 179,
-        "shop_sales": 264529,
-        "hpb_sales": 1670507,
-        "other_coupon_sales": 688570,
-        "customers": 277,
-        "tech_customers": 266,
-        "tech_customers_nominated": 199,
-        "tech_customers_free": 67,
+        "total_sales": 3221733,
+        "tech_sales": 2948513,
+        "tech_sales_nominated": 2177589,
+        "tech_sales_free": 770924,
+        "tech_sales_male": 515887,
+        "tech_sales_female": 2340136,
+        "tech_customers_male": 68,
+        "tech_customers_female": 188,
+        "shop_sales": 273220,
+        "hpb_sales": 1737793,
+        "other_coupon_sales": 705360,
+        "customers": 288,
+        "tech_customers": 276,
+        "tech_customers_nominated": 206,
+        "tech_customers_free": 70,
         "staff_count": 7,
         "by_dept": {
           "ヘア": {
-            "sales": 3085644,
-            "customers": 277,
+            "sales": 3221733,
+            "customers": 288,
             "staff_count": 7
           },
           "アイ": {
@@ -2682,21 +2682,21 @@
         ]
       },
       "202605": {
-        "total_sales": 4333453,
-        "tech_sales": 4192535,
-        "tech_sales_nominated": 1716723,
-        "tech_sales_free": 2475812,
+        "total_sales": 4421489,
+        "tech_sales": 4280571,
+        "tech_sales_nominated": 1748859,
+        "tech_sales_free": 2531712,
         "tech_sales_male": 228309,
-        "tech_sales_female": 2745168,
+        "tech_sales_female": 2789604,
         "tech_customers_male": 33,
-        "tech_customers_female": 355,
+        "tech_customers_female": 361,
         "shop_sales": 140918,
-        "hpb_sales": 2511367,
+        "hpb_sales": 2592048,
         "other_coupon_sales": 0,
-        "customers": 573,
-        "tech_customers": 565,
-        "tech_customers_nominated": 221,
-        "tech_customers_free": 344,
+        "customers": 586,
+        "tech_customers": 578,
+        "tech_customers_nominated": 226,
+        "tech_customers_free": 352,
         "staff_count": 8,
         "by_dept": {
           "ヘア": {
@@ -2705,13 +2705,13 @@
             "staff_count": 3
           },
           "アイ": {
-            "sales": 1883057,
-            "customers": 262,
+            "sales": 1916257,
+            "customers": 267,
             "staff_count": 3
           },
           "ネイル": {
-            "sales": 1021734,
-            "customers": 160,
+            "sales": 1076570,
+            "customers": 168,
             "staff_count": 2
           }
         },
@@ -19221,21 +19221,21 @@
           "store": "miyakojima",
           "date": "2026-05-25",
           "weekday": "月",
-          "new": 0,
-          "repeat": 0,
+          "new": 6,
+          "repeat": 7,
           "referral": 0,
           "nominated": 0,
-          "customers": 0,
+          "customers": 13,
           "customer_target": 21,
-          "customer_pct": 0.0,
-          "sales_grand_menu": 0,
+          "customer_pct": 61.9,
+          "sales_grand_menu": 1000,
           "sales_coupon": 0,
-          "sales_other": 0,
-          "sales": 0,
+          "sales_other": 87036,
+          "sales": 88036,
           "sales_target": 167742,
-          "sales_pct": 0.0,
-          "spend_per_customer": 0,
-          "reservations_next": 14
+          "sales_pct": 57.73,
+          "spend_per_customer": 6772,
+          "reservations_next": 13
         },
         {
           "store": "miyakojima",
@@ -19255,7 +19255,7 @@
           "sales_target": 167742,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 17
+          "reservations_next": 18
         },
         {
           "store": "miyakojima",
@@ -19275,7 +19275,7 @@
           "sales_target": 167742,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 22
+          "reservations_next": 23
         },
         {
           "store": "miyakojima",
@@ -19295,7 +19295,7 @@
           "sales_target": 167742,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 21
+          "reservations_next": 23
         },
         {
           "store": "miyakojima",
@@ -19335,7 +19335,7 @@
           "sales_target": 167742,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 10
+          "reservations_next": 13
         },
         {
           "store": "miyakojima",
@@ -45409,20 +45409,20 @@
           "store": "tsunashima",
           "date": "2026-05-25",
           "weekday": "月",
-          "new": 0,
-          "repeat": 0,
+          "new": 2,
+          "repeat": 9,
           "referral": 0,
           "nominated": 0,
-          "customers": 0,
+          "customers": 11,
           "customer_target": 13,
-          "customer_pct": 0.0,
-          "sales_grand_menu": 0,
-          "sales_coupon": 0,
-          "sales_other": 0,
-          "sales": 0,
+          "customer_pct": 84.62,
+          "sales_grand_menu": 43322,
+          "sales_coupon": 84076,
+          "sales_other": 8691,
+          "sales": 136089,
           "sales_target": 138065,
-          "sales_pct": 0.0,
-          "spend_per_customer": 0,
+          "sales_pct": 108.43,
+          "spend_per_customer": 12372,
           "reservations_next": 11
         },
         {
@@ -51271,11 +51271,11 @@
         "customers": 0
       },
       "202605": {
-        "new": 180,
-        "repeat": 375,
+        "new": 186,
+        "repeat": 382,
         "referral": 0,
         "nominated": 7,
-        "customers": 562
+        "customers": 575
       },
       "202602": {
         "new": 281,
@@ -51574,11 +51574,11 @@
         "customers": 297
       },
       "202605": {
-        "new": 42,
-        "repeat": 229,
+        "new": 44,
+        "repeat": 238,
         "referral": 0,
         "nominated": 6,
-        "customers": 277
+        "customers": 288
       },
       "202312": {
         "new": 107,
@@ -62432,27 +62432,27 @@
       "name": "水野 友里",
       "category": "",
       "work_days": 0,
-      "total_sales": 588014,
-      "customers": 46,
-      "spend_per_customer": 12783,
-      "tech_sales": 552777,
-      "tech_customers": 46,
-      "tech_sales_nominated": 552777,
-      "tech_customers_nominated": 46,
+      "total_sales": 622641,
+      "customers": 49,
+      "spend_per_customer": 12707,
+      "tech_sales": 587404,
+      "tech_customers": 49,
+      "tech_sales_nominated": 587404,
+      "tech_customers_nominated": 49,
       "tech_sales_free": 0,
       "tech_customers_free": 0,
       "tech_sales_male": 44583,
       "tech_customers_male": 6,
-      "tech_sales_female": 508194,
-      "tech_customers_female": 40,
+      "tech_sales_female": 542821,
+      "tech_customers_female": 43,
       "shop_sales": 35237,
       "shop_customers": 9,
-      "shop_pct": 5.99,
-      "purchase_pct": 19.57,
-      "hpb_sales": 67122,
-      "other_coupon_sales": 373953,
+      "shop_pct": 5.66,
+      "purchase_pct": 18.37,
+      "hpb_sales": 79831,
+      "other_coupon_sales": 389398,
       "dept_sales": {
-        "ヘア": 588014,
+        "ヘア": 622641,
         "アイ": 0,
         "ネイル": 0
       },
@@ -62467,9 +62467,9 @@
       "name": "水野 陽平",
       "category": "",
       "work_days": 0,
-      "total_sales": 129632,
-      "customers": 9,
-      "spend_per_customer": 14404,
+      "total_sales": 138323,
+      "customers": 10,
+      "spend_per_customer": 13832,
       "tech_sales": 0,
       "tech_customers": 0,
       "tech_sales_nominated": 0,
@@ -62480,14 +62480,14 @@
       "tech_customers_male": 0,
       "tech_sales_female": 0,
       "tech_customers_female": 0,
-      "shop_sales": 129632,
-      "shop_customers": 9,
+      "shop_sales": 138323,
+      "shop_customers": 10,
       "shop_pct": 100.0,
       "purchase_pct": 100.0,
       "hpb_sales": 0,
       "other_coupon_sales": 0,
       "dept_sales": {
-        "ヘア": 129632,
+        "ヘア": 138323,
         "アイ": 0,
         "ネイル": 0
       },
@@ -62537,27 +62537,27 @@
       "name": "渡辺 真也",
       "category": "",
       "work_days": 0,
-      "total_sales": 904082,
-      "customers": 68,
-      "spend_per_customer": 13295,
-      "tech_sales": 883206,
-      "tech_customers": 68,
-      "tech_sales_nominated": 708085,
-      "tech_customers_nominated": 51,
-      "tech_sales_free": 175121,
-      "tech_customers_free": 17,
+      "total_sales": 975617,
+      "customers": 72,
+      "spend_per_customer": 13550,
+      "tech_sales": 954741,
+      "tech_customers": 72,
+      "tech_sales_nominated": 769620,
+      "tech_customers_nominated": 54,
+      "tech_sales_free": 185121,
+      "tech_customers_free": 18,
       "tech_sales_male": 172548,
       "tech_customers_male": 19,
-      "tech_sales_female": 686540,
-      "tech_customers_female": 48,
+      "tech_sales_female": 758075,
+      "tech_customers_female": 52,
       "shop_sales": 20876,
       "shop_customers": 5,
-      "shop_pct": 2.31,
-      "purchase_pct": 7.35,
-      "hpb_sales": 732516,
-      "other_coupon_sales": 22422,
+      "shop_pct": 2.14,
+      "purchase_pct": 6.94,
+      "hpb_sales": 765857,
+      "other_coupon_sales": 23767,
       "dept_sales": {
-        "ヘア": 904082,
+        "ヘア": 975617,
         "アイ": 0,
         "ネイル": 0
       },
@@ -62607,27 +62607,27 @@
       "name": "馬場 美沙紀",
       "category": "",
       "work_days": 0,
-      "total_sales": 646252,
-      "customers": 55,
-      "spend_per_customer": 11750,
-      "tech_sales": 622966,
-      "tech_customers": 55,
-      "tech_sales_nominated": 137960,
-      "tech_customers_nominated": 16,
-      "tech_sales_free": 485006,
-      "tech_customers_free": 39,
-      "tech_sales_male": 89405,
-      "tech_customers_male": 13,
-      "tech_sales_female": 524943,
-      "tech_customers_female": 41,
+      "total_sales": 667488,
+      "customers": 58,
+      "spend_per_customer": 11508,
+      "tech_sales": 644202,
+      "tech_customers": 58,
+      "tech_sales_nominated": 146960,
+      "tech_customers_nominated": 17,
+      "tech_sales_free": 497242,
+      "tech_customers_free": 41,
+      "tech_sales_male": 95750,
+      "tech_customers_male": 14,
+      "tech_sales_female": 539834,
+      "tech_customers_female": 43,
       "shop_sales": 23286,
       "shop_customers": 1,
-      "shop_pct": 3.6,
-      "purchase_pct": 1.82,
-      "hpb_sales": 449681,
+      "shop_pct": 3.49,
+      "purchase_pct": 1.72,
+      "hpb_sales": 470917,
       "other_coupon_sales": 99876,
       "dept_sales": {
-        "ヘア": 646252,
+        "ヘア": 667488,
         "アイ": 0,
         "ネイル": 0
       },
@@ -63447,29 +63447,29 @@
       "name": "内藤 ひなき",
       "category": "",
       "work_days": 0,
-      "total_sales": 434022,
-      "customers": 75,
-      "spend_per_customer": 5787,
-      "tech_sales": 434022,
-      "tech_customers": 75,
-      "tech_sales_nominated": 65479,
-      "tech_customers_nominated": 12,
-      "tech_sales_free": 368543,
-      "tech_customers_free": 63,
+      "total_sales": 458722,
+      "customers": 79,
+      "spend_per_customer": 5807,
+      "tech_sales": 458722,
+      "tech_customers": 79,
+      "tech_sales_nominated": 70479,
+      "tech_customers_nominated": 13,
+      "tech_sales_free": 388243,
+      "tech_customers_free": 66,
       "tech_sales_male": 0,
       "tech_customers_male": 0,
-      "tech_sales_female": 178079,
-      "tech_customers_female": 31,
+      "tech_sales_female": 183579,
+      "tech_customers_female": 32,
       "shop_sales": 0,
       "shop_customers": 0,
       "shop_pct": 0.0,
       "purchase_pct": 0.0,
-      "hpb_sales": 377822,
+      "hpb_sales": 399322,
       "other_coupon_sales": 0,
       "dept_sales": {
         "ヘア": 0,
         "アイ": 0,
-        "ネイル": 434022
+        "ネイル": 458722
       },
       "primary_dept": "ネイル",
       "_nn_op_count": 0,
@@ -63482,29 +63482,29 @@
       "name": "一宮 有澄",
       "category": "",
       "work_days": 0,
-      "total_sales": 587712,
-      "customers": 85,
-      "spend_per_customer": 6914,
-      "tech_sales": 587712,
-      "tech_customers": 85,
-      "tech_sales_nominated": 310268,
-      "tech_customers_nominated": 46,
-      "tech_sales_free": 277444,
-      "tech_customers_free": 39,
+      "total_sales": 617848,
+      "customers": 89,
+      "spend_per_customer": 6942,
+      "tech_sales": 617848,
+      "tech_customers": 89,
+      "tech_sales_nominated": 333204,
+      "tech_customers_nominated": 49,
+      "tech_sales_free": 284644,
+      "tech_customers_free": 40,
       "tech_sales_male": 0,
       "tech_customers_male": 0,
-      "tech_sales_female": 215725,
-      "tech_customers_female": 32,
+      "tech_sales_female": 238661,
+      "tech_customers_female": 35,
       "shop_sales": 0,
       "shop_customers": 0,
       "shop_pct": 0.0,
       "purchase_pct": 0.0,
-      "hpb_sales": 516358,
+      "hpb_sales": 544039,
       "other_coupon_sales": 0,
       "dept_sales": {
         "ヘア": 0,
         "アイ": 0,
-        "ネイル": 587712
+        "ネイル": 617848
       },
       "primary_dept": "ネイル",
       "_nn_op_count": 0,
@@ -63517,28 +63517,28 @@
       "name": "宮里 乃の子",
       "category": "",
       "work_days": 0,
-      "total_sales": 610530,
-      "customers": 94,
-      "spend_per_customer": 6495,
-      "tech_sales": 600030,
-      "tech_customers": 93,
-      "tech_sales_nominated": 15191,
-      "tech_customers_nominated": 3,
-      "tech_sales_free": 584839,
-      "tech_customers_free": 90,
+      "total_sales": 643730,
+      "customers": 99,
+      "spend_per_customer": 6502,
+      "tech_sales": 633230,
+      "tech_customers": 98,
+      "tech_sales_nominated": 19391,
+      "tech_customers_nominated": 4,
+      "tech_sales_free": 613839,
+      "tech_customers_free": 94,
       "tech_sales_male": 3909,
       "tech_customers_male": 1,
-      "tech_sales_female": 307441,
-      "tech_customers_female": 48,
+      "tech_sales_female": 323441,
+      "tech_customers_female": 50,
       "shop_sales": 10500,
       "shop_customers": 3,
-      "shop_pct": 1.72,
-      "purchase_pct": 3.19,
-      "hpb_sales": 463181,
+      "shop_pct": 1.63,
+      "purchase_pct": 3.03,
+      "hpb_sales": 494681,
       "other_coupon_sales": 0,
       "dept_sales": {
-        "ヘア": 19479,
-        "アイ": 591051,
+        "ヘア": 20479,
+        "アイ": 623251,
         "ネイル": 0
       },
       "primary_dept": "アイ",
@@ -66199,18 +66199,14 @@
     "202605": 31
   },
   "uregi_top_snapshot": {
-    "snapshot_time": "2026/05/25 08:30:09",
+    "snapshot_time": "2026/05/26 08:30:10",
     "today_sales": "0人(0人)",
     "today_customers": "0人(0人)",
     "today_avg": "0人/0人",
     "today_active_staff": "0人/0人",
-    "today_reservation_rate": "0件/11件",
+    "today_reservation_rate": "0件/8件",
     "current_store_code": "001",
     "weekly_reservations": [
-      {
-        "date": "5/25(月)",
-        "count": "11件"
-      },
       {
         "date": "5/26(火)",
         "count": "8件"
@@ -66234,6 +66230,10 @@
       {
         "date": "5/31(日)",
         "count": "7件"
+      },
+      {
+        "date": "6/1(月)",
+        "count": "5件"
       }
     ]
   },
@@ -143773,7 +143773,7 @@
           "count": "1",
           "count_ratio": "0.2",
           "total_price": "23500",
-          "price_ratio": "0.6",
+          "price_ratio": "0.5",
           "unit_price": "23500",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -143941,7 +143941,7 @@
           "count": "4",
           "count_ratio": "0.7",
           "total_price": "32000",
-          "price_ratio": "0.8",
+          "price_ratio": "0.7",
           "unit_price": "8000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -144301,7 +144301,7 @@
           "count": "1",
           "count_ratio": "0.2",
           "total_price": "23500",
-          "price_ratio": "0.6",
+          "price_ratio": "0.5",
           "unit_price": "23500",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -144596,11 +144596,11 @@
         },
         {
           "row_number": "79",
-          "category_status_name": "ジェル",
-          "commodity_name": "長さ出しチップ 1本",
-          "count": "66",
-          "count_ratio": "11.9",
-          "total_price": "19774",
+          "category_status_name": "オフのみ",
+          "commodity_name": "チップ2本/埋め尽くし2本以上オフのみ",
+          "count": "70",
+          "count_ratio": "12.3",
+          "total_price": "20974",
           "price_ratio": "0.5",
           "unit_price": "300",
           "prev_total_price": "0",
@@ -144608,23 +144608,23 @@
         },
         {
           "row_number": "80",
-          "category_status_name": "ジェル",
-          "commodity_name": "長さ出しチップ 10本",
-          "count": "9",
-          "count_ratio": "1.6",
-          "total_price": "27000",
-          "price_ratio": "0.6",
+          "category_status_name": "オフのみ",
+          "commodity_name": "ハードジェル/スカルプのオフのみ",
+          "count": "10",
+          "count_ratio": "1.8",
+          "total_price": "30000",
+          "price_ratio": "0.7",
           "unit_price": "3000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
           "row_number": "81",
-          "category_status_name": "ジェル",
-          "commodity_name": "アクリル補強",
-          "count": "18",
-          "count_ratio": "3.2",
-          "total_price": "3558",
+          "category_status_name": "オフのみ",
+          "commodity_name": "過去の商品",
+          "count": "19",
+          "count_ratio": "3.4",
+          "total_price": "3758",
           "price_ratio": "0.1",
           "unit_price": "198",
           "prev_total_price": "0",
@@ -144632,8 +144632,8 @@
         },
         {
           "row_number": "82",
-          "category_status_name": "ジェル",
-          "commodity_name": "オフのみ",
+          "category_status_name": "オフのみ",
+          "commodity_name": "オフのみ(ケア無し)",
           "count": "6",
           "count_ratio": "1.1",
           "total_price": "20454",
@@ -144644,8 +144644,8 @@
         },
         {
           "row_number": "83",
-          "category_status_name": "ジェル",
-          "commodity_name": "クリアのみ",
+          "category_status_name": "オフのみ",
+          "commodity_name": "オフのみ(ケア有り)",
           "count": "2",
           "count_ratio": "0.4",
           "total_price": "8000",
@@ -144668,8 +144668,8 @@
         },
         {
           "row_number": "85",
-          "category_status_name": "ジェル",
-          "commodity_name": "コピー",
+          "category_status_name": "オフのみ",
+          "commodity_name": "過去の商品",
           "count": "0",
           "count_ratio": "0.0",
           "total_price": "0",
@@ -144767,9 +144767,9 @@
           "category_status_name": "カット",
           "commodity_name": "カット",
           "count": "56",
-          "count_ratio": "10.1",
+          "count_ratio": "9.9",
           "total_price": "236096",
-          "price_ratio": "5.6",
+          "price_ratio": "5.5",
           "unit_price": "4216",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -144887,7 +144887,7 @@
           "category_status_name": "まつげエクステ",
           "commodity_name": "ダブルフラット変更",
           "count": "53",
-          "count_ratio": "9.6",
+          "count_ratio": "9.3",
           "total_price": "105754",
           "price_ratio": "2.5",
           "unit_price": "1995",
@@ -144925,7 +144925,7 @@
           "count": "2",
           "count_ratio": "0.4",
           "total_price": "6312",
-          "price_ratio": "0.2",
+          "price_ratio": "0.1",
           "unit_price": "3156",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -144995,7 +144995,7 @@
           "category_status_name": "まつげエクステ",
           "commodity_name": "フラット120本",
           "count": "12",
-          "count_ratio": "2.2",
+          "count_ratio": "2.1",
           "total_price": "72000",
           "price_ratio": "1.7",
           "unit_price": "6000",
@@ -145103,7 +145103,7 @@
           "category_status_name": "まつげエクステ",
           "commodity_name": "LED初回",
           "count": "11",
-          "count_ratio": "2.0",
+          "count_ratio": "1.9",
           "total_price": "5500",
           "price_ratio": "0.1",
           "unit_price": "500",
@@ -145115,9 +145115,9 @@
           "category_status_name": "まつげエクステ",
           "commodity_name": "LED通常価格",
           "count": "7",
-          "count_ratio": "1.3",
+          "count_ratio": "1.2",
           "total_price": "10500",
-          "price_ratio": "0.3",
+          "price_ratio": "0.2",
           "unit_price": "1500",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -145366,9 +145366,9 @@
           "row_number": "143",
           "category_status_name": "I付替オフ",
           "commodity_name": "まつエク)付替オフ 他店",
-          "count": "18",
-          "count_ratio": "3.2",
-          "total_price": "9000",
+          "count": "19",
+          "count_ratio": "3.4",
+          "total_price": "9500",
           "price_ratio": "0.2",
           "unit_price": "500",
           "prev_total_price": "0",
@@ -145376,8 +145376,8 @@
         },
         {
           "row_number": "144",
-          "category_status_name": "アート",
-          "commodity_name": "有料アート",
+          "category_status_name": "追加メニュー",
+          "commodity_name": "長さ出しチップ5本まで",
           "count": "0",
           "count_ratio": "0.0",
           "total_price": "0",
@@ -145390,9 +145390,9 @@
           "row_number": "145",
           "category_status_name": "変更料",
           "commodity_name": "HPB再来＋550",
-          "count": "63",
-          "count_ratio": "11.4",
-          "total_price": "31479",
+          "count": "65",
+          "count_ratio": "11.5",
+          "total_price": "32479",
           "price_ratio": "0.8",
           "unit_price": "500",
           "prev_total_price": "0",
@@ -145424,10 +145424,58 @@
         },
         {
           "row_number": "148",
+          "category_status_name": "追加メニュー",
+          "commodity_name": "長さ出しチップ6～10本(1本¥330)",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "149",
+          "category_status_name": "追加メニュー",
+          "commodity_name": "アクリル補強(1か所¥220)",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "150",
+          "category_status_name": "追加メニュー",
+          "commodity_name": "ロング料金(根元から2cm以上のかた)",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "151",
+          "category_status_name": "追加メニュー",
+          "commodity_name": "特殊アート追加",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "152",
           "category_status_name": "カラー",
           "commodity_name": "カラー",
           "count": "15",
-          "count_ratio": "2.7",
+          "count_ratio": "2.6",
           "total_price": "93500",
           "price_ratio": "2.2",
           "unit_price": "6233",
@@ -145435,19 +145483,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "149",
+          "row_number": "153",
           "category_status_name": "カラー",
           "commodity_name": "Wカラー",
           "count": "6",
           "count_ratio": "1.1",
           "total_price": "86000",
-          "price_ratio": "2.1",
+          "price_ratio": "2.0",
           "unit_price": "14333",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "150",
+          "row_number": "154",
           "category_status_name": "カラー",
           "commodity_name": "トリプルカラー",
           "count": "0",
@@ -145459,7 +145507,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "151",
+          "row_number": "155",
           "category_status_name": "カラー",
           "commodity_name": "ハイライト＆全体カラー",
           "count": "4",
@@ -145471,7 +145519,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "152",
+          "row_number": "156",
           "category_status_name": "カラー",
           "commodity_name": "バレイヤージュ＆全体カラー",
           "count": "0",
@@ -145483,7 +145531,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "153",
+          "row_number": "157",
           "category_status_name": "カラー",
           "commodity_name": "インナーカラー＆全体カラー",
           "count": "2",
@@ -145495,11 +145543,11 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "154",
+          "row_number": "158",
           "category_status_name": "カラー",
           "commodity_name": "リタッチ",
           "count": "11",
-          "count_ratio": "2.0",
+          "count_ratio": "1.9",
           "total_price": "43591",
           "price_ratio": "1.0",
           "unit_price": "3963",
@@ -145507,11 +145555,11 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "155",
+          "row_number": "159",
           "category_status_name": "カラー",
           "commodity_name": "ロング料金",
           "count": "24",
-          "count_ratio": "4.3",
+          "count_ratio": "4.2",
           "total_price": "24000",
           "price_ratio": "0.6",
           "unit_price": "1000",
@@ -145519,11 +145567,11 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "156",
+          "row_number": "160",
           "category_status_name": "カラー",
           "commodity_name": "カラー剤料金",
           "count": "27",
-          "count_ratio": "4.9",
+          "count_ratio": "4.8",
           "total_price": "27000",
           "price_ratio": "0.6",
           "unit_price": "1000",
@@ -145531,7 +145579,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "157",
+          "row_number": "161",
           "category_status_name": "Iその他メニュー",
           "commodity_name": "ハリウッドブロウリフト",
           "count": "0",
@@ -145543,7 +145591,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "158",
+          "row_number": "162",
           "category_status_name": "Iその他メニュー",
           "commodity_name": "アップワードラッシュ",
           "count": "0",
@@ -145555,7 +145603,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "159",
+          "row_number": "163",
           "category_status_name": "Iその他メニュー",
           "commodity_name": "下まつ毛パーマ",
           "count": "0",
@@ -145567,9 +145615,9 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "160",
+          "row_number": "164",
           "category_status_name": "N付替オフ",
-          "commodity_name": "他店スカルプオフ",
+          "commodity_name": "ネイル）特殊オフ 3300",
           "count": "0",
           "count_ratio": "0.0",
           "total_price": "0",
@@ -145579,9 +145627,9 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "161",
+          "row_number": "165",
           "category_status_name": "N付替オフ",
-          "commodity_name": "ネイル)付替オフ",
+          "commodity_name": "ネイル)付替オフ 550",
           "count": "8",
           "count_ratio": "1.4",
           "total_price": "3500",
@@ -145591,7 +145639,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "162",
+          "row_number": "166",
           "category_status_name": "Iその他メニュー",
           "commodity_name": "アイシャンプー",
           "count": "0",
@@ -145603,7 +145651,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "163",
+          "row_number": "167",
           "category_status_name": "Iその他メニュー",
           "commodity_name": "アイシャンプー",
           "count": "1",
@@ -145615,7 +145663,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "164",
+          "row_number": "168",
           "category_status_name": "パーマ",
           "commodity_name": "パーマ",
           "count": "5",
@@ -145627,7 +145675,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "165",
+          "row_number": "169",
           "category_status_name": "Iオフのみ",
           "commodity_name": "マツエクオフのみ 当店",
           "count": "1",
@@ -145639,7 +145687,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "166",
+          "row_number": "170",
           "category_status_name": "Iオフのみ",
           "commodity_name": "マツエクオフのみ 他店",
           "count": "0",
@@ -145651,9 +145699,9 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "167",
+          "row_number": "171",
           "category_status_name": "NHPBクーポン",
-          "commodity_name": "*Jr. ﾜﾝｶﾗｰorｸﾞﾗﾃﾞｰ",
+          "commodity_name": "*Jr. H)グラデーション",
           "count": "0",
           "count_ratio": "0.0",
           "total_price": "0",
@@ -145663,7 +145711,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "168",
+          "row_number": "172",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*Jr. F)ワンカラー",
           "count": "0",
@@ -145675,19 +145723,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "169",
+          "row_number": "173",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*H)ワンカラー",
-          "count": "54",
-          "count_ratio": "9.7",
-          "total_price": "272844",
-          "price_ratio": "6.5",
-          "unit_price": "5053",
+          "count": "58",
+          "count_ratio": "10.2",
+          "total_price": "293025",
+          "price_ratio": "6.8",
+          "unit_price": "5052",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "170",
+          "row_number": "174",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*H)グラデーション",
           "count": "18",
@@ -145699,9 +145747,9 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "171",
+          "row_number": "175",
           "category_status_name": "NHPBクーポン",
-          "commodity_name": "*H)フレンチ",
+          "commodity_name": "*H)ベースクリアフレンチ",
           "count": "4",
           "count_ratio": "0.7",
           "total_price": "26499",
@@ -145711,19 +145759,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "172",
+          "row_number": "176",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*H)マグネットorミラー",
-          "count": "19",
-          "count_ratio": "3.4",
-          "total_price": "115500",
-          "price_ratio": "2.8",
-          "unit_price": "6079",
+          "count": "21",
+          "count_ratio": "3.7",
+          "total_price": "127500",
+          "price_ratio": "3.0",
+          "unit_price": "6071",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "173",
+          "row_number": "177",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*H)2本アート",
           "count": "6",
@@ -145735,7 +145783,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "174",
+          "row_number": "178",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*H)4本アート",
           "count": "8",
@@ -145747,23 +145795,23 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "175",
+          "row_number": "179",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*H)10本アート",
-          "count": "22",
-          "count_ratio": "4.0",
-          "total_price": "170724",
-          "price_ratio": "4.1",
-          "unit_price": "7760",
+          "count": "24",
+          "count_ratio": "4.2",
+          "total_price": "187724",
+          "price_ratio": "4.4",
+          "unit_price": "7822",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "176",
+          "row_number": "180",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*F)ワンカラー",
           "count": "17",
-          "count_ratio": "3.1",
+          "count_ratio": "3.0",
           "total_price": "90000",
           "price_ratio": "2.1",
           "unit_price": "5294",
@@ -145771,7 +145819,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "177",
+          "row_number": "181",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*F)親指アート",
           "count": "1",
@@ -145783,7 +145831,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "178",
+          "row_number": "182",
           "category_status_name": "NHPBクーポン",
           "commodity_name": "*F)10本アート",
           "count": "4",
@@ -145795,9 +145843,9 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "179",
+          "row_number": "183",
           "category_status_name": "NHPBクーポン",
-          "commodity_name": "Jr.アート2本",
+          "commodity_name": "*Jr.H)アート2本",
           "count": "0",
           "count_ratio": "0.0",
           "total_price": "0",
@@ -145807,9 +145855,9 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "180",
+          "row_number": "184",
           "category_status_name": "NHPBクーポン",
-          "commodity_name": "Jr.マグorミラー",
+          "commodity_name": "*Jr.H)マグorミラー",
           "count": "0",
           "count_ratio": "0.0",
           "total_price": "0",
@@ -145819,9 +145867,9 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "181",
+          "row_number": "185",
           "category_status_name": "NHPBクーポン",
-          "commodity_name": "Jr.フット親指アート",
+          "commodity_name": "*Jr.F)親指アート",
           "count": "0",
           "count_ratio": "0.0",
           "total_price": "0",
@@ -145831,7 +145879,115 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "182",
+          "row_number": "186",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*H)クリアのみ",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "187",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*H)バーチャルフレンチ",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "188",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*Jr.H)クリアのみ",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "189",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*Jr.H)ベースクリアフレンチ",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "190",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*Jr.F)ワンカラー",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "191",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*Jr.H)バーチャルフレンチ",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "192",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*Jr.H)4本アート",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "193",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*Jr.H)10本アート",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "194",
+          "category_status_name": "NHPBクーポン",
+          "commodity_name": "*Jr.F)10本アート",
+          "count": "0",
+          "count_ratio": "0.0",
+          "total_price": "0",
+          "price_ratio": "0.0",
+          "unit_price": "0",
+          "prev_total_price": "0",
+          "year_on_year_price": "0.0%"
+        },
+        {
+          "row_number": "195",
           "category_status_name": "縮毛矯正",
           "commodity_name": "*ソフトストレート",
           "count": "0",
@@ -145843,7 +145999,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "183",
+          "row_number": "196",
           "category_status_name": "縮毛矯正",
           "commodity_name": "縮毛矯正",
           "count": "1",
@@ -145855,7 +146011,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "184",
+          "row_number": "197",
           "category_status_name": "縮毛矯正",
           "commodity_name": "ポイント縮毛矯正",
           "count": "1",
@@ -145867,11 +146023,11 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "185",
+          "row_number": "198",
           "category_status_name": "I指名料",
           "commodity_name": "まつエク)指名料",
           "count": "84",
-          "count_ratio": "15.2",
+          "count_ratio": "14.8",
           "total_price": "41847",
           "price_ratio": "1.0",
           "unit_price": "498",
@@ -145879,19 +146035,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "186",
+          "row_number": "199",
           "category_status_name": "N変更料",
           "commodity_name": "H)1色追加",
-          "count": "20",
-          "count_ratio": "3.6",
-          "total_price": "9793",
+          "count": "21",
+          "count_ratio": "3.7",
+          "total_price": "10261",
           "price_ratio": "0.2",
-          "unit_price": "490",
+          "unit_price": "489",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "187",
+          "row_number": "200",
           "category_status_name": "N変更料",
           "commodity_name": "H)ベイビーブーマー",
           "count": "1",
@@ -145903,7 +146059,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "188",
+          "row_number": "201",
           "category_status_name": "N変更料",
           "commodity_name": "H)下地",
           "count": "2",
@@ -145915,7 +146071,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "189",
+          "row_number": "202",
           "category_status_name": "N変更料",
           "commodity_name": "H)バーチャルフレンチ",
           "count": "1",
@@ -145927,19 +146083,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "190",
+          "row_number": "203",
           "category_status_name": "N変更料",
           "commodity_name": "ストーン小",
-          "count": "122",
-          "count_ratio": "22.0",
-          "total_price": "6100",
+          "count": "126",
+          "count_ratio": "22.2",
+          "total_price": "6300",
           "price_ratio": "0.1",
           "unit_price": "50",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "191",
+          "row_number": "204",
           "category_status_name": "N変更料",
           "commodity_name": "シール1枚",
           "count": "5",
@@ -145951,11 +146107,11 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "192",
+          "row_number": "205",
           "category_status_name": "N変更料",
           "commodity_name": "ストーン大",
           "count": "23",
-          "count_ratio": "4.2",
+          "count_ratio": "4.1",
           "total_price": "8931",
           "price_ratio": "0.2",
           "unit_price": "388",
@@ -145963,7 +146119,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "193",
+          "row_number": "206",
           "category_status_name": "I指名料",
           "commodity_name": "過去の商品",
           "count": "0",
@@ -145975,23 +146131,23 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "194",
+          "row_number": "207",
           "category_status_name": "I指名料",
           "commodity_name": "I指名料+220円",
-          "count": "17",
-          "count_ratio": "3.1",
-          "total_price": "3396",
+          "count": "18",
+          "count_ratio": "3.2",
+          "total_price": "3596",
           "price_ratio": "0.1",
           "unit_price": "200",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "195",
+          "row_number": "208",
           "category_status_name": "トリートメント",
           "commodity_name": "2stepトリートメント",
           "count": "12",
-          "count_ratio": "2.2",
+          "count_ratio": "2.1",
           "total_price": "24000",
           "price_ratio": "0.6",
           "unit_price": "2000",
@@ -145999,7 +146155,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "196",
+          "row_number": "209",
           "category_status_name": "トリートメント",
           "commodity_name": "4stepトリートメント",
           "count": "4",
@@ -146011,7 +146167,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "197",
+          "row_number": "210",
           "category_status_name": "トリートメント",
           "commodity_name": "5stepトリートメント",
           "count": "1",
@@ -146023,7 +146179,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "198",
+          "row_number": "211",
           "category_status_name": "トリートメント",
           "commodity_name": "ケアプロ",
           "count": "3",
@@ -146035,55 +146191,55 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "199",
+          "row_number": "212",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*Wフラットラッシュ100本",
           "count": "35",
-          "count_ratio": "6.3",
+          "count_ratio": "6.2",
           "total_price": "226882",
-          "price_ratio": "5.4",
+          "price_ratio": "5.3",
           "unit_price": "6482",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "200",
+          "row_number": "213",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*Wフラットラッシュ120本",
           "count": "26",
-          "count_ratio": "4.7",
+          "count_ratio": "4.6",
           "total_price": "181830",
-          "price_ratio": "4.3",
+          "price_ratio": "4.2",
           "unit_price": "6993",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "201",
+          "row_number": "214",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*Wフラットラッシュ140本",
-          "count": "21",
-          "count_ratio": "3.8",
-          "total_price": "157499",
-          "price_ratio": "3.8",
+          "count": "24",
+          "count_ratio": "4.2",
+          "total_price": "179999",
+          "price_ratio": "4.2",
           "unit_price": "7500",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "202",
+          "row_number": "215",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*上まつ毛パーマ",
-          "count": "43",
+          "count": "44",
           "count_ratio": "7.8",
-          "total_price": "215000",
+          "total_price": "220000",
           "price_ratio": "5.1",
           "unit_price": "5000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "203",
+          "row_number": "216",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*上下まつ毛パーマ",
           "count": "6",
@@ -146095,7 +146251,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "204",
+          "row_number": "217",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*ﾊﾘｳｯﾄﾞﾌﾞﾛｳまつ毛ﾊﾟｰﾏ",
           "count": "3",
@@ -146107,7 +146263,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "205",
+          "row_number": "218",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*ｱｲﾌﾞﾛｳWAXまつ毛ﾊﾟｰﾏ",
           "count": "6",
@@ -146119,19 +146275,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "206",
+          "row_number": "219",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*アイブロウWAX脱毛",
-          "count": "20",
-          "count_ratio": "3.6",
-          "total_price": "79261",
+          "count": "21",
+          "count_ratio": "3.7",
+          "total_price": "83261",
           "price_ratio": "1.9",
-          "unit_price": "3963",
+          "unit_price": "3965",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "207",
+          "row_number": "220",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*ハリウッドブロウリフト",
           "count": "5",
@@ -146143,31 +146299,31 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "208",
+          "row_number": "221",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*40本リペア",
           "count": "20",
-          "count_ratio": "3.6",
+          "count_ratio": "3.5",
           "total_price": "61619",
-          "price_ratio": "1.5",
+          "price_ratio": "1.4",
           "unit_price": "3081",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "209",
+          "row_number": "222",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*80本リペア",
           "count": "30",
-          "count_ratio": "5.4",
+          "count_ratio": "5.3",
           "total_price": "119765",
-          "price_ratio": "2.9",
+          "price_ratio": "2.8",
           "unit_price": "3992",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "210",
+          "row_number": "223",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*マツエク100本",
           "count": "0",
@@ -146179,7 +146335,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "211",
+          "row_number": "224",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*マツエク120本",
           "count": "0",
@@ -146191,7 +146347,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "212",
+          "row_number": "225",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*マツエク140本",
           "count": "0",
@@ -146203,7 +146359,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "213",
+          "row_number": "226",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*マツエク160本",
           "count": "0",
@@ -146215,7 +146371,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "214",
+          "row_number": "227",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*シングル付け放題",
           "count": "1",
@@ -146227,7 +146383,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "215",
+          "row_number": "228",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*シングル上下付け放題",
           "count": "0",
@@ -146239,19 +146395,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "216",
+          "row_number": "229",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*下まつげ60本",
           "count": "14",
           "count_ratio": "2.5",
           "total_price": "44543",
-          "price_ratio": "1.1",
+          "price_ratio": "1.0",
           "unit_price": "3182",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "217",
+          "row_number": "230",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "*下まつ毛パーマ",
           "count": "1",
@@ -146263,11 +146419,11 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "218",
+          "row_number": "231",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "60本リペア",
           "count": "17",
-          "count_ratio": "3.1",
+          "count_ratio": "3.0",
           "total_price": "60133",
           "price_ratio": "1.4",
           "unit_price": "3537",
@@ -146275,19 +146431,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "219",
+          "row_number": "232",
           "category_status_name": "N指名料",
           "commodity_name": "N指名料２２０円",
-          "count": "53",
-          "count_ratio": "9.6",
-          "total_price": "10569",
+          "count": "56",
+          "count_ratio": "9.9",
+          "total_price": "11156",
           "price_ratio": "0.3",
           "unit_price": "199",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "220",
+          "row_number": "233",
           "category_status_name": "ヘッドスパ",
           "commodity_name": "過去の商品",
           "count": "0",
@@ -146299,7 +146455,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "221",
+          "row_number": "234",
           "category_status_name": "ヘッドスパ",
           "commodity_name": "ヘッドスパ１０分",
           "count": "1",
@@ -146311,7 +146467,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "222",
+          "row_number": "235",
           "category_status_name": "ヘッドスパ",
           "commodity_name": "ヘッドスパ２０分",
           "count": "2",
@@ -146323,7 +146479,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "223",
+          "row_number": "236",
           "category_status_name": "ヘアセット",
           "commodity_name": "アップ",
           "count": "4",
@@ -146335,7 +146491,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "224",
+          "row_number": "237",
           "category_status_name": "ヘアセット",
           "commodity_name": "ハーフアップ",
           "count": "2",
@@ -146347,7 +146503,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "225",
+          "row_number": "238",
           "category_status_name": "ヘアセット",
           "commodity_name": "巻き下ろし",
           "count": "1",
@@ -146359,7 +146515,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "226",
+          "row_number": "239",
           "category_status_name": "ヘアセット",
           "commodity_name": "早朝料金",
           "count": "0",
@@ -146371,7 +146527,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "227",
+          "row_number": "240",
           "category_status_name": "その他メニュー",
           "commodity_name": "*シャンプー",
           "count": "0",
@@ -146383,7 +146539,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "228",
+          "row_number": "241",
           "category_status_name": "その他メニュー",
           "commodity_name": "過去の商品",
           "count": "0",
@@ -146395,7 +146551,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "229",
+          "row_number": "242",
           "category_status_name": "その他メニュー",
           "commodity_name": "シャンプーブロー",
           "count": "1",
@@ -146407,11 +146563,11 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "230",
+          "row_number": "243",
           "category_status_name": "指名料",
           "commodity_name": "指名料",
           "count": "50",
-          "count_ratio": "9.0",
+          "count_ratio": "8.8",
           "total_price": "26410",
           "price_ratio": "0.6",
           "unit_price": "528",
@@ -146419,7 +146575,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "231",
+          "row_number": "244",
           "category_status_name": "セット",
           "commodity_name": "カット+カラー+トリートメント",
           "count": "4",
@@ -146431,7 +146587,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "232",
+          "row_number": "245",
           "category_status_name": "セット",
           "commodity_name": "カット+パーマ+トリートメント",
           "count": "1",
@@ -146443,7 +146599,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "233",
+          "row_number": "246",
           "category_status_name": "セット",
           "commodity_name": "カット+トリートメント",
           "count": "2",
@@ -146455,7 +146611,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "234",
+          "row_number": "247",
           "category_status_name": "セット",
           "commodity_name": "カット+ダブルカラー+TR",
           "count": "0",
@@ -146467,7 +146623,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "235",
+          "row_number": "248",
           "category_status_name": "セット",
           "commodity_name": "カット+リタッチカラー+TR",
           "count": "5",
@@ -146479,7 +146635,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "236",
+          "row_number": "249",
           "category_status_name": "セット",
           "commodity_name": "カット+縮毛矯正+トリートメント",
           "count": "0",
@@ -146491,7 +146647,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "237",
+          "row_number": "250",
           "category_status_name": "セット",
           "commodity_name": "カット+ポイント縮毛矯正+TR",
           "count": "0",
@@ -146503,7 +146659,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "238",
+          "row_number": "251",
           "category_status_name": "セット",
           "commodity_name": "カット+カラー+ハイライト+TR",
           "count": "1",
@@ -146515,7 +146671,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "239",
+          "row_number": "252",
           "category_status_name": "セット",
           "commodity_name": "カット+インナーカラー+カラー+TR",
           "count": "1",
@@ -146527,7 +146683,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "240",
+          "row_number": "253",
           "category_status_name": "エクステンション",
           "commodity_name": "エクステ１０本",
           "count": "2",
@@ -146539,19 +146695,19 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "241",
+          "row_number": "254",
           "category_status_name": "エクステンション",
           "commodity_name": "エクステ４０本",
           "count": "2",
           "count_ratio": "0.4",
           "total_price": "36000",
-          "price_ratio": "0.9",
+          "price_ratio": "0.8",
           "unit_price": "18000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "242",
+          "row_number": "255",
           "category_status_name": "エクステンション",
           "commodity_name": "エクステ５０本",
           "count": "0",
@@ -146563,7 +146719,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "243",
+          "row_number": "256",
           "category_status_name": "エクステンション",
           "commodity_name": "エクステ６０本",
           "count": "1",
@@ -146575,7 +146731,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "244",
+          "row_number": "257",
           "category_status_name": "エクステンション",
           "commodity_name": "エクステ８０本",
           "count": "2",
@@ -146587,7 +146743,7 @@
           "year_on_year_price": "0.0%"
         },
         {
-          "row_number": "245",
+          "row_number": "258",
           "category_status_name": "エクステンション",
           "commodity_name": "シールエクステオフ",
           "count": "1",
@@ -146604,22 +146760,22 @@
           "row_number": "1",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットカラー",
-          "count": "10",
-          "count_ratio": "3.8",
-          "total_price": "100647",
-          "price_ratio": "3.6",
-          "unit_price": "10065",
-          "prev_total_price": "98005",
-          "year_on_year_price": "102.7%"
+          "count": "11",
+          "count_ratio": "4.0",
+          "total_price": "111083",
+          "price_ratio": "3.8",
+          "unit_price": "10098",
+          "prev_total_price": "107987",
+          "year_on_year_price": "102.9%"
         },
         {
           "row_number": "2",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットカラーAujua",
           "count": "18",
-          "count_ratio": "6.8",
+          "count_ratio": "6.5",
           "total_price": "200130",
-          "price_ratio": "7.1",
+          "price_ratio": "6.8",
           "unit_price": "11118",
           "prev_total_price": "138927",
           "year_on_year_price": "144.1%"
@@ -146628,22 +146784,22 @@
           "row_number": "3",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カット美髪カラー美髪tr",
-          "count": "12",
-          "count_ratio": "4.5",
-          "total_price": "170868",
+          "count": "13",
+          "count_ratio": "4.7",
+          "total_price": "179868",
           "price_ratio": "6.1",
-          "unit_price": "14239",
-          "prev_total_price": "247482",
-          "year_on_year_price": "69.0%"
+          "unit_price": "13836",
+          "prev_total_price": "274718",
+          "year_on_year_price": "65.5%"
         },
         {
           "row_number": "4",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットカラースパ",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "25000",
-          "price_ratio": "0.9",
+          "price_ratio": "0.8",
           "unit_price": "12500",
           "prev_total_price": "47199",
           "year_on_year_price": "53.0%"
@@ -146653,7 +146809,7 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットリタッチ",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "37653",
           "price_ratio": "1.3",
           "unit_price": "9413",
@@ -146689,7 +146845,7 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "美髪リタッチ美髪tr",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "40545",
           "price_ratio": "1.4",
           "unit_price": "10136",
@@ -146701,7 +146857,7 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "美髪フルカラー美髪tr",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "46050",
           "price_ratio": "1.6",
           "unit_price": "11513",
@@ -146713,21 +146869,21 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットシャンプー",
           "count": "40",
-          "count_ratio": "15.0",
+          "count_ratio": "14.5",
           "total_price": "213078",
-          "price_ratio": "7.6",
+          "price_ratio": "7.2",
           "unit_price": "5327",
-          "prev_total_price": "219304",
-          "year_on_year_price": "97.2%"
+          "prev_total_price": "235612",
+          "year_on_year_price": "90.4%"
         },
         {
           "row_number": "11",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットスパ",
           "count": "6",
-          "count_ratio": "2.3",
+          "count_ratio": "2.2",
           "total_price": "44433",
-          "price_ratio": "1.6",
+          "price_ratio": "1.5",
           "unit_price": "7406",
           "prev_total_price": "48439",
           "year_on_year_price": "91.7%"
@@ -146736,11 +146892,11 @@
           "row_number": "12",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットAujua",
-          "count": "7",
-          "count_ratio": "2.6",
-          "total_price": "53979",
-          "price_ratio": "1.9",
-          "unit_price": "7711",
+          "count": "8",
+          "count_ratio": "2.9",
+          "total_price": "59870",
+          "price_ratio": "2.0",
+          "unit_price": "7484",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -146749,7 +146905,7 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "カット髪質改善",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "22690",
           "price_ratio": "0.8",
           "unit_price": "11345",
@@ -146761,7 +146917,7 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "メンズ　カットスパ",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "28116",
           "price_ratio": "1.0",
           "unit_price": "7029",
@@ -146772,32 +146928,32 @@
           "row_number": "15",
           "category_status_name": "HPBクーポン",
           "commodity_name": "メンズ　カット眉カット",
-          "count": "4",
-          "count_ratio": "1.5",
-          "total_price": "25380",
-          "price_ratio": "0.9",
+          "count": "5",
+          "count_ratio": "1.8",
+          "total_price": "31725",
+          "price_ratio": "1.1",
           "unit_price": "6345",
           "prev_total_price": "6345",
-          "year_on_year_price": "400.0%"
+          "year_on_year_price": "500.0%"
         },
         {
           "row_number": "16",
           "category_status_name": "HPBクーポン",
           "commodity_name": "メンズ　カットカラー",
           "count": "8",
-          "count_ratio": "3.0",
+          "count_ratio": "2.9",
           "total_price": "72458",
-          "price_ratio": "2.6",
+          "price_ratio": "2.5",
           "unit_price": "9057",
-          "prev_total_price": "62144",
-          "year_on_year_price": "116.6%"
+          "prev_total_price": "71216",
+          "year_on_year_price": "101.7%"
         },
         {
           "row_number": "17",
           "category_status_name": "HPBクーポン",
           "commodity_name": "メンズ　カットパーマ",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "28790",
           "price_ratio": "1.0",
           "unit_price": "14395",
@@ -146821,7 +146977,7 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "カット部分スト",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "26245",
           "price_ratio": "0.9",
           "unit_price": "13123",
@@ -146844,13 +147000,13 @@
           "row_number": "21",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カット縮毛矯正",
-          "count": "14",
-          "count_ratio": "5.3",
-          "total_price": "326111",
-          "price_ratio": "11.6",
-          "unit_price": "23294",
-          "prev_total_price": "120779",
-          "year_on_year_price": "270.0%"
+          "count": "15",
+          "count_ratio": "5.4",
+          "total_price": "349016",
+          "price_ratio": "11.8",
+          "unit_price": "23268",
+          "prev_total_price": "155287",
+          "year_on_year_price": "224.8%"
         },
         {
           "row_number": "22",
@@ -146905,7 +147061,7 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "名嘉眞ほのか限定　カットスパ眉カット",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "29016",
           "price_ratio": "1.0",
           "unit_price": "7254",
@@ -146988,13 +147144,13 @@
           "row_number": "33",
           "category_status_name": "HPBクーポン",
           "commodity_name": "お誕生日クーポン",
-          "count": "2",
-          "count_ratio": "0.8",
-          "total_price": "25418",
-          "price_ratio": "0.9",
+          "count": "3",
+          "count_ratio": "1.1",
+          "total_price": "38127",
+          "price_ratio": "1.3",
           "unit_price": "12709",
           "prev_total_price": "25418",
-          "year_on_year_price": "100.0%"
+          "year_on_year_price": "150.0%"
         },
         {
           "row_number": "34",
@@ -147003,7 +147159,7 @@
           "count": "3",
           "count_ratio": "1.1",
           "total_price": "50854",
-          "price_ratio": "1.8",
+          "price_ratio": "1.7",
           "unit_price": "16951",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -147037,9 +147193,9 @@
           "category_status_name": "HPBクーポン",
           "commodity_name": "縮毛矯正びはつtr",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "79901",
-          "price_ratio": "2.8",
+          "price_ratio": "2.7",
           "unit_price": "19975",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -147048,20 +147204,20 @@
           "row_number": "38",
           "category_status_name": "カット",
           "commodity_name": "*カット",
-          "count": "24",
-          "count_ratio": "9.0",
-          "total_price": "97576",
+          "count": "25",
+          "count_ratio": "9.1",
+          "total_price": "102576",
           "price_ratio": "3.5",
-          "unit_price": "4066",
-          "prev_total_price": "156216",
-          "year_on_year_price": "62.5%"
+          "unit_price": "4103",
+          "prev_total_price": "160727",
+          "year_on_year_price": "63.8%"
         },
         {
           "row_number": "39",
           "category_status_name": "カット",
           "commodity_name": "*キッズカット(0-6)",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "6000",
           "price_ratio": "0.2",
           "unit_price": "3000",
@@ -147073,7 +147229,7 @@
           "category_status_name": "カット",
           "commodity_name": "*前髪カット",
           "count": "5",
-          "count_ratio": "1.9",
+          "count_ratio": "1.8",
           "total_price": "5932",
           "price_ratio": "0.2",
           "unit_price": "1186",
@@ -147085,7 +147241,7 @@
           "category_status_name": "カット",
           "commodity_name": "*眉カット",
           "count": "7",
-          "count_ratio": "2.6",
+          "count_ratio": "2.5",
           "total_price": "8427",
           "price_ratio": "0.3",
           "unit_price": "1204",
@@ -147109,9 +147265,9 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "カットカラー",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "21781",
-          "price_ratio": "0.8",
+          "price_ratio": "0.7",
           "unit_price": "10891",
           "prev_total_price": "71005",
           "year_on_year_price": "30.7%"
@@ -147121,9 +147277,9 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "カットカラーAujua",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "47580",
-          "price_ratio": "1.7",
+          "price_ratio": "1.6",
           "unit_price": "11895",
           "prev_total_price": "70092",
           "year_on_year_price": "67.9%"
@@ -147157,9 +147313,9 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "カット美髪カラー美髪tr",
           "count": "20",
-          "count_ratio": "7.5",
+          "count_ratio": "7.2",
           "total_price": "280789",
-          "price_ratio": "10.0",
+          "price_ratio": "9.5",
           "unit_price": "14039",
           "prev_total_price": "269606",
           "year_on_year_price": "104.1%"
@@ -147173,7 +147329,7 @@
           "total_price": "0",
           "price_ratio": "0.0",
           "unit_price": "0",
-          "prev_total_price": "114819",
+          "prev_total_price": "125834",
           "year_on_year_price": "0.0%"
         },
         {
@@ -147181,7 +147337,7 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "カットリタッチ",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "17767",
           "price_ratio": "0.6",
           "unit_price": "8884",
@@ -147217,7 +147373,7 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "美髪リタッチ美髪tr",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "17798",
           "price_ratio": "0.6",
           "unit_price": "8899",
@@ -147229,9 +147385,9 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "美髪フルカラー美髪tr",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "44108",
-          "price_ratio": "1.6",
+          "price_ratio": "1.5",
           "unit_price": "11027",
           "prev_total_price": "44047",
           "year_on_year_price": "100.1%"
@@ -147241,9 +147397,9 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "カットシャンプー",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "21744",
-          "price_ratio": "0.8",
+          "price_ratio": "0.7",
           "unit_price": "5436",
           "prev_total_price": "36969",
           "year_on_year_price": "58.8%"
@@ -147351,7 +147507,7 @@
           "count": "1",
           "count_ratio": "0.4",
           "total_price": "7254",
-          "price_ratio": "0.3",
+          "price_ratio": "0.2",
           "unit_price": "7254",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
@@ -147372,13 +147528,13 @@
           "row_number": "65",
           "category_status_name": "BMクーポン",
           "commodity_name": "水野限定　カットカラースパトリ",
-          "count": "4",
-          "count_ratio": "1.5",
-          "total_price": "58308",
-          "price_ratio": "2.1",
-          "unit_price": "14577",
+          "count": "5",
+          "count_ratio": "1.8",
+          "total_price": "72480",
+          "price_ratio": "2.5",
+          "unit_price": "14496",
           "prev_total_price": "14982",
-          "year_on_year_price": "389.2%"
+          "year_on_year_price": "483.8%"
         },
         {
           "row_number": "66",
@@ -147397,9 +147553,9 @@
           "category_status_name": "BMクーポン",
           "commodity_name": "メンズ　カットスパ",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "13060",
-          "price_ratio": "0.5",
+          "price_ratio": "0.4",
           "unit_price": "6530",
           "prev_total_price": "13600",
           "year_on_year_price": "96.0%"
@@ -147444,20 +147600,20 @@
           "row_number": "71",
           "category_status_name": "変更料",
           "commodity_name": "カラー変更",
-          "count": "24",
-          "count_ratio": "9.0",
-          "total_price": "32649",
+          "count": "26",
+          "count_ratio": "9.4",
+          "total_price": "35267",
           "price_ratio": "1.2",
-          "unit_price": "1360",
-          "prev_total_price": "43824",
-          "year_on_year_price": "74.5%"
+          "unit_price": "1356",
+          "prev_total_price": "46424",
+          "year_on_year_price": "76.0%"
         },
         {
           "row_number": "72",
           "category_status_name": "変更料",
           "commodity_name": "スパ追加",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "3444",
           "price_ratio": "0.1",
           "unit_price": "861",
@@ -147469,7 +147625,7 @@
           "category_status_name": "変更料",
           "commodity_name": "トリートメント追加1480",
           "count": "5",
-          "count_ratio": "1.9",
+          "count_ratio": "1.8",
           "total_price": "8163",
           "price_ratio": "0.3",
           "unit_price": "1633",
@@ -147505,12 +147661,12 @@
           "category_status_name": "変更料",
           "commodity_name": "トリートメント追加1980",
           "count": "4",
-          "count_ratio": "1.5",
+          "count_ratio": "1.4",
           "total_price": "7200",
-          "price_ratio": "0.3",
+          "price_ratio": "0.2",
           "unit_price": "1800",
-          "prev_total_price": "31385",
-          "year_on_year_price": "22.9%"
+          "prev_total_price": "34985",
+          "year_on_year_price": "20.6%"
         },
         {
           "row_number": "77",
@@ -147540,32 +147696,32 @@
           "row_number": "79",
           "category_status_name": "カラー",
           "commodity_name": "*リタッチカラー",
-          "count": "1",
-          "count_ratio": "0.4",
-          "total_price": "5790",
-          "price_ratio": "0.2",
-          "unit_price": "5790",
+          "count": "2",
+          "count_ratio": "0.7",
+          "total_price": "11609",
+          "price_ratio": "0.4",
+          "unit_price": "5805",
           "prev_total_price": "26953",
-          "year_on_year_price": "21.5%"
+          "year_on_year_price": "43.1%"
         },
         {
           "row_number": "80",
           "category_status_name": "カラー",
           "commodity_name": "*フルカラー",
           "count": "27",
-          "count_ratio": "10.2",
+          "count_ratio": "9.8",
           "total_price": "93245",
-          "price_ratio": "3.3",
+          "price_ratio": "3.2",
           "unit_price": "3454",
-          "prev_total_price": "76941",
-          "year_on_year_price": "121.2%"
+          "prev_total_price": "78941",
+          "year_on_year_price": "118.1%"
         },
         {
           "row_number": "81",
           "category_status_name": "カラー",
           "commodity_name": "*ｱﾃﾞｨｸｼｰﾌﾙｶﾗｰ",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "13706",
           "price_ratio": "0.5",
           "unit_price": "6853",
@@ -147601,7 +147757,7 @@
           "category_status_name": "カラー",
           "commodity_name": "*フルブリーチ",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "11897",
           "price_ratio": "0.4",
           "unit_price": "5949",
@@ -147661,7 +147817,7 @@
           "category_status_name": "カラー",
           "commodity_name": "*ブリーチリタッチ",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "9696",
           "price_ratio": "0.3",
           "unit_price": "4848",
@@ -147699,7 +147855,7 @@
           "count": "1",
           "count_ratio": "0.4",
           "total_price": "10000",
-          "price_ratio": "0.4",
+          "price_ratio": "0.3",
           "unit_price": "10000",
           "prev_total_price": "6999",
           "year_on_year_price": "142.9%"
@@ -147744,20 +147900,20 @@
           "row_number": "96",
           "category_status_name": "縮毛矯正",
           "commodity_name": "*縮毛矯正",
-          "count": "2",
-          "count_ratio": "0.8",
-          "total_price": "34200",
-          "price_ratio": "1.2",
-          "unit_price": "17100",
-          "prev_total_price": "121676",
-          "year_on_year_price": "28.1%"
+          "count": "3",
+          "count_ratio": "1.1",
+          "total_price": "49845",
+          "price_ratio": "1.7",
+          "unit_price": "16615",
+          "prev_total_price": "133405",
+          "year_on_year_price": "37.4%"
         },
         {
           "row_number": "97",
           "category_status_name": "縮毛矯正",
           "commodity_name": "*部分縮毛矯正",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "12634",
           "price_ratio": "0.4",
           "unit_price": "6317",
@@ -147816,25 +147972,25 @@
           "row_number": "102",
           "category_status_name": "トリートメント",
           "commodity_name": "髪質改善トリートメント",
-          "count": "1",
-          "count_ratio": "0.4",
-          "total_price": "9003",
-          "price_ratio": "0.3",
-          "unit_price": "9003",
+          "count": "2",
+          "count_ratio": "0.7",
+          "total_price": "19003",
+          "price_ratio": "0.6",
+          "unit_price": "9502",
           "prev_total_price": "21179",
-          "year_on_year_price": "42.5%"
+          "year_on_year_price": "89.7%"
         },
         {
           "row_number": "103",
           "category_status_name": "トリートメント",
           "commodity_name": "*AujuaクイックTR",
-          "count": "1",
-          "count_ratio": "0.4",
-          "total_price": "4000",
-          "price_ratio": "0.1",
-          "unit_price": "4000",
-          "prev_total_price": "11000",
-          "year_on_year_price": "36.4%"
+          "count": "2",
+          "count_ratio": "0.7",
+          "total_price": "7911",
+          "price_ratio": "0.3",
+          "unit_price": "3956",
+          "prev_total_price": "14609",
+          "year_on_year_price": "54.2%"
         },
         {
           "row_number": "104",
@@ -147889,7 +148045,7 @@
           "category_status_name": "ヘッドスパ",
           "commodity_name": "*20min",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "6401",
           "price_ratio": "0.2",
           "unit_price": "3201",
@@ -148009,7 +148165,7 @@
           "category_status_name": "その他メニュー",
           "commodity_name": "*シャンプー",
           "count": "6",
-          "count_ratio": "2.3",
+          "count_ratio": "2.2",
           "total_price": "2723",
           "price_ratio": "0.1",
           "unit_price": "454",
@@ -148033,7 +148189,7 @@
           "category_status_name": "その他メニュー",
           "commodity_name": "*ブロー",
           "count": "2",
-          "count_ratio": "0.8",
+          "count_ratio": "0.7",
           "total_price": "2000",
           "price_ratio": "0.1",
           "unit_price": "1000",
@@ -148092,25 +148248,25 @@
           "row_number": "125",
           "category_status_name": "指名料",
           "commodity_name": "*¥550",
-          "count": "160",
-          "count_ratio": "60.2",
-          "total_price": "77672",
-          "price_ratio": "2.8",
-          "unit_price": "485",
-          "prev_total_price": "78435",
-          "year_on_year_price": "99.0%"
+          "count": "166",
+          "count_ratio": "60.1",
+          "total_price": "80619",
+          "price_ratio": "2.7",
+          "unit_price": "486",
+          "prev_total_price": "80352",
+          "year_on_year_price": "100.3%"
         },
         {
           "row_number": "126",
           "category_status_name": "指名料",
           "commodity_name": "*330",
           "count": "14",
-          "count_ratio": "5.3",
+          "count_ratio": "5.1",
           "total_price": "3801",
           "price_ratio": "0.1",
           "unit_price": "272",
-          "prev_total_price": "15053",
-          "year_on_year_price": "25.3%"
+          "prev_total_price": "15953",
+          "year_on_year_price": "23.8%"
         },
         {
           "row_number": "127",
