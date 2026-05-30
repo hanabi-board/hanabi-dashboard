@@ -2495,21 +2495,26 @@ async function saveRecruitForm(e) {
   if (getGhToken()) {
     showToast("保存中 → GitHubに反映...", "info");
     try {
-      // Build clean recruitment.json from DATA.recruitment (drop any null-marked deletions)
-      const cleaned = { ...DATA.recruitment };
+      // 🛡 push 直前に GitHub から最新版を fetch して、 自分の編集だけマージ
+      // (連続編集時に他人/前回の変更を上書きしてしまうバグを防止)
+      const remoteRec = await fetchRemoteRecruitment();
+      const baseData = remoteRec || DATA.recruitment;
+      const cleaned = { ...baseData };
       cleaned.candidates = (cleaned.candidates || []).filter(c => c);
+      // 自分の編集 candidate だけ最新リストに反映
+      const baseList = cleaned.candidates;
+      const baseIdx = baseList.findIndex(c => c.id === candidate.id);
+      if (baseIdx >= 0) baseList[baseIdx] = candidate;
+      else baseList.push(candidate);
       await pushJsonToGitHub("data/recruitment.json", cleaned, `Update recruitment.json (${candidate.name})`);
       // Success → clear this entry's override (it's now in the canonical file)
       const o2 = _loadRecruitOverrides();
       delete o2[id];
       _saveRecruitOverrides(o2);
+      // DATA.recruitment も最新版で更新 (次回保存も最新基準に)
+      DATA.recruitment = cleaned;
+      mergeLocalRecruitOverrides();
       showToast("✓ GitHub反映成功 · 他端末にも順次反映 (1-3分)", "good");
-      // 即時 sync: 保存後すぐ raw から fetch して整合性確認 (キャッシュ無視)
-      setTimeout(async () => {
-        const remote = await fetchRemoteRecruitment();
-        if (remote) DATA.recruitment = remote;
-        renderRecruitTab();
-      }, 2000);
     } catch (err) {
       showToast("⚠️ GitHub反映失敗: " + err.message + " (ローカル保存は維持)", "error");
     }
@@ -2532,9 +2537,15 @@ async function deleteRecruitCurrent() {
   if (getGhToken()) {
     showToast("削除中 → GitHubに反映...", "info");
     try {
-      const cleaned = { ...DATA.recruitment };
-      cleaned.candidates = (cleaned.candidates || []).filter(c => c);
+      // 🛡 push 直前に GitHub から最新版を fetch して、 該当 candidate を削除
+      const remoteRec = await fetchRemoteRecruitment();
+      const baseData = remoteRec || DATA.recruitment;
+      const cleaned = { ...baseData };
+      cleaned.candidates = (cleaned.candidates || []).filter(c => c && c.id !== id);
       await pushJsonToGitHub("data/recruitment.json", cleaned, `Delete candidate (${deletedName})`);
+      // DATA も最新版に
+      DATA.recruitment = cleaned;
+      mergeLocalRecruitOverrides();
       const o2 = _loadRecruitOverrides();
       delete o2[id];  // override no longer needed
       _saveRecruitOverrides(o2);
@@ -2561,17 +2572,27 @@ async function retryUnsyncedRecruit() {
   }
   showToast(`${count}件の変更を GitHub に再送信中...`, "info");
   try {
-    const cleaned = { ...DATA.recruitment };
+    // 🛡 最新版から始めて、 各 override を上書きマージ (他人の変更を消さない)
+    const remoteRec = await fetchRemoteRecruitment();
+    const baseData = remoteRec || DATA.recruitment;
+    const cleaned = { ...baseData };
     cleaned.candidates = (cleaned.candidates || []).filter(c => c);
+    const list = cleaned.candidates;
+    for (const [oid, oval] of Object.entries(overrides)) {
+      if (oval === null || oval === "__deleted__") {
+        const i = list.findIndex(c => c.id === oid);
+        if (i >= 0) list.splice(i, 1);
+        continue;
+      }
+      const i = list.findIndex(c => c.id === oid);
+      if (i >= 0) list[i] = oval;
+      else list.push(oval);
+    }
     await pushJsonToGitHub("data/recruitment.json", cleaned, `Resync recruitment.json (${count} unsynced changes)`);
-    // Success → clear all overrides
     localStorage.removeItem("hanabi_recruit_overrides_v1");
+    DATA.recruitment = cleaned;
     showToast(`✓ ${count}件 GitHub反映成功`, "good");
-    setTimeout(async () => {
-      const remote = await fetchRemoteRecruitment();
-      if (remote) DATA.recruitment = remote;
-      renderRecruitTab();
-    }, 2000);
+    renderRecruitTab();
   } catch (err) {
     showToast("⚠️ 再送信失敗: " + err.message + "\nトークンが期限切れの可能性があります。 GHボタンから再発行してください", "error");
   }
@@ -5319,12 +5340,19 @@ async function saveStaffProfileForm(e) {
 
   showToast("保存中 → GitHub反映...", "info");
   try {
-    await pushJsonToGitHub("data/staff_profiles.json", DATA.staff_profiles, `Update staff profile (${newName})`);
-    // 成功: localStorage から該当 override を削除
+    // 🛡 最新版を fetch して 自分の編集だけマージ (連続編集時の上書き事故防止)
+    const remoteSp = await fetchRemoteStaffProfiles();
+    const baseData = remoteSp || DATA.staff_profiles;
+    const merged = { ...baseData, profiles: { ...(baseData.profiles || {}) } };
+    if (originalName && originalName !== newName) delete merged.profiles[originalName];
+    merged.profiles[newName] = profile;
+    await pushJsonToGitHub("data/staff_profiles.json", merged, `Update staff profile (${newName})`);
     const o2 = _loadStaffProfileOverrides();
     delete o2[newName];
     if (originalName && originalName !== newName) delete o2[originalName];
     _saveStaffProfileOverrides(o2);
+    DATA.staff_profiles = merged;
+    mergeLocalStaffProfileOverrides();
     showToast("✓ プロフィール保存 (GitHub反映)", "good");
   } catch (err) {
     showToast("⚠️ GitHub反映失敗: " + err.message + " (ローカル保存は維持)", "error");
@@ -5347,7 +5375,14 @@ async function deleteStaffProfile() {
     return;
   }
   try {
-    await pushJsonToGitHub("data/staff_profiles.json", DATA.staff_profiles, `Delete staff profile (${name})`);
+    // 🛡 最新版を fetch して 該当プロフィールだけ削除
+    const remoteSp = await fetchRemoteStaffProfiles();
+    const baseData = remoteSp || DATA.staff_profiles;
+    const merged = { ...baseData, profiles: { ...(baseData.profiles || {}) } };
+    delete merged.profiles[name];
+    await pushJsonToGitHub("data/staff_profiles.json", merged, `Delete staff profile (${name})`);
+    DATA.staff_profiles = merged;
+    mergeLocalStaffProfileOverrides();
     const o2 = _loadStaffProfileOverrides();
     delete o2[name];
     _saveStaffProfileOverrides(o2);
@@ -5372,8 +5407,17 @@ async function retryUnsyncedStaffProfile() {
   }
   showToast(`${count}件のプロフィール変更を GitHub に再送信中...`, "info");
   try {
-    await pushJsonToGitHub("data/staff_profiles.json", DATA.staff_profiles, `Resync staff profiles (${count} unsynced changes)`);
+    // 🛡 最新版から始めて override をマージ (他人の変更を消さない)
+    const remoteSp = await fetchRemoteStaffProfiles();
+    const baseData = remoteSp || DATA.staff_profiles;
+    const merged = { ...baseData, profiles: { ...(baseData.profiles || {}) } };
+    for (const [n, v] of Object.entries(overrides)) {
+      if (v === "__deleted__") delete merged.profiles[n];
+      else merged.profiles[n] = v;
+    }
+    await pushJsonToGitHub("data/staff_profiles.json", merged, `Resync staff profiles (${count} unsynced changes)`);
     localStorage.removeItem(_staffProfileOverrideKey());
+    DATA.staff_profiles = merged;
     showToast(`✓ ${count}件 GitHub反映成功`, "good");
     setTimeout(async () => {
       const remote = await fetchRemoteStaffProfiles();
