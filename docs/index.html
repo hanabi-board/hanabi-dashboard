@@ -232,6 +232,15 @@
     <!-- FY26 progress (vs budget + vs FY25) -->
     <div class="grid md:grid-cols-3 gap-3 mb-5" id="fyProgressCards"></div>
 
+    <!-- 💰 原価率 KPI (全社 + 店舗/部門別 5レベル) -->
+    <div class="card p-4 mb-5">
+      <div class="flex items-baseline justify-between mb-3 flex-wrap gap-2">
+        <h3 class="section-title">💰 原価率 <span class="section-sub">全社 + 店舗/部門別 (Box 原価管理表ベース・ナイスネイル除外)</span></h3>
+        <span class="text-[11px] text-gray-500" id="costKpiMeta">—</span>
+      </div>
+      <div id="costKpiPanel" class="grid grid-cols-2 md:grid-cols-5 gap-2"></div>
+    </div>
+
     <!-- Status panel + Monthly trend -->
     <div class="grid lg:grid-cols-5 gap-4 mb-5">
       <div class="card p-5 lg:col-span-2">
@@ -532,6 +541,15 @@
         <button onclick="openPastReviews()" class="text-xs border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">📅 過去の振り返り一覧</button>
       </div>
       <div id="mgmtReview" class="space-y-2"></div>
+    </div>
+
+    <!-- 💰 原価率レビュー (Box xlsx 自動取り込み) -->
+    <div class="card p-5 mb-5">
+      <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+        <h3 class="section-title">💰 原価率レビュー <span class="section-sub">部門別 規定 vs 実績 · 12ヶ月推移 (Box 原価管理表から自動取得)</span></h3>
+        <span class="text-[11px] text-gray-500" id="costRatioMeta">—</span>
+      </div>
+      <div id="costRatioPanel" class="space-y-3"></div>
     </div>
   </div>
 
@@ -1403,6 +1421,7 @@ function render(month) {
   renderAlerts();
   renderTopKpi();
   renderFyProgress();
+  renderCostRatioKpis();
   renderMenuTab();
   renderGrowthView();
   renderAnnualReport();
@@ -4705,6 +4724,49 @@ function renderManagementTab() {
   const benchEl = document.getElementById("mgmtBenchmark");
   if (benchEl) {
     // OPEN前店舗は比較表から除外 (0数字でノイズ)
+    // 原価率データ取得 (Box xlsx 由来、 表示月にデータあれば、 なければ直近月)
+    const _cr = DATA.cost_ratios || {};
+    const _crMonths = Object.keys(_cr.monthly || {}).sort();
+    let _crDisplayMonth = SCOPE.month;
+    if (!(_cr.monthly || {})[_crDisplayMonth]) {
+      const past = _crMonths.filter(m => m <= SCOPE.month);
+      _crDisplayMonth = past.length ? past[past.length - 1] : null;
+    }
+    const _crMd = _crDisplayMonth ? (_cr.monthly[_crDisplayMonth] || {}) : {};
+    const _crFy = _crDisplayMonth ? fyOfMonth(_crDisplayMonth) : null;
+    const _crTargets = _crFy ? ((_cr.targets || {})[_crFy] || {}) : {};
+    const _crIsFallback = _crDisplayMonth && _crDisplayMonth !== SCOPE.month;
+
+    // 原価率セル: 店舗単位 (綱島=tsunashima, 宮古島=miyakojima_total)
+    const costCell = (sid) => {
+      const crSid = sid === "tsunashima" ? "tsunashima" : sid === "miyakojima" ? "miyakojima_total" : null;
+      if (!crSid) return `<td class="py-2.5 px-3 text-right text-gray-400 text-xs">—</td>`;
+      const d = _crMd[crSid];
+      if (!d || d.ratio == null) return `<td class="py-2.5 px-3 text-right text-gray-400 text-xs">未取得</td>`;
+      // 規定値は 綱島=ヘア / 宮古島=店舗合計の規定が無いので 各部門の規定平均で代用
+      let t;
+      if (sid === "tsunashima") {
+        t = _crTargets.tsunashima;
+      } else {
+        // 宮古島: 売上加重で 3部門 規定の平均
+        const sids = ["miyakojima_hair", "miyakojima_eye", "miyakojima_nail"];
+        let ws = 0, ts = 0;
+        for (const s2 of sids) {
+          const d2 = _crMd[s2];
+          if (d2 && d2.sales && _crTargets[s2] != null) {
+            ws += d2.sales * _crTargets[s2];
+            ts += d2.sales;
+          }
+        }
+        t = ts > 0 ? ws / ts : null;
+      }
+      const j = judgeCostRatio(d.ratio, t);
+      return `<td class="py-2.5 px-3 text-right whitespace-nowrap">
+        <span class="kpi-num font-semibold" style="color:${j.color}">${(d.ratio*100).toFixed(1)}%</span>
+        <span class="text-[10px] ml-0.5" style="color:${j.color}">${j.icon}</span>
+      </td>`;
+    };
+
     const rowsHtml = SCOPE.storeRows.filter(r => !r.isBeforeOpen).map(r => {
       const monthlyTarget = r.monthlyTarget || 0;
       const pacePctV = r.elapsedTarget ? (r.sales / r.elapsedTarget * 100) : 0;
@@ -4724,13 +4786,14 @@ function renderManagementTab() {
         <td class="py-2.5 px-3 text-right kpi-num">${fmt(projection)}</td>
         <td class="py-2.5 px-3 text-right kpi-num">${fmtN(r.customers)}</td>
         <td class="py-2.5 px-3 text-right kpi-num">${fmt(avgTicket)}</td>
+        ${costCell(r.sid)}
         <td class="py-2.5 px-3 text-right kpi-num">${nominationRate.toFixed(1)}%</td>
         <td class="py-2.5 px-3 text-right kpi-num">${repeatRate ? repeatRate.toFixed(1) + "%" : "—"}</td>
         <td class="py-2.5 px-3 text-right kpi-num">${staffCount}</td>
         <td class="py-2.5 pl-3 text-right kpi-num font-semibold">${fmt(perStaff)}</td>
       </tr>`;
     }).join("");
-    benchEl.innerHTML = `<table class="w-full text-sm" style="min-width:1000px">
+    benchEl.innerHTML = `<table class="w-full text-sm" style="min-width:1100px">
       <thead class="text-xs text-gray-500 border-b border-gray-200">
         <tr>
           <th class="text-left py-2 pr-3">店舗</th>
@@ -4739,6 +4802,7 @@ function renderManagementTab() {
           <th class="text-right py-2 px-3">月末予測</th>
           <th class="text-right py-2 px-3">客数</th>
           <th class="text-right py-2 px-3">客単価</th>
+          <th class="text-right py-2 px-3">原価率${_crIsFallback ? `<span class="text-[10px] text-gray-400 font-normal block">(${_crDisplayMonth.slice(0,4)}/${parseInt(_crDisplayMonth.slice(4,6))}月)</span>` : ""}</th>
           <th class="text-right py-2 px-3">指名率</th>
           <th class="text-right py-2 px-3">リピート率</th>
           <th class="text-right py-2 px-3">スタッフ</th>
@@ -4747,7 +4811,7 @@ function renderManagementTab() {
       </thead>
       <tbody>${rowsHtml}</tbody>
     </table>
-    <div class="text-[11px] text-gray-500 mt-3">※ 業態違い (綱島=ヘア専門 / 宮古島=トータルビューティ) のため、 客単価/指名率/リピート率の絶対比較は注意。 各店舗のトレンドを見ること推奨。</div>`;
+    <div class="text-[11px] text-gray-500 mt-3">※ 業態違い (綱島=ヘア専門 / 宮古島=トータルビューティ) のため、 客単価/指名率/リピート率の絶対比較は注意。 原価率は宮古島の場合 3部門合算 (店舗合計)。 部門別の詳細は下の「💰 原価率レビュー」 を参照。</div>`;
   }
 
   // 外部メディア (HotPepper / Instagram) - 月スナップショット
@@ -4951,6 +5015,311 @@ function renderManagementTab() {
 
   // 経営レビュー (自動診断)
   renderMgmtReview();
+
+  // 💰 原価率レビュー (Box xlsx 自動取得)
+  renderCostRatios();
+}
+
+// ============= 💰 原価率レビュー =============
+// SCOPE.month が属する FY を返す ("FY25" 等)
+function fyOfMonth(yyyymm) {
+  if (!yyyymm) return null;
+  const y = parseInt(yyyymm.slice(0,4)), m = parseInt(yyyymm.slice(4,6));
+  // 5月以降は当年 FY、 1-4月は前年 FY
+  const fyYear = m >= 5 ? y : y - 1;
+  return `FY${fyYear % 100}`;
+}
+// FY の月リスト (5月→翌4月、 YYYYMM配列)
+function fyMonths(fy) {
+  if (!fy || !fy.startsWith("FY")) return [];
+  const yy = parseInt(fy.slice(2));
+  const year = 2000 + yy;
+  const out = [];
+  for (let m = 5; m <= 12; m++) out.push(`${year}${String(m).padStart(2,"0")}`);
+  for (let m = 1; m <= 4; m++) out.push(`${year+1}${String(m).padStart(2,"0")}`);
+  return out;
+}
+// 判定: ◯達成 / △軽微超過 (規定+1pt以内) / ● 要対応 (規定+1pt超過)
+function judgeCostRatio(actual, target) {
+  if (actual == null || target == null) return { icon: "—", label: "—", color: "#9CA3AF" };
+  const diff = actual - target;
+  if (diff <= 0) return { icon: "◯", label: "達成", color: "#059669" };           // 緑
+  if (diff <= 0.01) return { icon: "△", label: "軽微超過", color: "#D97706" };    // オレンジ
+  return { icon: "●", label: "要対応", color: "#DC2626" };                       // 赤
+}
+// セクションラベル + カラー
+const COST_SECTIONS = [
+  { sid: "tsunashima",       label: "🏪 Hanabi 綱島店",       sub: "ヘア",       color: "#E91E63" },
+  { sid: "miyakojima_hair",  label: "🏪 ELLE 宮古島 ヘア",     sub: "※エクステ除外", color: "#E91E63" },
+  { sid: "miyakojima_eye",   label: "🏪 ELLE 宮古島 アイ",     sub: "アイラッシュ", color: "#1E88E5" },
+  { sid: "miyakojima_nail",  label: "🏪 ELLE 宮古島 ネイル",   sub: "ネイル",     color: "#F59E0B" },
+];
+
+// サマリータブの 💰 原価率 KPI (全社 + 4部門 = 5カード)
+//   全社平均 = (綱島原価 + 宮古島原価) / (綱島売上 + 宮古島売上) — ナイスネイル除外
+function renderCostRatioKpis() {
+  const root = document.getElementById("costKpiPanel");
+  const meta = document.getElementById("costKpiMeta");
+  if (!root) return;
+  const cr = DATA.cost_ratios || {};
+  const monthly = cr.monthly || {};
+  const allMonths = Object.keys(monthly).sort();
+
+  // 当月にデータあれば当月、 なければ直近月へフォールバック
+  let displayMonth = SCOPE.month;
+  if (!monthly[displayMonth]) {
+    const past = allMonths.filter(m => m <= SCOPE.month);
+    displayMonth = past.length ? past[past.length - 1] : (allMonths[allMonths.length - 1] || null);
+  }
+  if (!displayMonth) {
+    root.innerHTML = `<div class="col-span-full text-xs text-gray-500 text-center py-3">⏳ 原価率データ未取得 (Box xlsx 待ち)</div>`;
+    if (meta) meta.textContent = "未取得";
+    return;
+  }
+  const md = monthly[displayMonth] || {};
+  const fy = fyOfMonth(displayMonth);
+  const targets = (cr.targets || {})[fy] || {};
+
+  // 全社平均 (綱島 + 宮古島ヘア+アイ+ネイル の sales/cost を合算、 ナイスネイル除外)
+  const overallSids = ["tsunashima", "miyakojima_hair", "miyakojima_eye", "miyakojima_nail"];
+  let totalSales = 0, totalCost = 0, hasAny = false;
+  for (const sid of overallSids) {
+    const d = md[sid] || {};
+    if (d.sales != null) { totalSales += d.sales; hasAny = true; }
+    if (d.cost != null) totalCost += d.cost;
+  }
+  const overallRatio = hasAny && totalSales > 0 ? totalCost / totalSales : null;
+  // 全社規定値: 各部門の規定値を売上加重平均 (各部門の売上 × 規定値 / 総売上)
+  let weightedTarget = null;
+  if (totalSales > 0) {
+    let weightedSum = 0, totalSalesForTarget = 0;
+    for (const sid of overallSids) {
+      const d = md[sid] || {};
+      const t = targets[sid];
+      if (d.sales != null && t != null) {
+        weightedSum += d.sales * t;
+        totalSalesForTarget += d.sales;
+      }
+    }
+    weightedTarget = totalSalesForTarget > 0 ? weightedSum / totalSalesForTarget : null;
+  }
+
+  const dy = displayMonth.slice(0,4), dm = parseInt(displayMonth.slice(4,6));
+  if (meta) {
+    const isFallback = displayMonth !== SCOPE.month;
+    meta.textContent = isFallback
+      ? `直近実績 ${dy}年${dm}月 (${fy})`
+      : `${dy}年${dm}月 (${fy})`;
+  }
+
+  // 5カード (全社 + 4セクション)
+  const buildCard = (label, actual, target, sub) => {
+    const j = judgeCostRatio(actual, target);
+    const actualStr = actual != null ? `${(actual*100).toFixed(1)}%` : "—";
+    const targetStr = target != null ? `規定 ${(target*100).toFixed(1)}%` : "規定 —";
+    const diff = (actual != null && target != null) ? (actual - target) : null;
+    const diffStr = diff != null ? (diff >= 0 ? `+${(diff*100).toFixed(1)}pt` : `${(diff*100).toFixed(1)}pt`) : "";
+    return `<div class="border border-gray-200 rounded-lg p-2.5 bg-white">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[10px] text-gray-500 font-semibold truncate">${label}</span>
+        <span class="text-[10px] font-bold" style="color:${j.color}">${j.icon}</span>
+      </div>
+      <div class="kpi-num text-lg font-bold" style="color:${j.color}">${actualStr}</div>
+      <div class="text-[10px] text-gray-400 mt-0.5">${targetStr}${diffStr ? ` <span style="color:${j.color}">${diffStr}</span>` : ""}</div>
+      ${sub ? `<div class="text-[9px] text-gray-400">${sub}</div>` : ""}
+    </div>`;
+  };
+
+  const cards = [
+    buildCard("🏢 全社平均", overallRatio, weightedTarget, ""),
+    buildCard("🏪 綱島", md.tsunashima?.ratio, targets.tsunashima, "ヘア"),
+    buildCard("🏪 宮古島ヘア", md.miyakojima_hair?.ratio, targets.miyakojima_hair, "※エクステ除外"),
+    buildCard("🏪 宮古島アイ", md.miyakojima_eye?.ratio, targets.miyakojima_eye, "アイラッシュ"),
+    buildCard("🏪 宮古島ネイル", md.miyakojima_nail?.ratio, targets.miyakojima_nail, "ネイル"),
+  ];
+  root.innerHTML = cards.join("");
+}
+
+function renderCostRatios() {
+  const root = document.getElementById("costRatioPanel");
+  if (!root) return;
+  const cr = DATA.cost_ratios || {};
+  const meta = document.getElementById("costRatioMeta");
+  if (meta) {
+    const at = cr.parsed_at ? new Date(cr.parsed_at) : null;
+    meta.textContent = at
+      ? `最終取得: ${at.getFullYear()}/${at.getMonth()+1}/${at.getDate()} ${String(at.getHours()).padStart(2,"0")}:${String(at.getMinutes()).padStart(2,"0")}`
+      : "未取得 (Box xlsx 待ち)";
+  }
+  if (!Object.keys(cr.monthly || {}).length) {
+    root.innerHTML = `<div class="text-center text-sm text-gray-500 py-8 bg-gray-50 rounded">
+      ⏳ 原価率データ未取得<br>
+      <span class="text-xs">Box の「HABABI_FY26予実管理表.xlsx → FY26原価管理表」 シートが更新されると自動反映されます</span>
+    </div>`;
+    return;
+  }
+
+  // 当月 (SCOPE.month) または直近データある月にフォールバック
+  const allMonths = Object.keys(cr.monthly || {}).sort();
+  let displayMonth = SCOPE.month;
+  if (!cr.monthly[displayMonth]) {
+    // SCOPE.month 以下の最新月を採用
+    const pastMonths = allMonths.filter(m => m <= SCOPE.month);
+    displayMonth = pastMonths.length ? pastMonths[pastMonths.length - 1] : allMonths[allMonths.length - 1];
+  }
+  const fy = fyOfMonth(displayMonth);
+  const targets = (cr.targets || {})[fy] || {};
+  const fyAvg = (cr.fy_average || {})[fy] || {};
+  const monthData = cr.monthly[displayMonth] || {};
+  const isFallback = displayMonth !== SCOPE.month;
+
+  // ヘッダーバー
+  let headerBanner = "";
+  if (isFallback) {
+    const dy = displayMonth.slice(0,4), dm = parseInt(displayMonth.slice(4,6));
+    headerBanner = `<div class="text-[11px] mb-3 bg-blue-50 border border-blue-200 rounded p-2 text-blue-700">
+      📌 ${SCOPE.month.slice(0,4)}年${parseInt(SCOPE.month.slice(4,6))}月 はまだ原価データ未入力のため、 直近の <strong>${dy}年${dm}月分</strong> を表示中
+    </div>`;
+  }
+
+  // セクション別カード
+  const sectionCards = COST_SECTIONS.map(sec => {
+    const d = monthData[sec.sid] || {};
+    const actual = d.ratio;
+    const target = targets[sec.sid];
+    const j = judgeCostRatio(actual, target);
+    const diff = (actual != null && target != null) ? actual - target : null;
+    const sales = d.sales, cost = d.cost;
+    const fyAvgVal = fyAvg[sec.sid];
+
+    const actualStr = actual != null ? `${(actual * 100).toFixed(1)}%` : "—";
+    const targetStr = target != null ? `${(target * 100).toFixed(1)}%` : "—";
+    const diffStr = diff != null ? (diff >= 0 ? `+${(diff*100).toFixed(1)}pt` : `${(diff*100).toFixed(1)}pt`) : "—";
+    const fyAvgStr = fyAvgVal != null ? `${(fyAvgVal*100).toFixed(1)}%` : "—";
+
+    return `<div class="border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition">
+      <div class="flex items-start justify-between gap-3 mb-2">
+        <div class="min-w-0">
+          <div class="font-bold text-sm">${sec.label}</div>
+          <div class="text-[10px] text-gray-500">${sec.sub}</div>
+        </div>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:${j.color}20; color:${j.color}; border:1px solid ${j.color}50">${j.icon} ${j.label}</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2 text-center text-xs">
+        <div>
+          <div class="text-gray-400 text-[10px]">規定</div>
+          <div class="kpi-num font-semibold text-gray-700">${targetStr}</div>
+        </div>
+        <div>
+          <div class="text-gray-400 text-[10px]">実績</div>
+          <div class="kpi-num font-bold text-base" style="color:${j.color}">${actualStr}</div>
+        </div>
+        <div>
+          <div class="text-gray-400 text-[10px]">差分</div>
+          <div class="kpi-num font-semibold" style="color:${j.color}">${diffStr}</div>
+        </div>
+        <div>
+          <div class="text-gray-400 text-[10px]">FY平均</div>
+          <div class="kpi-num font-semibold text-gray-700">${fyAvgStr}</div>
+        </div>
+      </div>
+      ${sales != null && cost != null ? `<div class="text-[10px] text-gray-400 text-right mt-1.5">売上 ${fmt(sales)} / 原価 ${fmt(cost)}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  // 12ヶ月推移グラフ (FY の全 12ヶ月)
+  const chartId = "costRatioChart";
+  const trendHtml = `<div class="mt-4 card p-3 bg-gray-50">
+    <div class="text-xs font-semibold text-gray-600 mb-2">📈 ${fy} 12ヶ月推移 (規定値=点線)</div>
+    <div style="position:relative; height:280px"><canvas id="${chartId}"></canvas></div>
+  </div>`;
+
+  const monthLabel = displayMonth.slice(0,4) + "年" + parseInt(displayMonth.slice(4,6)) + "月";
+  root.innerHTML = `${headerBanner}
+    <div class="text-xs text-gray-600 mb-2">${monthLabel} 実績 · ${fy} 規定値: 綱島 ${targets.tsunashima != null ? (targets.tsunashima*100).toFixed(1)+'%' : '—'} / 宮古島ヘア ${targets.miyakojima_hair != null ? (targets.miyakojima_hair*100).toFixed(1)+'%' : '—'} / アイ ${targets.miyakojima_eye != null ? (targets.miyakojima_eye*100).toFixed(1)+'%' : '—'} / ネイル ${targets.miyakojima_nail != null ? (targets.miyakojima_nail*100).toFixed(1)+'%' : '—'}</div>
+    <div class="grid md:grid-cols-2 gap-3">${sectionCards}</div>
+    ${trendHtml}
+    <div class="text-[10px] text-gray-400 mt-2">※ ヘアの実績は エクステ除外後の値 (在庫管理表ベース)。 判定: ◯達成 / △軽微超過 (規定+1pt以内) / ● 要対応 (規定+1pt超過)</div>`;
+
+  // チャート描画 (Chart.js)
+  drawCostRatioTrend(chartId, fy, cr);
+}
+
+function drawCostRatioTrend(canvasId, fy, cr) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  if (window._chartCostRatio) window._chartCostRatio.destroy();
+  const months = fyMonths(fy);
+  const labels = months.map(m => parseInt(m.slice(4,6)) + "月");
+  const targets = (cr.targets || {})[fy] || {};
+  const monthly = cr.monthly || {};
+
+  const lineFor = (sid, color) => {
+    return {
+      label: COST_SECTIONS.find(s => s.sid === sid)?.label.replace("🏪 ", "") || sid,
+      data: months.map(m => {
+        const d = (monthly[m] || {})[sid];
+        return d && d.ratio != null ? d.ratio * 100 : null;
+      }),
+      borderColor: color,
+      backgroundColor: color + "20",
+      tension: 0.2,
+      spanGaps: true,
+      pointRadius: 3,
+    };
+  };
+  const targetLine = (sid, color) => {
+    const t = targets[sid];
+    if (t == null) return null;
+    return {
+      label: `規定 (${(t*100).toFixed(1)}%)`,
+      data: months.map(() => t * 100),
+      borderColor: color,
+      borderDash: [4, 4],
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: false,
+    };
+  };
+
+  const datasets = [
+    lineFor("tsunashima", "#E91E63"),
+    lineFor("miyakojima_hair", "#9C27B0"),
+    lineFor("miyakojima_eye", "#1E88E5"),
+    lineFor("miyakojima_nail", "#F59E0B"),
+  ];
+  // 規定ライン: ヘア (綱島+宮古島ヘア同じ規定値), アイ, ネイル
+  ["tsunashima", "miyakojima_eye", "miyakojima_nail"].forEach(sid => {
+    const color = sid === "tsunashima" ? "#E91E6360" : sid === "miyakojima_eye" ? "#1E88E560" : "#F59E0B60";
+    const tl = targetLine(sid, color);
+    if (tl) datasets.push(tl);
+  });
+
+  window._chartCostRatio = new Chart(el, {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { position: "bottom", labels: { font: { size: 10 }, boxWidth: 12, padding: 8 } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + "%" : "—"}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (v) => v + "%", font: { size: 10 } },
+          title: { display: true, text: "原価率 (%)", font: { size: 10 } }
+        },
+        x: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
 }
 
 // ============= 経営レビュー (月次振り返り: 数字 + 手動メモ + 自動診断) =============

@@ -105,6 +105,11 @@ if [ "$DAY" = "01" ]; then
   python3 scripts/scrape_menu.py "$PREV_YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ prev menu scrape failed — 続行"
 fi
 
+# 3c. 原価管理表 (Box xlsx) を毎朝 パース → data/cost_ratios.json 更新
+#     Box Drive 起動済みなら成功、 失敗時は既存 JSON 維持で続行 (致命ではない)
+log "[2c/5] 原価管理表 (Box xlsx) パース"
+python3 scripts/parse_cost_ratios.py 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ 原価管理表 パース失敗 — 続行 (既存 cost_ratios.json 維持)"
+
 # 4. JSON再生成
 log "[3/5] generate.py"
 python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"

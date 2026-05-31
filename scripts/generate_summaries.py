@@ -230,6 +230,54 @@ def build_dept_stats(data: dict, month: str, dept_label: str) -> str:
     return "\n".join(lines)
 
 
+def build_cost_ratio_block(data: dict, month: str, section_id: str) -> str:
+    """セクション別の原価率データ (規定値 + 実績 + 差分 + FY平均)"""
+    cr = data.get("cost_ratios", {}) or {}
+    if not cr.get("monthly"):
+        return ""
+    # cost_ratios の sid マッピング
+    cr_sid_map = {
+        "tsunashima": "tsunashima",
+        "miyakojima": "miyakojima_total",
+        "miyakojima_hair": "miyakojima_hair",
+        "miyakojima_eye": "miyakojima_eye",
+        "miyakojima_nail": "miyakojima_nail",
+    }
+    cr_sid = cr_sid_map.get(section_id)
+    if not cr_sid:
+        return ""  # company / shinyokohama (新横浜は原価管理対象外) は省略
+
+    # FY 判定 (5月以降=当年FY、 1-4月=前年FY)
+    y, m = int(month[:4]), int(month[4:6])
+    fy_year = y if m >= 5 else y - 1
+    fy = f"FY{fy_year % 100}"
+    targets = (cr.get("targets") or {}).get(fy, {})
+    fy_avg = (cr.get("fy_average") or {}).get(fy, {})
+    md = (cr.get("monthly") or {}).get(month, {}).get(cr_sid, {})
+
+    target_ratio = targets.get(cr_sid)
+    actual_ratio = md.get("ratio")
+    fy_avg_ratio = fy_avg.get(cr_sid)
+
+    if target_ratio is None and actual_ratio is None:
+        return ""
+
+    lines = ["【原価率】"]
+    if target_ratio is not None:
+        lines.append(f"{fy} 規定値: {target_ratio*100:.1f}%")
+    if actual_ratio is not None:
+        diff = (actual_ratio - target_ratio) if target_ratio is not None else None
+        diff_str = f" (規定比 {diff*100:+.1f}pt)" if diff is not None else ""
+        lines.append(f"{m}月 実績: {actual_ratio*100:.2f}%{diff_str}")
+        if md.get("sales") and md.get("cost") is not None:
+            lines.append(f"  売上 ¥{md['sales']:,} / 原価 ¥{md['cost']:,}")
+    if fy_avg_ratio is not None:
+        lines.append(f"{fy} 平均: {fy_avg_ratio*100:.2f}%")
+    if section_id == "miyakojima_hair":
+        lines.append("※ヘアの原価率はエクステ除外後の値 (在庫管理表ベース)")
+    return "\n".join(lines)
+
+
 def detect_staff_changes(data: dict, month: str, sid: str | None = None) -> str:
     """当月の入退社を検知 (staff_profiles の joined/retired を見る)"""
     profiles = (data.get("staff_profiles", {}) or {}).get("profiles", {})
@@ -280,6 +328,8 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
     else:
         return ""
 
+    cost_block = build_cost_ratio_block(data, month, section_id)
+
     prompt = f"""あなたは美容サロン経営の戦略アナリスト。 経営者(水野陽平氏)向けに 月次振り返り文章を作成してください。
 
 【対象】 {label}
@@ -291,12 +341,15 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
 【数字データ】
 {stats}
 
+{cost_block if cost_block else ""}
+
 【スタッフ動向】
 {staff_news}
 
 【出力ルール】
 - 3〜5文 で簡潔に
-- 数字 (売上、客数、客単価、達成率、前月比、等) を必ず1つ以上引用
+- 数字 (売上、客数、客単価、達成率、前月比、原価率、等) を必ず1つ以上引用
+- 原価率データがあれば 規定値との比較を1文加える (達成 or 超過、 構造的要因の所感込み)
 - 前提コンテキストの戦略・人事方針を踏まえた所感を含める
 - 改善アクションは 状況に応じて 必要な時のみ (無理に書かない)
 - 太字 (**) や 箇条書き (- や *) や 見出し (#) は禁止、 普通の段落文で
