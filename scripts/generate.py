@@ -47,7 +47,7 @@ STORES = {
         "brand": "nicenail",
         "departments": ["ネイル"],
         "open_date": "2026-05-29",  # ナイスネイル 新横浜店 OPEN (FY26)
-        "photos": [],  # 店舗写真は開店後アップロード予定
+        "photos": ["shinyokohama_1.jpg"],
         # ナイスネイル運営、 DENKO 出向スタッフ、 HANABI 予算管理
         # 部門別合算からは独立扱い (ELLE宮古島の「ネイル」と混ぜない)
         "independent_dept": True,  # True: 部門別合算から除外、 単独スライス扱い

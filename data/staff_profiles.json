@@ -134,6 +134,18 @@
       "employment_type": "パート",
       "irregular": true,
       "_note": "宮古島アイ、 不定期出勤のパート (CSV最終 202603)"
+    },
+    "Risa": {
+      "photo": "Risa.png",
+      "_note": "ナイスネイル 新横浜店 (トップ)。 役職/かな/入社日 は水野さんが UI から追加予定"
+    },
+    "□Natsuki": {
+      "photo": "Natsuki.png",
+      "_note": "ナイスネイル 新横浜店 (ネイリスト)。 役職/かな/入社日 は水野さんが UI から追加予定"
+    },
+    "★Mariko": {
+      "photo": "Mariko.png",
+      "_note": "ナイスネイル 新横浜店 (ジュニア)。 役職/かな/入社日 は水野さんが UI から追加予定"
     }
   }
 }

@@ -528,7 +528,7 @@
     <!-- 経営レビュー (月次振り返り) -->
     <div class="card p-5 mb-5">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-        <h3 class="section-title">📋 月次振り返り <span class="section-sub">数字 + 前提コンテキスト + 月次振り返り文章 (Claude 自動生成) + 自動診断</span></h3>
+        <h3 class="section-title">📋 月次振り返り <span class="section-sub">数字 + 前提 + 振り返り + 自動診断 を店舗/部門ごとに</span></h3>
         <button onclick="openPastReviews()" class="text-xs border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">📅 過去の振り返り一覧</button>
       </div>
       <div id="mgmtReview" class="space-y-2"></div>
@@ -3446,7 +3446,7 @@ function renderStoreCompare() {
               return `<div class="flex items-center gap-2 text-sm">
                 <span class="rank-num ${medal} w-4 text-center">${i+1}</span>
                 ${staffAvatar(s, 22)}
-                <span class="flex-1 truncate">${s.name}</span>
+                <span class="flex-1 truncate">${staffDisplayName(s.name, s.store)}</span>
                 <span class="kpi-num font-semibold">${fmt(s.total_sales)}</span>
               </div>`;
             }).join("")}
@@ -4206,13 +4206,17 @@ function renderRetiredStaffList() {
   listEl.innerHTML = `<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">${list.map(({ name, profile }) => {
     const info = lastInfo(name);
     const storeName = info ? DATA.stores[info.store]?.name : "—";
-    const deptColor = info?.primary_dept === "ヘア" ? "var(--dept-hair)" : info?.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
     const avatar = info ? staffAvatar(info, 48) : `<div class="rounded-full bg-gray-300" style="width:48px;height:48px"></div>`;
+    const displayN = info ? staffDisplayName(name, info.store) : name;
+    // ナイスネイル店ならランク、 他は部門
+    const subInfo = info && isNicenailStore(info.store)
+      ? detectNicenailRank(name).label
+      : (info?.primary_dept || "");
     return `<div class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
       ${avatar}
       <div class="flex-1 min-w-0">
-        <div class="font-semibold text-sm truncate">${name}${profile.display_name && profile.display_name !== name ? ` <span class="text-xs text-gray-400">(${profile.display_name})</span>` : ""}</div>
-        <div class="text-[11px] text-gray-500 truncate">${storeName} ${info?.primary_dept ? `· ${info.primary_dept}` : ""}</div>
+        <div class="font-semibold text-sm truncate">${displayN}${profile.display_name && profile.display_name !== name ? ` <span class="text-xs text-gray-400">(${profile.display_name})</span>` : ""}</div>
+        <div class="text-[11px] text-gray-500 truncate">${storeName} ${subInfo ? `· ${subInfo}` : ""}</div>
         <div class="text-[11px] text-gray-400">退職 ${profile.retired || "(日付不明)"}</div>
       </div>
       <button class="text-xs text-blue-600 hover:text-blue-800" onclick="openStaffProfileModal('${name.replace(/'/g,"\\'")}')">編集</button>
@@ -4252,15 +4256,19 @@ function renderIrregularStaffList() {
     const avatar = info ? staffAvatar(info, 48) : `<div class="rounded-full bg-gray-300" style="width:48px;height:48px"></div>`;
     const lastMonth = info ? `${info.month.slice(0,4)}/${info.month.slice(4,6)}` : "—";
     const empType = profile.employment_type || "業務委託";
+    const displayN = info ? staffDisplayName(name, info.store) : name;
+    const subInfo = info && isNicenailStore(info.store)
+      ? detectNicenailRank(name).label
+      : (info?.primary_dept || "");
     return `<div class="flex items-center gap-3 p-3 border border-amber-200 rounded-lg hover:bg-amber-50" style="background:#FFFBF0">
       ${avatar}
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-1.5 mb-0.5">
-          <span class="font-semibold text-sm truncate">${name}</span>
+          <span class="font-semibold text-sm truncate">${displayN}</span>
           ${profile.display_name && profile.display_name !== name ? `<span class="text-xs text-gray-400">(${profile.display_name})</span>` : ""}
           <span class="text-[9px] font-bold px-1.5 py-0.5 rounded text-white" style="background:#D97706">${empType}</span>
         </div>
-        <div class="text-[11px] text-gray-500 truncate">${storeName} ${info?.primary_dept ? `· ${info.primary_dept}` : ""}${profile.role ? ` · ${profile.role}` : ""}</div>
+        <div class="text-[11px] text-gray-500 truncate">${storeName} ${subInfo ? `· ${subInfo}` : ""}${profile.role ? ` · ${profile.role}` : ""}</div>
         <div class="text-[11px] text-amber-700 font-semibold">不定期 · 最終出勤 ${lastMonth}</div>
       </div>
       <button class="text-xs text-blue-600 hover:text-blue-800" onclick="openStaffProfileModal('${name.replace(/'/g,"\\'")}')">編集</button>
@@ -4301,15 +4309,56 @@ function closeStorePhotoModal() {
 }
 window.openStorePhotoModal = openStorePhotoModal;
 window.closeStorePhotoModal = closeStorePhotoModal;
+// === ナイスネイル店スタッフ ランクロジック (DENKO salon-dashboard 由来) ===
+// CSV プレフィックス: 無記号=トップ, □=ネイリスト, ■●▲★◆☆=ジュニア
+// 末尾 * は同名区別 (例: Mariko / Mariko* は別人)
+function nicenailDisplayName(rawName) {
+  // 表示名: プレフィックス除去、 末尾 * は保持 (同名区別)
+  return (rawName || "").replace(/^[■□●▲★◆☆]+/, "");
+}
+function nicenailDisplayNameClean(rawName) {
+  // クリーン表示用: プレフィックス + 末尾 * 両方除去
+  return (rawName || "").replace(/^[■□●▲★◆☆]+/, "").replace(/\*+$/, "");
+}
+function detectNicenailRank(rawName) {
+  if (rawName && rawName.startsWith("□")) return { key: "nailist", label: "ネイリスト", color: "#4ab8d8" };
+  if (rawName && /^[■●▲★◆☆]/.test(rawName)) return { key: "junior", label: "ジュニア", color: "#888780" };
+  return { key: "top", label: "トップ", color: "#e8557a" };
+}
+function nicenailRankOrder(rawName) {
+  // メインソート: トップ=0, ネイリスト=1, ジュニア=2
+  if (rawName && rawName.startsWith("□")) return 1;
+  if (rawName && /^[■●▲★◆☆]/.test(rawName)) return 2;
+  return 0;
+}
+function nicenailSubRank(rawName) {
+  // ジュニア内サブランク: ■=0(最上位), ☆=1, ★=2, ●=3 (最下位)
+  if (rawName && rawName.startsWith("■")) return 0;
+  if (rawName && rawName.startsWith("☆")) return 1;
+  if (rawName && rawName.startsWith("★")) return 2;
+  if (rawName && rawName.startsWith("●")) return 3;
+  return 99;
+}
+function isNicenailStore(storeId) {
+  return ((DATA.stores || {})[storeId] || {}).brand === "nicenail";
+}
+// 表示用名前 (ナイスネイル店ならプレフィックス除去、 他はそのまま)
+function staffDisplayName(rawName, storeId) {
+  return isNicenailStore(storeId) ? nicenailDisplayName(rawName) : rawName;
+}
+
 function staffAvatar(s, size = 24) {
   const profile = (DATA.staff_profiles && DATA.staff_profiles.profiles && DATA.staff_profiles.profiles[s.name]) || null;
-  const initial = staffInitial(s.name);
-  const deptColor = s.primary_dept === "ヘア" ? "var(--dept-hair)" : s.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+  const initial = staffInitial(staffDisplayName(s.name, s.store));
+  // 枠色: ナイスネイル店ならランク色、 他は業態色
+  const frameColor = isNicenailStore(s.store)
+    ? detectNicenailRank(s.name).color
+    : (s.primary_dept === "ヘア" ? "var(--dept-hair)" : s.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)");
   const sz = `width:${size}px;height:${size}px`;
   if (profile && profile.photo) {
-    return `<img src="assets/staff/${encodeURIComponent(profile.photo)}?v=${_PHOTO_VERSION}" alt="${s.name}" class="rounded-full object-cover border-2" style="${sz};border-color:${deptColor}" onerror="this.outerHTML='<div class=\\'rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0\\' style=\\'${sz};background:${deptColor}\\'>${initial}</div>'">`;
+    return `<img src="assets/staff/${encodeURIComponent(profile.photo)}?v=${_PHOTO_VERSION}" alt="${s.name}" class="rounded-full object-cover border-2" style="${sz};border-color:${frameColor}" onerror="this.outerHTML='<div class=\\'rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0\\' style=\\'${sz};background:${frameColor}\\'>${initial}</div>'">`;
   }
-  return `<div class="rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style="${sz};background:${deptColor}">${initial}</div>`;
+  return `<div class="rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style="${sz};background:${frameColor}">${initial}</div>`;
 }
 
 function rankTable(rows, sortKey, storeId) {
@@ -4373,17 +4422,26 @@ function rankTable(rows, sortKey, storeId) {
       <tr>
         <th class="text-center py-3 pr-2 ${headerCls('rank')} w-12">#</th>
         <th class="text-left py-3 pr-2 font-medium text-gray-500 border-b border-gray-200">スタッフ</th>
-        ${isNicenail ? "" : `<th class="text-center py-3 ${cellPadX} font-medium text-gray-500 border-b border-gray-200">部門</th>`}
+        <th class="text-center py-3 ${cellPadX} font-medium text-gray-500 border-b border-gray-200">${isNicenail ? "ランク" : "部門"}</th>
         ${columns.map((c, idx) => `<th class="text-right py-3 ${idx === columns.length-1 ? 'pl-2' : cellPadX} ${headerCls(c.key)} whitespace-nowrap">${c.label}</th>`).join("")}
       </tr>
     </thead>
     <tbody>
       ${sorted.map((s, i) => {
-        const deptColor = s.primary_dept === "ヘア" ? "var(--dept-hair)" : s.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
         const editBtn = currentRole === "master"
           ? `<button class="text-gray-300 hover:text-gray-700 ml-1.5 text-xs" title="プロフィール編集" onclick="event.stopPropagation(); openStaffProfileModal('${s.name.replace(/'/g,"\\'")}')">✎</button>`
           : "";
-        const deptBadge = `<span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold tracking-wider" style="background:${deptColor}; color:#fff; min-width:52px;">${s.primary_dept}</span>`;
+        // バッジ: ナイスネイル店ならランクバッジ、 他は業態バッジ
+        let badgeHtml;
+        if (isNicenail) {
+          const r = detectNicenailRank(s.name);
+          badgeHtml = `<span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold tracking-wider" style="background:${r.color}; color:#fff; min-width:72px;">${r.label}</span>`;
+        } else {
+          const deptColor = s.primary_dept === "ヘア" ? "var(--dept-hair)" : s.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+          badgeHtml = `<span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-bold tracking-wider" style="background:${deptColor}; color:#fff; min-width:52px;">${s.primary_dept}</span>`;
+        }
+        // 表示名: ナイスネイル店はプレフィックス除去
+        const displayN = staffDisplayName(s.name, s.store);
         // TOP3 行背景
         const rowBg = i === 0 ? "bg-yellow-50/70" : i === 1 ? "bg-gray-100/60" : i === 2 ? "bg-orange-50/50" : "";
         // セル
@@ -4410,11 +4468,11 @@ function rankTable(rows, sortKey, storeId) {
             <div class="flex items-center gap-2 min-w-0">
               ${staffAvatar(s, 36)}
               <div class="min-w-0">
-                <div class="font-semibold text-sm whitespace-nowrap">${s.name}${editBtn}</div>
+                <div class="font-semibold text-sm whitespace-nowrap">${displayN}${editBtn}</div>
               </div>
             </div>
           </td>
-          ${isNicenail ? "" : `<td class="py-3 ${cellPadX} text-center">${deptBadge}</td>`}
+          <td class="py-3 ${cellPadX} text-center">${badgeHtml}</td>
           ${columns.map(c => cellFor(c.key)).join("")}
         </tr>`;
       }).join("")}
@@ -5166,14 +5224,14 @@ function renderMgmtReview() {
     return "";
   };
 
-  // ヘッダー: 生成タイムスタンプ表示
+  // ヘッダー: 最終更新タイムスタンプ表示
   let headerInfo = "";
   if (generatedAt) {
     const d = new Date(generatedAt);
     const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-    headerInfo = `<div class="text-[11px] text-gray-500 mb-2">📝 振り返り文章 自動生成: ${dateStr}</div>`;
+    headerInfo = `<div class="text-[11px] text-gray-500 mb-2">最終更新: ${dateStr}</div>`;
   } else {
-    headerInfo = `<div class="text-[11px] text-amber-600 mb-2">⏳ 振り返り文章 未生成 (月初の自動更新で生成されます)</div>`;
+    headerInfo = `<div class="text-[11px] text-amber-600 mb-2">⏳ 振り返り 未作成 (翌月の月初に更新されます)</div>`;
   }
 
   root.innerHTML = headerInfo + sections.map(sec => {
@@ -5187,12 +5245,12 @@ function renderMgmtReview() {
       : "";
     const summaryHtml = summary
       ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3">
-          <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">📝 今月の振り返り (Claude 自動生成)</div>
+          <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">📝 今月の振り返り</div>
           ${renderReviewMemo(summary)}
         </div>`
       : (sec.kind === "before_open"
           ? ""
-          : `<div class="mb-3 text-xs text-gray-400 italic bg-gray-50 border border-dashed border-gray-300 rounded p-2">⏳ 月次振り返り未生成</div>`);
+          : `<div class="mb-3 text-xs text-gray-400 italic bg-gray-50 border border-dashed border-gray-300 rounded p-2">⏳ 月次振り返り未作成</div>`);
     const insightsHtml = insights.length
       ? `<div class="space-y-1.5">
           <div class="text-[11px] font-semibold text-gray-500 mb-1">🔍 自動診断</div>
@@ -5233,7 +5291,7 @@ function openPastReviews() {
   modal.id = "pastReviewsModal";
   modal.className = "fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4";
   const body = months.length === 0
-    ? `<div class="text-center text-sm text-gray-500 py-12">まだ月次振り返りが生成されていません<br><span class="text-xs">毎月1日 朝 8:30 に自動生成されます</span></div>`
+    ? `<div class="text-center text-sm text-gray-500 py-12">まだ月次振り返りがありません<br><span class="text-xs">翌月の月初に更新されます</span></div>`
     : months.map(month => {
         const monthData = all[month] || {};
         const filledSecs = SECTION_ORDER.filter(sid => (monthData[sid] || "").trim());
@@ -5244,7 +5302,7 @@ function openPastReviews() {
         return `<details class="mb-3 border border-gray-200 rounded-lg overflow-hidden" ${month === SCOPE.month ? "open" : ""}>
           <summary class="cursor-pointer bg-gray-50 hover:bg-gray-100 px-4 py-2.5 font-semibold text-sm select-none">
             📅 ${y}年${m}月 <span class="text-xs text-gray-500 font-normal ml-2">${filledSecs.length}件</span>
-            ${genStr ? `<span class="text-[10px] text-gray-400 font-normal ml-2">(${genStr} 生成)</span>` : ""}
+            ${genStr ? `<span class="text-[10px] text-gray-400 font-normal ml-2">(${genStr} 更新)</span>` : ""}
           </summary>
           <div class="p-4 space-y-3">
             ${filledSecs.map(sid => `
@@ -5349,8 +5407,10 @@ function buildSearchIndex() {
     if (seenNames.has(s.store + "::" + s.name)) return;
     seenNames.add(s.store + "::" + s.name);
     const store = DATA.stores[s.store];
+    const isNN = isNicenailStore(s.store);
+    const subLabel = isNN ? detectNicenailRank(s.name).label : s.primary_dept;
     items.push({
-      type: "staff", icon: "👤", label: s.name, sub: `${store.short || store.name} · ${s.primary_dept}`,
+      type: "staff", icon: "👤", label: staffDisplayName(s.name, s.store), sub: `${store.short || store.name} · ${subLabel}`,
       action: () => { activateTab("staff"); setTimeout(() => openStaffDetail(s.store, s.name), 200); }
     });
   });
@@ -6122,8 +6182,17 @@ function openStaffDetail(storeId, staffName) {
   const store = DATA.stores[storeId];
   const profile = (DATA.staff_profiles && DATA.staff_profiles.profiles && DATA.staff_profiles.profiles[staffName]) || {};
   document.getElementById("sdAvatar").innerHTML = staffAvatar(curRow, 48);
-  document.getElementById("sdName").textContent = staffName;
-  const deptColor = curRow.primary_dept === "ヘア" ? "var(--dept-hair)" : curRow.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+  document.getElementById("sdName").textContent = staffDisplayName(staffName, storeId);
+  // ナイスネイル店ならランク色 + ランク表示、 他は業態色 + 部門表示
+  let primaryLabel, primaryColor;
+  if (isNicenailStore(storeId)) {
+    const r = detectNicenailRank(staffName);
+    primaryLabel = r.label;
+    primaryColor = r.color;
+  } else {
+    primaryLabel = curRow.primary_dept;
+    primaryColor = curRow.primary_dept === "ヘア" ? "var(--dept-hair)" : curRow.primary_dept === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+  }
   // プロフィールから役職 + 雇用形態 を表示
   const roleStr = profile.role ? ` · ${profile.role}` : "";
   const empColor = profile.employment_type === "正社員" ? "#1976D2"
@@ -6134,7 +6203,7 @@ function openStaffDetail(storeId, staffName) {
   const empBadge = profile.employment_type
     ? `<span class="ml-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold" style="background:${empColor}15; color:${empColor}; border:1px solid ${empColor}40">${profile.employment_type}</span>`
     : "";
-  document.getElementById("sdStoreDept").innerHTML = `${store.name} · <span style="color:${deptColor}; font-weight:600">${curRow.primary_dept}</span>${roleStr}${empBadge}`;
+  document.getElementById("sdStoreDept").innerHTML = `${store.name} · <span style="color:${primaryColor}; font-weight:600">${primaryLabel}</span>${roleStr}${empBadge}`;
 
   // Current month KPI
   const ms = (DATA.monthly_by_store[storeId] || {})[currentMonth];
