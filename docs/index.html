@@ -5227,9 +5227,9 @@ function renderCostRatios() {
       ? `💰 原価所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分)`
       : `💰 原価所感`;
     const reviewHtml = reviewText
-      ? `<div class="mt-2.5 text-[11px] leading-relaxed text-gray-700 bg-sky-50 border-l-2 border-sky-400 rounded-r p-2">
-          <div class="text-[9px] font-bold text-sky-700 mb-1 tracking-wide">${reviewLabel}</div>
-          ${renderReviewMemo(reviewText)}
+      ? `<div class="mt-3 text-[12px] leading-7 text-gray-700 bg-sky-50 border-l-2 border-sky-400 rounded-r px-3 py-2.5">
+          <div class="text-[10px] font-bold text-sky-700 mb-1.5 tracking-wide uppercase opacity-80">${reviewLabel}</div>
+          ${renderProseReview(reviewText)}
         </div>`
       : "";
 
@@ -5279,9 +5279,9 @@ function renderCostRatios() {
     ? `💰 全社 原価所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分・レビューレポートより)`
     : `💰 全社 原価所感 (レビューレポートより)`;
   const companyReviewHtml = companyReview
-    ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-sky-50 border-l-4 border-sky-400 rounded-r p-3">
-        <div class="text-[10px] font-bold text-sky-700 mb-1 tracking-wide">${companyReviewLabel}</div>
-        ${renderReviewMemo(companyReview)}
+    ? `<div class="mb-4 text-sm leading-7 text-gray-800 bg-sky-50 border-l-4 border-sky-400 rounded-r px-4 py-3">
+        <div class="text-[11px] font-bold text-sky-700 mb-2 tracking-wide uppercase opacity-80">${companyReviewLabel}</div>
+        ${renderProseReview(companyReview)}
       </div>`
     : "";
 
@@ -5375,6 +5375,21 @@ function drawCostRatioTrend(canvasId, fy, cr) {
 
 // ============= 経営レビュー (月次振り返り: 数字 + 手動メモ + 自動診断) =============
 // 重点メモを安全にHTML化 — markdown-lite (画像/リンク/改行)
+// 長文レビュー専用レンダラ: 数字強調 + 句点改段 + 行間広め
+// renderReviewMemo (短いコンテキスト/メモ用) と区別。 内容は同じ、 見た目だけリッチ化
+function renderProseReview(text) {
+  if (!text) return "";
+  // 1. 既存処理 (markdown + URL + 改行)
+  let html = renderReviewMemo(text);
+  // 2. 数字強調 — 1つの正規表現に統合して二重ラップ防止 (左から順に最初のマッチが優先)
+  //    パターン優先順: 通貨記号付き → pt → % → 万円 → 桁区切り (3桁,3桁)
+  const numRe = /(¥[\d,]+(?:\.\d+)?|[+\-]\d+(?:\.\d+)?\s*pt|\d+(?:\.\d+)?%|\d+(?:\.\d+)?万円?|\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b)/g;
+  html = html.replace(numRe, '<strong class="text-gray-900 font-semibold">$1</strong>');
+  // 3. 句点 (。) + 直後に空白/<br>/末尾 が続く場合に paragraph break (視覚的な余白を 1.5 rem 追加)
+  html = html.replace(/。(?=\s|<br>|$)/g, "。<span class=\"block h-2\"></span>");
+  return html;
+}
+
 function renderReviewMemo(text) {
   if (!text) return "";
   const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -5689,9 +5704,9 @@ function renderMgmtReview() {
       ? `📝 ${fallbackMonth.slice(0,4)}年${parseInt(fallbackMonth.slice(4,6))}月分の振り返り`
       : `📝 今月の振り返り`;
     const summaryHtml = summary
-      ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3">
-          <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">${summaryLabel}</div>
-          ${renderReviewMemo(summary)}
+      ? `<div class="mb-4 text-sm leading-7 text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r px-4 py-3">
+          <div class="text-[11px] font-bold text-amber-700 mb-2 tracking-wide uppercase opacity-80">${summaryLabel}</div>
+          ${renderProseReview(summary)}
         </div>`
       : (sec.kind === "before_open"
           ? ""
@@ -5752,8 +5767,8 @@ function openPastReviews() {
           <div class="p-4 space-y-3">
             ${filledSecs.map(sid => `
               <div>
-                <div class="text-xs font-bold text-gray-700 mb-1">${SECTION_LABELS[sid] || sid}</div>
-                <div class="text-sm text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3 leading-relaxed">${renderReviewMemo(monthData[sid])}</div>
+                <div class="text-xs font-bold text-gray-700 mb-1.5">${SECTION_LABELS[sid] || sid}</div>
+                <div class="text-sm text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r px-4 py-3 leading-7">${renderProseReview(monthData[sid])}</div>
               </div>`).join("")}
           </div>
         </details>`;
