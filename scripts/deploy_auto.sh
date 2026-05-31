@@ -109,6 +109,18 @@ fi
 log "[3/5] generate.py"
 python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
 
+# 4b. 月初なら 前月の月次振り返り文章を Claude CLI で自動生成
+#     失敗しても既存サマリ維持で続行 (致命ではない)
+if [ "$DAY" = "01" ]; then
+  log "[3b/5] 月初: 前月($PREV_YM) 月次振り返り 自動生成 (Claude CLI)"
+  if python3 scripts/generate_summaries.py "$PREV_YM" 2>&1 | tee -a "$LOG_FILE"; then
+    log "  ✓ 月次振り返り 生成成功 — generate.py 再実行で data.json に取り込み"
+    python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
+  else
+    log "  ⚠️ 月次振り返り 生成失敗 — 既存サマリ維持で続行"
+  fi
+fi
+
 # 5. 差分があればコミット&プッシュ
 log "[4/5] git commit if changed"
 PUSHED="no"

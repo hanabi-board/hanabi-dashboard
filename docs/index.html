@@ -525,11 +525,11 @@
       <div id="mgmtExternal"></div>
     </div>
 
-    <!-- 経営レビュー (自動診断) -->
+    <!-- 経営レビュー (月次振り返り) -->
     <div class="card p-5 mb-5">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-        <h3 class="section-title">📊 経営レビュー <span class="section-sub">今月の自動診断 + アクション提案</span></h3>
-        <span class="text-[11px] text-gray-500">毎朝 自動更新</span>
+        <h3 class="section-title">📋 月次振り返り <span class="section-sub">数字 + 前提コンテキスト + 月次振り返り文章 (Claude 自動生成) + 自動診断</span></h3>
+        <button onclick="openPastReviews()" class="text-xs border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">📅 過去の振り返り一覧</button>
       </div>
       <div id="mgmtReview" class="space-y-2"></div>
     </div>
@@ -1089,6 +1089,22 @@ async function fetchRemoteStaffProfiles() {
     return await r.json();
   } catch (e) { return null; }
 }
+async function fetchRemoteStoreContexts() {
+  try {
+    const url = `https://raw.githubusercontent.com/${GH_REPO}/main/data/store_contexts.json?ts=${Date.now()}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
+async function fetchRemoteMonthlySummaries() {
+  try {
+    const url = `https://raw.githubusercontent.com/${GH_REPO}/main/data/monthly_summaries.json?ts=${Date.now()}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
 
 function isSessionValid() {
   try {
@@ -1248,7 +1264,12 @@ async function loadData() {
   // Background: fetch latest recruitment.json and staff_profiles.json from GitHub raw
   // (data.json is regenerated daily; this picks up same-day edits)
   setTimeout(async () => {
-    const [remoteRec, remoteSp] = await Promise.all([fetchRemoteRecruitment(), fetchRemoteStaffProfiles()]);
+    const [remoteRec, remoteSp, remoteCtx, remoteSum] = await Promise.all([
+      fetchRemoteRecruitment(),
+      fetchRemoteStaffProfiles(),
+      fetchRemoteStoreContexts(),
+      fetchRemoteMonthlySummaries(),
+    ]);
     if (remoteRec) {
       const localStr = JSON.stringify(DATA.recruitment || {});
       if (JSON.stringify(remoteRec) !== localStr) {
@@ -1265,6 +1286,18 @@ async function loadData() {
         applyRetiredStaffFlag();
         if (document.querySelector('[data-panel="staff"].active')) renderStaffTab();
       }
+    }
+    let needMgmtRerender = false;
+    if (remoteCtx && JSON.stringify(remoteCtx) !== JSON.stringify(DATA.store_contexts || {})) {
+      DATA.store_contexts = remoteCtx;
+      needMgmtRerender = true;
+    }
+    if (remoteSum && JSON.stringify(remoteSum) !== JSON.stringify(DATA.monthly_summaries || {})) {
+      DATA.monthly_summaries = remoteSum;
+      needMgmtRerender = true;
+    }
+    if (needMgmtRerender && document.querySelector('[data-panel="management"].active') && typeof renderMgmtReview === "function") {
+      renderMgmtReview();
     }
   }, 1500);
 }
@@ -4862,11 +4895,43 @@ function renderManagementTab() {
   renderMgmtReview();
 }
 
-// ============= 経営レビュー (自動診断 + アクション提案) =============
-function renderMgmtReview() {
-  const root = document.getElementById("mgmtReview");
-  if (!root) return;
-  const insights = [];
+// ============= 経営レビュー (月次振り返り: 数字 + 手動メモ + 自動診断) =============
+// 重点メモを安全にHTML化 — markdown-lite (画像/リンク/改行)
+function renderReviewMemo(text) {
+  if (!text) return "";
+  const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  // URL placeholder で 二重escape 回避
+  const placeholders = [];
+  let html = esc(text);
+  // ![alt](url) → image (画像はクリックでフルサイズ展開)
+  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_, alt, url) => {
+    const i = placeholders.length;
+    placeholders.push(`<a href="${url}" target="_blank" rel="noopener" class="inline-block"><img src="${url}" alt="${alt}" class="max-w-full max-h-64 rounded border my-1.5 shadow-sm"></a>`);
+    return ` P${i} `;
+  });
+  // [text](url) → link
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, txt, url) => {
+    const i = placeholders.length;
+    placeholders.push(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800">${txt}</a>`);
+    return ` P${i} `;
+  });
+  // bare URL → auto-link
+  html = html.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+    const i = placeholders.length;
+    placeholders.push(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline hover:text-blue-800 break-all">${url}</a>`);
+    return ` P${i} `;
+  });
+  // 改行 → <br>
+  html = html.replace(/\n/g, "<br>");
+  // placeholder 復元
+  html = html.replace(/ P(\d+) /g, (_, i) => placeholders[parseInt(i)]);
+  return html;
+}
+
+function computeMgmtInsights() {
+  // 既存の診断ルールで生成、 store / section にタグ付け
+  const out = {};  // section_id -> [insights]
+  const push = (sec, item) => { (out[sec] = out[sec] || []).push(item); };
 
   const prevMonth = (() => {
     const y = parseInt(SCOPE.month.slice(0,4));
@@ -4876,7 +4941,8 @@ function renderMgmtReview() {
     return `${py}${String(pm).padStart(2,"0")}`;
   })();
 
-  // 1. 売上ペース (店舗別) — 危険信号と好調信号
+  // ルール → セクション付与で push
+  // 1. 売上ペース (店舗別)
   for (const r of SCOPE.storeRows) {
     if (r.isBeforeOpen) continue;
     if (!r.elapsedTarget) continue;
@@ -4886,27 +4952,16 @@ function renderMgmtReview() {
     const remainDays = Math.max(0, SCOPE.daysInMonth - SCOPE.globalElapsedDays);
     const reqDaily = remainDays ? Math.round(remainTarget / remainDays) : 0;
     if (pace < 75) {
-      insights.push({
-        severity: 'warn',
-        store: r.store.name,
-        title: `売上ペース ${pace.toFixed(0)}% — 未達ペース`,
-        value: `${fmt(r.sales)} / 月予算 ${fmtM(r.monthlyTarget)}`,
-        analysis: `現ペース継続なら月末着地 ${fmt(proj)}、 予算 ${fmtM(r.monthlyTarget)} に対し ▼${fmt(Math.abs(proj - r.monthlyTarget))}`,
-        action: `残${remainDays}日 必要日商 ${fmt(reqDaily)}/日。 高単価メニュー提案 + 指名取り強化、 SNS / DM 集客促進。`,
-      });
+      push(r.sid, { severity: 'warn', title: `売上ペース ${pace.toFixed(0)}% — 未達ペース`,
+        analysis: `着地予測 ${fmt(proj)} (予算 ${fmtM(r.monthlyTarget)} に対し ▼${fmt(Math.abs(proj - r.monthlyTarget))})`,
+        action: `残${remainDays}日 必要日商 ${fmt(reqDaily)}/日` });
     } else if (pace >= 110) {
-      insights.push({
-        severity: 'good',
-        store: r.store.name,
-        title: `売上ペース ${pace.toFixed(0)}% — 好調`,
-        value: `${fmt(r.sales)} / 月予算 ${fmtM(r.monthlyTarget)}`,
-        analysis: `月末着地予測 ${fmt(proj)}、 予算超過 ▲${fmt(proj - r.monthlyTarget)}`,
-        action: `スタッフ全員に成功体験共有。 要因を分析し他店舗へ横展開。`,
-      });
+      push(r.sid, { severity: 'good', title: `売上ペース ${pace.toFixed(0)}% — 好調`,
+        analysis: `着地予測 ${fmt(proj)} (予算超過 ▲${fmt(proj - r.monthlyTarget)})`,
+        action: `成功要因を全員共有、 他店舗へ横展開` });
     }
   }
-
-  // 2. 客単価 前月比トレンド
+  // 2. 客単価 前月比
   for (const r of SCOPE.storeRows) {
     if (r.isBeforeOpen) continue;
     const ms = r.ms;
@@ -4918,27 +4973,16 @@ function renderMgmtReview() {
     if (prev <= 0) continue;
     const delta = (cur / prev - 1) * 100;
     if (delta < -5) {
-      insights.push({
-        severity: 'warn',
-        store: r.store.name,
-        title: `客単価 ${delta.toFixed(1)}% (前月比)`,
-        value: `¥${Math.round(cur).toLocaleString()} ← 前月 ¥${Math.round(prev).toLocaleString()}`,
-        analysis: `高単価メニュー (OP・指名料) の比率減少 or 低単価メニュー需要増の可能性。`,
-        action: `OP提案率を上げる接客指導、 単価高メニューへの誘導。 店販クロスセル強化。`,
-      });
+      push(r.sid, { severity: 'warn', title: `客単価 ${delta.toFixed(1)}% (前月比)`,
+        analysis: `¥${Math.round(cur).toLocaleString()} ← 前月 ¥${Math.round(prev).toLocaleString()}。 高単価メニュー比率減少の可能性`,
+        action: `OP提案率UP、 高単価メニューへの誘導強化` });
     } else if (delta > 10) {
-      insights.push({
-        severity: 'good',
-        store: r.store.name,
-        title: `客単価 +${delta.toFixed(1)}% (前月比)`,
-        value: `¥${Math.round(cur).toLocaleString()} ← 前月 ¥${Math.round(prev).toLocaleString()}`,
-        analysis: `OP提案や高単価メニュー誘導が効いてる可能性。`,
-        action: `成功要因を特定し、 他店舗・他スタッフへ展開。`,
-      });
+      push(r.sid, { severity: 'good', title: `客単価 +${delta.toFixed(1)}% (前月比)`,
+        analysis: `¥${Math.round(cur).toLocaleString()} ← 前月 ¥${Math.round(prev).toLocaleString()}`,
+        action: `成功要因を特定し他スタッフへ展開` });
     }
   }
-
-  // 3. 指名率 (ヘア専門店のみ評価、 ネイル/アイは別基準)
+  // 3. 指名率 (ヘア専門のみ)
   for (const r of SCOPE.storeRows) {
     if (r.isBeforeOpen) continue;
     const ms = r.ms;
@@ -4950,35 +4994,23 @@ function renderMgmtReview() {
     const rate = nom / total * 100;
     const isHair = (r.store.departments || []).includes("ヘア");
     if (rate < 50 && isHair) {
-      insights.push({
-        severity: 'warn',
-        store: r.store.name,
-        title: `指名率 ${rate.toFixed(0)}% — 業界平均より低い`,
-        value: `指名 ${nom}名 / 全客 ${total}名`,
-        analysis: `ヘアサロンの指名率は 60% 以上が理想。 リピート設計に改善余地。`,
-        action: `次回予約案内の徹底、 トップ指名スタッフの接客手法を全員に共有。`,
-      });
+      push(r.sid, { severity: 'warn', title: `指名率 ${rate.toFixed(0)}% — 業界平均より低い`,
+        analysis: `指名 ${nom}名 / 全客 ${total}名。 ヘアは 60%以上が理想`,
+        action: `次回予約案内の徹底、 トップ指名スタッフ手法の共有` });
     }
   }
-
-  // 4. リピート率 (店舗別)
+  // 4. リピート率 (Hanabi のみ)
   for (const r of SCOPE.storeRows) {
     if (r.isBeforeOpen) continue;
     if (!r.vis || !r.vis.customers) continue;
     const rate = r.vis.repeat / r.vis.customers * 100;
     if (rate < 60 && r.store.brand === "hanabi") {
-      insights.push({
-        severity: 'warn',
-        store: r.store.name,
-        title: `リピート率 ${rate.toFixed(0)}% — 改善余地`,
-        value: `リピート ${r.vis.repeat}名 / 全客 ${r.vis.customers}名`,
-        analysis: `綱島は通常75%超。 新規偏重 or リピーター離反の可能性。`,
-        action: `失客分析タブで離反要因確認。 既存顧客へのDM / クーポン施策強化。`,
-      });
+      push(r.sid, { severity: 'warn', title: `リピート率 ${rate.toFixed(0)}% — 改善余地`,
+        analysis: `リピート ${r.vis.repeat}名 / 全客 ${r.vis.customers}名 (綱島は通常75%超)`,
+        action: `失客分析確認、 DM / クーポン施策強化` });
     }
   }
-
-  // 5. 同店舗 YoY (急落 or 大幅成長)
+  // 5. 同店舗 YoY
   for (const r of SCOPE.storeRows) {
     if (r.isBeforeOpen) continue;
     if (!isSameStoreEligible(r.sid, SCOPE.month)) continue;
@@ -4987,59 +5019,39 @@ function renderMgmtReview() {
     if (!expected) continue;
     const yoy = r.sales / expected * 100;
     if (yoy < 85) {
-      insights.push({
-        severity: 'warn',
-        store: r.store.name,
-        title: `前年同月比 ${yoy.toFixed(0)}% — 急落`,
-        value: `前年同月 ${fmt(r.prevMonthSales)} の同期 ${fmt(Math.round(expected))} に対し ${fmt(r.sales)}`,
-        analysis: `競合出店 / 客層変化 / 主力メニュー需要減 の可能性。`,
-        action: `客層分析、 メニュー別比較で離反要因特定。 緊急対策プラン策定。`,
-      });
+      push(r.sid, { severity: 'warn', title: `前年同月比 ${yoy.toFixed(0)}% — 急落`,
+        analysis: `前年同期 ${fmt(Math.round(expected))} に対し ${fmt(r.sales)}`,
+        action: `客層・メニュー別比較で要因特定、 緊急対策` });
     } else if (yoy >= 120) {
-      insights.push({
-        severity: 'good',
-        store: r.store.name,
-        title: `前年同月比 +${(yoy - 100).toFixed(0)}% — 大幅成長`,
-        value: `前年同月 ${fmt(r.prevMonthSales)} → 今期同期 ${fmt(r.sales)}`,
-        analysis: `集客・接客・メニュー設計のどれかが当たってる。`,
-        action: `要因を分析。 中期計画上方修正検討。`,
-      });
+      push(r.sid, { severity: 'good', title: `前年同月比 +${(yoy - 100).toFixed(0)}% — 大幅成長`,
+        analysis: `前年同期 ${fmt(Math.round(expected))} → ${fmt(r.sales)}`,
+        action: `要因分析、 中期計画上方修正検討` });
     }
   }
-
   // 6. 部門別予算 (ELLE宮古島)
   const eleR = SCOPE.storeRows.find(r => r.sid === "miyakojima" && !r.isBeforeOpen);
   if (eleR && eleR.ms) {
     const monthDeptBudget = ((DATA.budgets || {}).monthly_dept_miyakojima || {})[SCOPE.month] || {};
+    const deptSecMap = { "ヘア": "miyakojima_hair", "アイ": "miyakojima_eye", "ネイル": "miyakojima_nail" };
     for (const d of ["ヘア","アイ","ネイル"]) {
       const sales = eleR.ms.by_dept[d].sales;
       const monthly = monthDeptBudget[d] || 0;
       if (!monthly) continue;
       const expected = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
       const pct = sales / expected * 100;
+      const sec = deptSecMap[d];
       if (pct < 70) {
-        insights.push({
-          severity: 'warn',
-          store: `ELLE宮古島 ${d}部門`,
-          title: `${d}部門 ペース ${pct.toFixed(0)}% — 未達`,
-          value: `${fmt(sales)} / 月予算 ${fmt(monthly)}`,
-          analysis: `${d}担当スタッフの稼働 or 需要不足の可能性。`,
-          action: `${d}メニュー強化施策、 担当スタッフのシフト見直し、 集客導線確認。`,
-        });
+        push(sec, { severity: 'warn', title: `${d}部門 ペース ${pct.toFixed(0)}% — 未達`,
+          analysis: `${fmt(sales)} / 月予算 ${fmt(monthly)}`,
+          action: `${d}メニュー強化、 担当シフト見直し` });
       } else if (pct >= 130) {
-        insights.push({
-          severity: 'good',
-          store: `ELLE宮古島 ${d}部門`,
-          title: `${d}部門 ペース ${pct.toFixed(0)}% — 好調`,
-          value: `${fmt(sales)} / 月予算 ${fmt(monthly)}`,
-          analysis: `需要 or オペレーション改善が効いてる。`,
-          action: `予算上方修正、 さらなる強化 (スタッフ追加・メニュー拡充) 検討。`,
-        });
+        push(sec, { severity: 'good', title: `${d}部門 ペース ${pct.toFixed(0)}% — 好調`,
+          analysis: `${fmt(sales)} / 月予算 ${fmt(monthly)}`,
+          action: `予算上方修正、 さらなる強化検討` });
       }
     }
   }
-
-  // 7. スタッフギャップ (TOP vs 平均、 育成余地検知)
+  // 7. スタッフギャップ
   for (const r of SCOPE.storeRows) {
     if (r.isBeforeOpen) continue;
     const rows = (DATA.staff_rows || []).filter(s => s.store === r.sid && s.month === SCOPE.month && !s.hidden);
@@ -5050,18 +5062,12 @@ function renderMgmtReview() {
     if (avgOthers <= 0) continue;
     const ratio = top.total_sales / avgOthers;
     if (ratio >= 2) {
-      insights.push({
-        severity: 'info',
-        store: r.store.name,
-        title: `TOPスタッフ ${top.name} が他平均の ${ratio.toFixed(1)}倍 — 育成余地大`,
-        value: `${top.name} ${fmt(top.total_sales)} ↔ 他平均 ${fmt(Math.round(avgOthers))}`,
-        analysis: `集客力 / 接客力 / 指名取得力 に大きい差。 下位スタッフの伸びしろあり。`,
-        action: `${top.name}さん の手法を OJT / マニュアル化、 月1回の勉強会開催。`,
-      });
+      push(r.sid, { severity: 'info', title: `TOPスタッフ ${top.name} が他平均の ${ratio.toFixed(1)}倍`,
+        analysis: `${top.name} ${fmt(top.total_sales)} ↔ 他平均 ${fmt(Math.round(avgOthers))}`,
+        action: `${top.name}さんの手法を OJT / 勉強会で共有` });
     }
   }
-
-  // 8. 外部メディア (HPB 評価が低い場合)
+  // 8. HPB評価
   const external = DATA.external || {};
   const hpbLatest = (external.hotpepper || []).slice(-1)[0];
   if (hpbLatest) {
@@ -5072,67 +5078,201 @@ function renderMgmtReview() {
       const rating = hp.avg_rating != null ? hp.avg_rating : hp.rating;
       if (rating == null) continue;
       if (rating < 4.0) {
-        insights.push({
-          severity: 'warn',
-          store: r.store.name,
-          title: `HPB評価 ★${rating} — 4.0未満は集客に響く`,
-          value: `口コミ ${hp.total_review_count || hp.review_count || "?"}件`,
-          analysis: `HPB の評価4.0未満は新規流入に大きく影響。`,
-          action: `最近の低評価レビュー確認 → スタッフ全員にフィードバック共有。 次回予約時に口コミ依頼。`,
-        });
+        push(r.sid, { severity: 'warn', title: `HPB評価 ★${rating} — 4.0未満は集客に影響`,
+          analysis: `口コミ ${hp.total_review_count || hp.review_count || "?"}件`,
+          action: `低評価レビュー確認、 次回予約時に口コミ依頼` });
       }
     }
   }
-
-  // 9. 採用ファネル (停滞検知)
+  // 9. 採用 (今月応募0)
   const recs = ((DATA.recruitment || {}).candidates || []);
   const thisMonth = `${SCOPE.month.slice(0,4)}-${SCOPE.month.slice(4,6)}`;
   const monthApplied = recs.filter(c => (c.applied_date || "").startsWith(thisMonth)).length;
   if (monthApplied === 0 && parseInt(SCOPE.month.slice(4,6)) <= new Date().getMonth() + 1) {
-    insights.push({
-      severity: 'warn',
-      store: '採用',
-      title: `今月応募 0件`,
-      value: ``,
-      analysis: `募集経路の露出不足 or 競合 / 季節要因。`,
-      action: `Beauty Work / リジョブ の掲載内容見直し、 リファラル促進キャンペーン検討。`,
-    });
+    push("company", { severity: 'warn', title: `今月応募 0件`,
+      analysis: `募集経路の露出不足の可能性`,
+      action: `Beauty Work / リジョブ 掲載見直し、 リファラル促進` });
   }
 
-  // === Render ===
-  if (!insights.length) {
-    root.innerHTML = `<div class="text-center text-sm text-gray-500 py-8">
-      <div class="text-2xl mb-2">✨</div>
-      <div>今月は特筆すべき診断項目なし — 主要指標 全て健全範囲内</div>
-    </div>`;
-    return;
+  return out;
+}
+
+// 経営レビュー本体: セクション単位で 数字 + 前提コンテキスト + AI生成振り返り + 自動診断 を表示
+const SECTION_LABELS = {
+  company: "🏢 全社方針",
+  tsunashima: "🏪 Hanabi 綱島店",
+  miyakojima: "🏪 ELLE 宮古島店 (全体)",
+  miyakojima_hair: "▸ ELLE 宮古島 ヘア部門",
+  miyakojima_eye: "▸ ELLE 宮古島 アイ部門",
+  miyakojima_nail: "▸ ELLE 宮古島 ネイル部門",
+  shinyokohama: "🏪 ナイスネイル 新横浜店",
+};
+const SECTION_ORDER = ["company","tsunashima","miyakojima","miyakojima_hair","miyakojima_eye","miyakojima_nail","shinyokohama"];
+
+function renderMgmtReview() {
+  const root = document.getElementById("mgmtReview");
+  if (!root) return;
+  const contexts = ((DATA.store_contexts || {}).contexts || {});
+  const summaries = ((DATA.monthly_summaries || {}).summaries || {})[SCOPE.month] || {};
+  const generatedAt = ((DATA.monthly_summaries || {}).generated_at || {})[SCOPE.month];
+  const insightsBySec = computeMgmtInsights();
+
+  // セクション定義 (順序固定)
+  const sections = [];
+  sections.push({ id: "company", title: SECTION_LABELS.company, subtitle: "全体的な戦略・人事方針", kind: "company" });
+  for (const r of SCOPE.storeRows) {
+    if (r.isBeforeOpen) {
+      sections.push({ id: r.sid, title: `🏪 ${r.store.name}`, subtitle: "🚧 OPEN前準備中", kind: "before_open", row: r });
+      continue;
+    }
+    sections.push({ id: r.sid, title: `🏪 ${r.store.name}`, subtitle: (r.store.departments || []).join("/") + (r.store.departments.length === 1 ? "専門" : ""), kind: "store", row: r });
+    if (r.sid === "miyakojima" && r.ms) {
+      sections.push({ id: "miyakojima_hair", title: "  ▸ ヘア部門", kind: "dept", row: r, dept: "ヘア" });
+      sections.push({ id: "miyakojima_eye", title: "  ▸ アイ部門", kind: "dept", row: r, dept: "アイ" });
+      sections.push({ id: "miyakojima_nail", title: "  ▸ ネイル部門", kind: "dept", row: r, dept: "ネイル" });
+    }
   }
-  // severity 順にソート (warn → good → info)
-  const sevOrder = { warn: 0, good: 1, info: 2 };
-  insights.sort((a, b) => (sevOrder[a.severity] || 9) - (sevOrder[b.severity] || 9));
+
   const sevStyle = (s) => {
-    if (s === 'warn') return { bg: 'bg-amber-50', border: 'border-amber-300', dot: 'text-amber-600', icon: '⚠' };
-    if (s === 'good') return { bg: 'bg-emerald-50', border: 'border-emerald-300', dot: 'text-emerald-600', icon: '✓' };
-    return { bg: 'bg-blue-50', border: 'border-blue-300', dot: 'text-blue-600', icon: 'ℹ' };
+    if (s === 'warn') return { bg: 'bg-amber-50', border: 'border-amber-200', dot: 'text-amber-600', icon: '⚠' };
+    if (s === 'good') return { bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'text-emerald-600', icon: '✓' };
+    return { bg: 'bg-blue-50', border: 'border-blue-200', dot: 'text-blue-600', icon: 'ℹ' };
   };
-  root.innerHTML = insights.map(it => {
-    const s = sevStyle(it.severity);
-    return `<div class="rounded-lg border-2 ${s.border} ${s.bg} p-4">
-      <div class="flex items-start gap-3">
-        <span class="text-xl flex-shrink-0 ${s.dot}">${s.icon}</span>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-baseline gap-2 flex-wrap mb-1">
-            <span class="text-[11px] font-bold text-gray-500 uppercase">${it.store}</span>
-            <span class="font-bold text-sm text-gray-900">${it.title}</span>
-          </div>
-          ${it.value ? `<div class="text-xs text-gray-700 mb-1.5 kpi-num">${it.value}</div>` : ""}
-          <div class="text-xs text-gray-700 mb-1.5">🔍 <strong>解析:</strong> ${it.analysis}</div>
-          <div class="text-xs text-gray-700">💡 <strong>アクション:</strong> ${it.action}</div>
-        </div>
+
+  const renderKpi = (sec) => {
+    if (sec.kind === "company") {
+      const t = SCOPE.totals;
+      const pace = t.expected ? (t.sales / t.expected * 100) : 0;
+      return `<div class="text-xs text-gray-600 mb-2">全社売上 <span class="kpi-num font-semibold text-gray-900">${fmt(t.sales)}</span> / 月予算 ${fmtM(t.target)} (ペース ${pace.toFixed(0)}%) · 全社客数 <span class="kpi-num font-semibold text-gray-900">${fmtN(t.customers)}</span></div>`;
+    }
+    if (sec.kind === "before_open") {
+      const r = sec.row;
+      const days = Math.ceil((new Date(r.store.open_date) - new Date()) / (1000*60*60*24));
+      return `<div class="text-xs text-gray-500 mb-2">${r.store.open_date} OPEN予定 (あと${days}日)</div>`;
+    }
+    if (sec.kind === "store") {
+      const r = sec.row;
+      const pace = r.elapsedTarget ? (r.sales / r.elapsedTarget * 100) : 0;
+      const avg = r.customers ? Math.round(r.sales / r.customers) : 0;
+      return `<div class="text-xs text-gray-600 mb-2">売上 <span class="kpi-num font-semibold text-gray-900">${fmt(r.sales)}</span> / 月予算 ${fmtM(r.monthlyTarget)} (ペース ${pace.toFixed(0)}%) · 客数 <span class="kpi-num font-semibold text-gray-900">${fmtN(r.customers)}</span> · 客単価 ¥${avg.toLocaleString()}</div>`;
+    }
+    if (sec.kind === "dept") {
+      const r = sec.row;
+      const ds = (r.ms.by_dept[sec.dept] || {}).sales || 0;
+      const budget = (((DATA.budgets || {}).monthly_dept_miyakojima || {})[SCOPE.month] || {})[sec.dept] || 0;
+      const pace = budget && SCOPE.globalElapsedDays ? (ds / (budget * SCOPE.globalElapsedDays / SCOPE.daysInMonth) * 100) : 0;
+      return `<div class="text-xs text-gray-600 mb-2">売上 <span class="kpi-num font-semibold text-gray-900">${fmt(ds)}</span> / 月予算 ${fmtM(budget)} (ペース ${pace.toFixed(0)}%)</div>`;
+    }
+    return "";
+  };
+
+  // ヘッダー: 生成タイムスタンプ表示
+  let headerInfo = "";
+  if (generatedAt) {
+    const d = new Date(generatedAt);
+    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    headerInfo = `<div class="text-[11px] text-gray-500 mb-2">📝 振り返り文章 自動生成: ${dateStr}</div>`;
+  } else {
+    headerInfo = `<div class="text-[11px] text-amber-600 mb-2">⏳ 振り返り文章 未生成 (月初の自動更新で生成されます)</div>`;
+  }
+
+  root.innerHTML = headerInfo + sections.map(sec => {
+    const ctx = (contexts[sec.id] || "").trim();
+    const summary = (summaries[sec.id] || "").trim();
+    const insights = insightsBySec[sec.id] || [];
+    const ctxHtml = ctx
+      ? `<div class="mb-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded p-2">
+          <span class="font-bold text-gray-500">📌 前提:</span> ${renderReviewMemo(ctx)}
+        </div>`
+      : "";
+    const summaryHtml = summary
+      ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3">
+          <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">📝 今月の振り返り (Claude 自動生成)</div>
+          ${renderReviewMemo(summary)}
+        </div>`
+      : (sec.kind === "before_open"
+          ? ""
+          : `<div class="mb-3 text-xs text-gray-400 italic bg-gray-50 border border-dashed border-gray-300 rounded p-2">⏳ 月次振り返り未生成</div>`);
+    const insightsHtml = insights.length
+      ? `<div class="space-y-1.5">
+          <div class="text-[11px] font-semibold text-gray-500 mb-1">🔍 自動診断</div>
+          ${insights.map(it => {
+            const s = sevStyle(it.severity);
+            return `<div class="flex items-start gap-2 text-xs ${s.bg} border ${s.border} rounded px-2 py-1.5">
+              <span class="${s.dot} font-bold">${s.icon}</span>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-gray-900">${it.title}</div>
+                <div class="text-gray-700 text-[11px]">${it.analysis}</div>
+                ${it.action ? `<div class="text-gray-600 text-[11px] mt-0.5">💡 ${it.action}</div>` : ""}
+              </div>
+            </div>`;
+          }).join("")}
+        </div>`
+      : `<div class="text-[11px] text-gray-400">自動診断: 健全範囲 ✓</div>`;
+    return `<div class="card p-4 mb-3">
+      <div class="mb-2">
+        <h4 class="font-bold text-sm">${sec.title}</h4>
+        ${sec.subtitle ? `<div class="text-[11px] text-gray-500">${sec.subtitle}</div>` : ""}
       </div>
+      ${renderKpi(sec)}
+      ${ctxHtml}
+      ${summaryHtml}
+      ${insightsHtml}
     </div>`;
   }).join("");
 }
+
+// 過去の振り返り一覧 (時系列モーダル) — Claude生成 monthly_summaries を表示
+function openPastReviews() {
+  const all = ((DATA.monthly_summaries || {}).summaries || {});
+  const generatedAt = ((DATA.monthly_summaries || {}).generated_at || {});
+  const months = Object.keys(all).filter(m => /^\d{6}$/.test(m)).sort().reverse();
+  let modal = document.getElementById("pastReviewsModal");
+  if (modal) modal.remove();
+  modal = document.createElement("div");
+  modal.id = "pastReviewsModal";
+  modal.className = "fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4";
+  const body = months.length === 0
+    ? `<div class="text-center text-sm text-gray-500 py-12">まだ月次振り返りが生成されていません<br><span class="text-xs">毎月1日 朝 8:30 に自動生成されます</span></div>`
+    : months.map(month => {
+        const monthData = all[month] || {};
+        const filledSecs = SECTION_ORDER.filter(sid => (monthData[sid] || "").trim());
+        if (!filledSecs.length) return "";
+        const y = month.slice(0,4), m = parseInt(month.slice(4,6));
+        const gen = generatedAt[month];
+        const genStr = gen ? new Date(gen).toLocaleString("ja-JP", { year:"numeric", month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" }) : "";
+        return `<details class="mb-3 border border-gray-200 rounded-lg overflow-hidden" ${month === SCOPE.month ? "open" : ""}>
+          <summary class="cursor-pointer bg-gray-50 hover:bg-gray-100 px-4 py-2.5 font-semibold text-sm select-none">
+            📅 ${y}年${m}月 <span class="text-xs text-gray-500 font-normal ml-2">${filledSecs.length}件</span>
+            ${genStr ? `<span class="text-[10px] text-gray-400 font-normal ml-2">(${genStr} 生成)</span>` : ""}
+          </summary>
+          <div class="p-4 space-y-3">
+            ${filledSecs.map(sid => `
+              <div>
+                <div class="text-xs font-bold text-gray-700 mb-1">${SECTION_LABELS[sid] || sid}</div>
+                <div class="text-sm text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3 leading-relaxed">${renderReviewMemo(monthData[sid])}</div>
+              </div>`).join("")}
+          </div>
+        </details>`;
+      }).filter(Boolean).join("");
+  modal.innerHTML = `
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between p-5 border-b border-gray-200">
+        <div>
+          <h3 class="font-bold text-base">📅 過去の振り返り一覧</h3>
+          <div class="text-xs text-gray-500 mt-0.5">時系列 (新しい順)・全店舗・全部門</div>
+        </div>
+        <button onclick="document.getElementById('pastReviewsModal').remove()" class="text-gray-400 hover:text-gray-700 text-2xl leading-none">×</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-5">${body}</div>
+      <div class="p-3 border-t border-gray-200 flex justify-end">
+        <button onclick="document.getElementById('pastReviewsModal').remove()" class="text-xs border border-gray-300 rounded px-4 py-1.5 hover:bg-gray-50">閉じる</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+window.openPastReviews = openPastReviews;
 
 function drawMgmtCompanyTrend() {
   const el = document.getElementById("mgmtCompanyTrendChart");

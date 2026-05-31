@@ -236,6 +236,30 @@ def load_staff_ranking(path: Path, store_id: str, year_month: str) -> list[dict]
     return out
 
 
+def load_store_contexts() -> dict:
+    """store_contexts.json を読み込み (店舗/部門ごとの前提コンテキスト)"""
+    p = DATA / "store_contexts.json"
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"  warn: failed to load store_contexts.json: {e}")
+        return {}
+
+
+def load_monthly_summaries() -> dict:
+    """monthly_summaries.json を読み込み (Claude CLI 自動生成 月次振り返り文章)"""
+    p = DATA / "monthly_summaries.json"
+    if not p.exists():
+        return {"summaries": {}, "generated_at": {}, "model": {}}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"  warn: failed to load monthly_summaries.json: {e}")
+        return {"summaries": {}, "generated_at": {}, "model": {}}
+
+
 def load_external_targets() -> dict:
     """external_targets.json を読み込んで { store_id: { hotpepper, instagram } } 形式に"""
     p = DATA / "external_targets.json"
@@ -557,6 +581,8 @@ def main():
         "denpyo_summary": denpyo_summary,
         "nicenail_extras": load_nicenail_extras(),  # 新横浜店等の NN固有 KPI (OP率, 稼働率, 1日1名)
         "external_targets": load_external_targets(),  # 店舗別 HPB/IG URL 設定
+        "store_contexts": load_store_contexts(),  # 店舗/部門ごとの前提コンテキスト (低頻度更新)
+        "monthly_summaries": load_monthly_summaries(),  # Claude CLI 自動生成 月次振り返り (月初に生成)
     }
 
     out_path = DOCS / "data.json"
