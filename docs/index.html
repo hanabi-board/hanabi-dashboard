@@ -5224,11 +5224,11 @@ function renderCostRatios() {
     // 原価レビュー所感 (該当セクションに該当月のレビューがあれば表示)
     const reviewText = (costReviews[sec.sid] || "").trim();
     const reviewLabel = costReviewIsFallback && costReviewMonth
-      ? `📝 原価所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分)`
-      : `📝 原価所感`;
+      ? `💰 原価所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分)`
+      : `💰 原価所感`;
     const reviewHtml = reviewText
-      ? `<div class="mt-2.5 text-[11px] leading-relaxed text-gray-700 bg-amber-50 border-l-2 border-amber-300 rounded-r p-2">
-          <div class="text-[9px] font-bold text-amber-700 mb-1 tracking-wide">${reviewLabel}</div>
+      ? `<div class="mt-2.5 text-[11px] leading-relaxed text-gray-700 bg-sky-50 border-l-2 border-sky-400 rounded-r p-2">
+          <div class="text-[9px] font-bold text-sky-700 mb-1 tracking-wide">${reviewLabel}</div>
           ${renderReviewMemo(reviewText)}
         </div>`
       : "";
@@ -5276,11 +5276,11 @@ function renderCostRatios() {
   // 全社レベル原価所感 (cost_reviews.company があればトップに表示)
   const companyReview = (costReviews.company || "").trim();
   const companyReviewLabel = costReviewIsFallback && costReviewMonth
-    ? `📋 全社所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分・レビューレポートより)`
-    : `📋 全社所感 (レビューレポートより)`;
+    ? `💰 全社 原価所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分・レビューレポートより)`
+    : `💰 全社 原価所感 (レビューレポートより)`;
   const companyReviewHtml = companyReview
-    ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3">
-        <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">${companyReviewLabel}</div>
+    ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-sky-50 border-l-4 border-sky-400 rounded-r p-3">
+        <div class="text-[10px] font-bold text-sky-700 mb-1 tracking-wide">${companyReviewLabel}</div>
         ${renderReviewMemo(companyReview)}
       </div>`
     : "";
@@ -5529,22 +5529,10 @@ function computeMgmtInsights() {
       }
     }
   }
-  // 7. スタッフギャップ
-  for (const r of SCOPE.storeRows) {
-    if (r.isBeforeOpen) continue;
-    const rows = (DATA.staff_rows || []).filter(s => s.store === r.sid && s.month === SCOPE.month && !s.hidden);
-    if (rows.length < 3) continue;
-    const sorted = [...rows].sort((a,b) => b.total_sales - a.total_sales);
-    const top = sorted[0];
-    const avgOthers = sorted.slice(1).reduce((a,s) => a + s.total_sales, 0) / (sorted.length - 1);
-    if (avgOthers <= 0) continue;
-    const ratio = top.total_sales / avgOthers;
-    if (ratio >= 2) {
-      push(r.sid, { severity: 'info', title: `TOPスタッフ ${top.name} が他平均の ${ratio.toFixed(1)}倍`,
-        analysis: `${top.name} ${fmt(top.total_sales)} ↔ 他平均 ${fmt(Math.round(avgOthers))}`,
-        action: `${top.name}さんの手法を OJT / 勉強会で共有` });
-    }
-  }
+  // 7. スタッフギャップ — 廃止 (2026-05-31)
+  //   ELLE宮古島は 部門違い (ヘア vs アイ vs ネイル) で売上構造が違うため比較が誤解を招く
+  //   新横浜は 立ち上げ期は主力スタッフ突出が構造上当然のため意味のある指標にならない
+  //   → 部門別 KPI で見るので 全体ランキング比較は不要
   // 8. HPB評価
   const external = DATA.external || {};
   const hpbLatest = (external.hotpepper || []).slice(-1)[0];
