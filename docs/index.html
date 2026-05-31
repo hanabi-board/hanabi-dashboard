@@ -5171,8 +5171,31 @@ function renderMgmtReview() {
   const root = document.getElementById("mgmtReview");
   if (!root) return;
   const contexts = ((DATA.store_contexts || {}).contexts || {});
-  const summaries = ((DATA.monthly_summaries || {}).summaries || {})[SCOPE.month] || {};
-  const generatedAt = ((DATA.monthly_summaries || {}).generated_at || {})[SCOPE.month];
+  const allSummaries = ((DATA.monthly_summaries || {}).summaries || {});
+  const allGeneratedAt = ((DATA.monthly_summaries || {}).generated_at || {});
+  // 当月のサマリ
+  const currentSummaries = allSummaries[SCOPE.month] || {};
+  const currentGeneratedAt = allGeneratedAt[SCOPE.month];
+  // 当月にレビューが1つも無ければ 直近完成月 (前月以前) にフォールバック
+  const currentHasAny = Object.values(currentSummaries).some(v => (v || "").trim());
+  let fallbackMonth = null;
+  let fallbackSummaries = {};
+  let fallbackGeneratedAt = null;
+  if (!currentHasAny) {
+    const pastMonths = Object.keys(allSummaries).filter(m => /^\d{6}$/.test(m) && m < SCOPE.month).sort().reverse();
+    for (const m of pastMonths) {
+      if (Object.values(allSummaries[m] || {}).some(v => (v || "").trim())) {
+        fallbackMonth = m;
+        fallbackSummaries = allSummaries[m] || {};
+        fallbackGeneratedAt = allGeneratedAt[m];
+        break;
+      }
+    }
+  }
+  // 表示に使うサマリ: 当月優先、 無ければフォールバック
+  const summaries = currentHasAny ? currentSummaries : fallbackSummaries;
+  const generatedAt = currentHasAny ? currentGeneratedAt : fallbackGeneratedAt;
+  const usingFallback = !currentHasAny && fallbackMonth;
   const insightsBySec = computeMgmtInsights();
 
   // セクション定義 (順序固定)
@@ -5224,12 +5247,22 @@ function renderMgmtReview() {
     return "";
   };
 
-  // ヘッダー: 最終更新タイムスタンプ表示
+  // ヘッダー: 最終更新タイムスタンプ + フォールバック時は前月表示中である旨を明示
   let headerInfo = "";
-  if (generatedAt) {
-    const d = new Date(generatedAt);
-    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-    headerInfo = `<div class="text-[11px] text-gray-500 mb-2">最終更新: ${dateStr}</div>`;
+  const fmtTs = (iso) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  };
+  if (usingFallback) {
+    const fy = fallbackMonth.slice(0,4), fm = parseInt(fallbackMonth.slice(4,6));
+    const cy = SCOPE.month.slice(0,4), cm = parseInt(SCOPE.month.slice(4,6));
+    headerInfo = `<div class="text-[11px] mb-2 bg-blue-50 border border-blue-200 rounded p-2">
+      <span class="text-blue-700 font-bold">📌 ${cy}年${cm}月 はまだ振り返り未作成のため、 直近完成版の <strong>${fy}年${fm}月分</strong> を表示中</span>
+      ${generatedAt ? `<span class="text-gray-500 ml-2">(最終更新 ${fmtTs(generatedAt)})</span>` : ""}
+      <div class="text-[10px] text-gray-600 mt-1">月初の自動更新で ${cy}年${cm}月分が生成されたら 自動的に切り替わります。 全月の振り返りは右上 「📅 過去の振り返り一覧」 から。</div>
+    </div>`;
+  } else if (generatedAt) {
+    headerInfo = `<div class="text-[11px] text-gray-500 mb-2">最終更新: ${fmtTs(generatedAt)}</div>`;
   } else {
     headerInfo = `<div class="text-[11px] text-amber-600 mb-2">⏳ 振り返り 未作成 (翌月の月初に更新されます)</div>`;
   }
@@ -5243,9 +5276,13 @@ function renderMgmtReview() {
           <span class="font-bold text-gray-500">📌 前提:</span> ${renderReviewMemo(ctx)}
         </div>`
       : "";
+    // フォールバック時は ラベルを 「YYYY年M月分の振り返り」 に変える (誤読防止)
+    const summaryLabel = usingFallback
+      ? `📝 ${fallbackMonth.slice(0,4)}年${parseInt(fallbackMonth.slice(4,6))}月分の振り返り`
+      : `📝 今月の振り返り`;
     const summaryHtml = summary
       ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3">
-          <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">📝 今月の振り返り</div>
+          <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">${summaryLabel}</div>
           ${renderReviewMemo(summary)}
         </div>`
       : (sec.kind === "before_open"
