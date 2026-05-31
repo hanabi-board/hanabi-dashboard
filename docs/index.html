@@ -1123,6 +1123,14 @@ async function fetchRemoteMonthlySummaries() {
     return await r.json();
   } catch (e) { return null; }
 }
+async function fetchRemoteCostReviews() {
+  try {
+    const url = `https://raw.githubusercontent.com/${GH_REPO}/main/data/cost_reviews.json?ts=${Date.now()}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
 
 function isSessionValid() {
   try {
@@ -1282,11 +1290,12 @@ async function loadData() {
   // Background: fetch latest recruitment.json and staff_profiles.json from GitHub raw
   // (data.json is regenerated daily; this picks up same-day edits)
   setTimeout(async () => {
-    const [remoteRec, remoteSp, remoteCtx, remoteSum] = await Promise.all([
+    const [remoteRec, remoteSp, remoteCtx, remoteSum, remoteCostRev] = await Promise.all([
       fetchRemoteRecruitment(),
       fetchRemoteStaffProfiles(),
       fetchRemoteStoreContexts(),
       fetchRemoteMonthlySummaries(),
+      fetchRemoteCostReviews(),
     ]);
     if (remoteRec) {
       const localStr = JSON.stringify(DATA.recruitment || {});
@@ -1312,6 +1321,10 @@ async function loadData() {
     }
     if (remoteSum && JSON.stringify(remoteSum) !== JSON.stringify(DATA.monthly_summaries || {})) {
       DATA.monthly_summaries = remoteSum;
+      needMgmtRerender = true;
+    }
+    if (remoteCostRev && JSON.stringify(remoteCostRev) !== JSON.stringify(DATA.cost_reviews || {})) {
+      DATA.cost_reviews = remoteCostRev;
       needMgmtRerender = true;
     }
     if (needMgmtRerender && document.querySelector('[data-panel="management"].active') && typeof renderMgmtReview === "function") {
@@ -5182,6 +5195,17 @@ function renderCostRatios() {
     </div>`;
   }
 
+  // 原価レビュー所感 (Excel レポート由来) — 表示月 (or フォールバック) のレビューがあれば各セクションに添える
+  const allCostReviews = ((DATA.cost_reviews || {}).reviews || {});
+  let costReviewMonth = displayMonth;
+  if (!allCostReviews[costReviewMonth]) {
+    // 表示月にレビューがなければ 直近月にフォールバック (cost_reviews は手動転記のため穴があく可能性)
+    const reviewMonths = Object.keys(allCostReviews).filter(m => /^\d{6}$/.test(m) && m <= SCOPE.month).sort();
+    costReviewMonth = reviewMonths.length ? reviewMonths[reviewMonths.length - 1] : null;
+  }
+  const costReviews = costReviewMonth ? (allCostReviews[costReviewMonth] || {}) : {};
+  const costReviewIsFallback = costReviewMonth && costReviewMonth !== displayMonth;
+
   // セクション別カード
   const sectionCards = COST_SECTIONS.map(sec => {
     const d = monthData[sec.sid] || {};
@@ -5196,6 +5220,18 @@ function renderCostRatios() {
     const targetStr = target != null ? `${(target * 100).toFixed(1)}%` : "—";
     const diffStr = diff != null ? (diff >= 0 ? `+${(diff*100).toFixed(1)}pt` : `${(diff*100).toFixed(1)}pt`) : "—";
     const fyAvgStr = fyAvgVal != null ? `${(fyAvgVal*100).toFixed(1)}%` : "—";
+
+    // 原価レビュー所感 (該当セクションに該当月のレビューがあれば表示)
+    const reviewText = (costReviews[sec.sid] || "").trim();
+    const reviewLabel = costReviewIsFallback && costReviewMonth
+      ? `📝 原価所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分)`
+      : `📝 原価所感`;
+    const reviewHtml = reviewText
+      ? `<div class="mt-2.5 text-[11px] leading-relaxed text-gray-700 bg-amber-50 border-l-2 border-amber-300 rounded-r p-2">
+          <div class="text-[9px] font-bold text-amber-700 mb-1 tracking-wide">${reviewLabel}</div>
+          ${renderReviewMemo(reviewText)}
+        </div>`
+      : "";
 
     return `<div class="border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition">
       <div class="flex items-start justify-between gap-3 mb-2">
@@ -5224,6 +5260,7 @@ function renderCostRatios() {
         </div>
       </div>
       ${sales != null && cost != null ? `<div class="text-[10px] text-gray-400 text-right mt-1.5">売上 ${fmt(sales)} / 原価 ${fmt(cost)}</div>` : ""}
+      ${reviewHtml}
     </div>`;
   }).join("");
 
@@ -5235,8 +5272,22 @@ function renderCostRatios() {
   </div>`;
 
   const monthLabel = displayMonth.slice(0,4) + "年" + parseInt(displayMonth.slice(4,6)) + "月";
+
+  // 全社レベル原価所感 (cost_reviews.company があればトップに表示)
+  const companyReview = (costReviews.company || "").trim();
+  const companyReviewLabel = costReviewIsFallback && costReviewMonth
+    ? `📋 全社所感 (${costReviewMonth.slice(0,4)}年${parseInt(costReviewMonth.slice(4,6))}月分・レビューレポートより)`
+    : `📋 全社所感 (レビューレポートより)`;
+  const companyReviewHtml = companyReview
+    ? `<div class="mb-3 text-sm leading-relaxed text-gray-800 bg-amber-50 border-l-4 border-amber-300 rounded-r p-3">
+        <div class="text-[10px] font-bold text-amber-700 mb-1 tracking-wide">${companyReviewLabel}</div>
+        ${renderReviewMemo(companyReview)}
+      </div>`
+    : "";
+
   root.innerHTML = `${headerBanner}
     <div class="text-xs text-gray-600 mb-2">${monthLabel} 実績 · ${fy} 規定値: 綱島 ${targets.tsunashima != null ? (targets.tsunashima*100).toFixed(1)+'%' : '—'} / 宮古島ヘア ${targets.miyakojima_hair != null ? (targets.miyakojima_hair*100).toFixed(1)+'%' : '—'} / アイ ${targets.miyakojima_eye != null ? (targets.miyakojima_eye*100).toFixed(1)+'%' : '—'} / ネイル ${targets.miyakojima_nail != null ? (targets.miyakojima_nail*100).toFixed(1)+'%' : '—'}</div>
+    ${companyReviewHtml}
     <div class="grid md:grid-cols-2 gap-3">${sectionCards}</div>
     ${trendHtml}
     <div class="text-[10px] text-gray-400 mt-2">※ ヘアの実績は エクステ除外後の値 (在庫管理表ベース)。 判定: ◯達成 / △軽微超過 (規定+1pt以内) / ● 要対応 (規定+1pt超過)</div>`;

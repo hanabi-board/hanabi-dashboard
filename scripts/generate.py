@@ -272,6 +272,18 @@ def load_cost_ratios() -> dict:
         return {"targets": {}, "monthly": {}, "fy_average": {}}
 
 
+def load_cost_reviews() -> dict:
+    """cost_reviews.json を読み込み (原価レビューレポート所感、 月次振り返りとは別管理)"""
+    p = DATA / "cost_reviews.json"
+    if not p.exists():
+        return {"reviews": {}, "generated_at": {}, "model": {}}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"  warn: failed to load cost_reviews.json: {e}")
+        return {"reviews": {}, "generated_at": {}, "model": {}}
+
+
 def load_external_targets() -> dict:
     """external_targets.json を読み込んで { store_id: { hotpepper, instagram } } 形式に"""
     p = DATA / "external_targets.json"
@@ -596,6 +608,7 @@ def main():
         "store_contexts": load_store_contexts(),  # 店舗/部門ごとの前提コンテキスト (低頻度更新)
         "monthly_summaries": load_monthly_summaries(),  # Claude CLI 自動生成 月次振り返り (月初に生成)
         "cost_ratios": load_cost_ratios(),  # Box xlsx 原価管理表 から自動生成 (FY別 規定/実績)
+        "cost_reviews": load_cost_reviews(),  # 原価レビューレポート所感 (xlsx → 手動転記、 月次振り返りとは別管理)
     }
 
     out_path = DOCS / "data.json"
