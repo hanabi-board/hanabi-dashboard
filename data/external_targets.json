@@ -14,8 +14,10 @@
     "instagram": "https://www.instagram.com/elle_miyakojima/"
   },
   "shinyokohama": {
-    "_note": "ナイスネイル 新横浜店。 HPB URL は開店前に登録、 IG は運用なし",
-    "hotpepper": [],
+    "_note": "ナイスネイル 新横浜店。 IG は運用なし",
+    "hotpepper": [
+      { "url": "https://beauty.hotpepper.jp/kr/slnH000814039/", "category": "ネイル" }
+    ],
     "instagram": null
   }
 }
