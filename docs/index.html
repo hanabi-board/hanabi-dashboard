@@ -524,6 +524,15 @@
       </div>
       <div id="mgmtExternal"></div>
     </div>
+
+    <!-- 経営レビュー (自動診断) -->
+    <div class="card p-5 mb-5">
+      <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+        <h3 class="section-title">📊 経営レビュー <span class="section-sub">今月の自動診断 + アクション提案</span></h3>
+        <span class="text-[11px] text-gray-500">毎朝 自動更新</span>
+      </div>
+      <div id="mgmtReview" class="space-y-2"></div>
+    </div>
   </div>
 
   <!-- =========== Tab: 顧客分析 =========== -->
@@ -4848,6 +4857,281 @@ function renderManagementTab() {
       </div>`;
     }).join("");
   }
+
+  // 経営レビュー (自動診断)
+  renderMgmtReview();
+}
+
+// ============= 経営レビュー (自動診断 + アクション提案) =============
+function renderMgmtReview() {
+  const root = document.getElementById("mgmtReview");
+  if (!root) return;
+  const insights = [];
+
+  const prevMonth = (() => {
+    const y = parseInt(SCOPE.month.slice(0,4));
+    const m = parseInt(SCOPE.month.slice(4,6));
+    const py = m === 1 ? y - 1 : y;
+    const pm = m === 1 ? 12 : m - 1;
+    return `${py}${String(pm).padStart(2,"0")}`;
+  })();
+
+  // 1. 売上ペース (店舗別) — 危険信号と好調信号
+  for (const r of SCOPE.storeRows) {
+    if (r.isBeforeOpen) continue;
+    if (!r.elapsedTarget) continue;
+    const pace = r.sales / r.elapsedTarget * 100;
+    const proj = SCOPE.globalElapsedDays ? Math.round(r.sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
+    const remainTarget = Math.max(0, r.monthlyTarget - r.sales);
+    const remainDays = Math.max(0, SCOPE.daysInMonth - SCOPE.globalElapsedDays);
+    const reqDaily = remainDays ? Math.round(remainTarget / remainDays) : 0;
+    if (pace < 75) {
+      insights.push({
+        severity: 'warn',
+        store: r.store.name,
+        title: `売上ペース ${pace.toFixed(0)}% — 未達ペース`,
+        value: `${fmt(r.sales)} / 月予算 ${fmtM(r.monthlyTarget)}`,
+        analysis: `現ペース継続なら月末着地 ${fmt(proj)}、 予算 ${fmtM(r.monthlyTarget)} に対し ▼${fmt(Math.abs(proj - r.monthlyTarget))}`,
+        action: `残${remainDays}日 必要日商 ${fmt(reqDaily)}/日。 高単価メニュー提案 + 指名取り強化、 SNS / DM 集客促進。`,
+      });
+    } else if (pace >= 110) {
+      insights.push({
+        severity: 'good',
+        store: r.store.name,
+        title: `売上ペース ${pace.toFixed(0)}% — 好調`,
+        value: `${fmt(r.sales)} / 月予算 ${fmtM(r.monthlyTarget)}`,
+        analysis: `月末着地予測 ${fmt(proj)}、 予算超過 ▲${fmt(proj - r.monthlyTarget)}`,
+        action: `スタッフ全員に成功体験共有。 要因を分析し他店舗へ横展開。`,
+      });
+    }
+  }
+
+  // 2. 客単価 前月比トレンド
+  for (const r of SCOPE.storeRows) {
+    if (r.isBeforeOpen) continue;
+    const ms = r.ms;
+    if (!ms || !ms.customers) continue;
+    const cur = ms.total_sales / ms.customers;
+    const prevMs = (DATA.monthly_by_store[r.sid] || {})[prevMonth];
+    if (!prevMs || !prevMs.customers) continue;
+    const prev = prevMs.total_sales / prevMs.customers;
+    if (prev <= 0) continue;
+    const delta = (cur / prev - 1) * 100;
+    if (delta < -5) {
+      insights.push({
+        severity: 'warn',
+        store: r.store.name,
+        title: `客単価 ${delta.toFixed(1)}% (前月比)`,
+        value: `¥${Math.round(cur).toLocaleString()} ← 前月 ¥${Math.round(prev).toLocaleString()}`,
+        analysis: `高単価メニュー (OP・指名料) の比率減少 or 低単価メニュー需要増の可能性。`,
+        action: `OP提案率を上げる接客指導、 単価高メニューへの誘導。 店販クロスセル強化。`,
+      });
+    } else if (delta > 10) {
+      insights.push({
+        severity: 'good',
+        store: r.store.name,
+        title: `客単価 +${delta.toFixed(1)}% (前月比)`,
+        value: `¥${Math.round(cur).toLocaleString()} ← 前月 ¥${Math.round(prev).toLocaleString()}`,
+        analysis: `OP提案や高単価メニュー誘導が効いてる可能性。`,
+        action: `成功要因を特定し、 他店舗・他スタッフへ展開。`,
+      });
+    }
+  }
+
+  // 3. 指名率 (ヘア専門店のみ評価、 ネイル/アイは別基準)
+  for (const r of SCOPE.storeRows) {
+    if (r.isBeforeOpen) continue;
+    const ms = r.ms;
+    if (!ms) continue;
+    const nom = ms.tech_customers_nominated || 0;
+    const free = ms.tech_customers_free || 0;
+    const total = nom + free;
+    if (!total) continue;
+    const rate = nom / total * 100;
+    const isHair = (r.store.departments || []).includes("ヘア");
+    if (rate < 50 && isHair) {
+      insights.push({
+        severity: 'warn',
+        store: r.store.name,
+        title: `指名率 ${rate.toFixed(0)}% — 業界平均より低い`,
+        value: `指名 ${nom}名 / 全客 ${total}名`,
+        analysis: `ヘアサロンの指名率は 60% 以上が理想。 リピート設計に改善余地。`,
+        action: `次回予約案内の徹底、 トップ指名スタッフの接客手法を全員に共有。`,
+      });
+    }
+  }
+
+  // 4. リピート率 (店舗別)
+  for (const r of SCOPE.storeRows) {
+    if (r.isBeforeOpen) continue;
+    if (!r.vis || !r.vis.customers) continue;
+    const rate = r.vis.repeat / r.vis.customers * 100;
+    if (rate < 60 && r.store.brand === "hanabi") {
+      insights.push({
+        severity: 'warn',
+        store: r.store.name,
+        title: `リピート率 ${rate.toFixed(0)}% — 改善余地`,
+        value: `リピート ${r.vis.repeat}名 / 全客 ${r.vis.customers}名`,
+        analysis: `綱島は通常75%超。 新規偏重 or リピーター離反の可能性。`,
+        action: `失客分析タブで離反要因確認。 既存顧客へのDM / クーポン施策強化。`,
+      });
+    }
+  }
+
+  // 5. 同店舗 YoY (急落 or 大幅成長)
+  for (const r of SCOPE.storeRows) {
+    if (r.isBeforeOpen) continue;
+    if (!isSameStoreEligible(r.sid, SCOPE.month)) continue;
+    if (!r.prevMonthSales) continue;
+    const expected = r.prevMonthSales * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+    if (!expected) continue;
+    const yoy = r.sales / expected * 100;
+    if (yoy < 85) {
+      insights.push({
+        severity: 'warn',
+        store: r.store.name,
+        title: `前年同月比 ${yoy.toFixed(0)}% — 急落`,
+        value: `前年同月 ${fmt(r.prevMonthSales)} の同期 ${fmt(Math.round(expected))} に対し ${fmt(r.sales)}`,
+        analysis: `競合出店 / 客層変化 / 主力メニュー需要減 の可能性。`,
+        action: `客層分析、 メニュー別比較で離反要因特定。 緊急対策プラン策定。`,
+      });
+    } else if (yoy >= 120) {
+      insights.push({
+        severity: 'good',
+        store: r.store.name,
+        title: `前年同月比 +${(yoy - 100).toFixed(0)}% — 大幅成長`,
+        value: `前年同月 ${fmt(r.prevMonthSales)} → 今期同期 ${fmt(r.sales)}`,
+        analysis: `集客・接客・メニュー設計のどれかが当たってる。`,
+        action: `要因を分析。 中期計画上方修正検討。`,
+      });
+    }
+  }
+
+  // 6. 部門別予算 (ELLE宮古島)
+  const eleR = SCOPE.storeRows.find(r => r.sid === "miyakojima" && !r.isBeforeOpen);
+  if (eleR && eleR.ms) {
+    const monthDeptBudget = ((DATA.budgets || {}).monthly_dept_miyakojima || {})[SCOPE.month] || {};
+    for (const d of ["ヘア","アイ","ネイル"]) {
+      const sales = eleR.ms.by_dept[d].sales;
+      const monthly = monthDeptBudget[d] || 0;
+      if (!monthly) continue;
+      const expected = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+      const pct = sales / expected * 100;
+      if (pct < 70) {
+        insights.push({
+          severity: 'warn',
+          store: `ELLE宮古島 ${d}部門`,
+          title: `${d}部門 ペース ${pct.toFixed(0)}% — 未達`,
+          value: `${fmt(sales)} / 月予算 ${fmt(monthly)}`,
+          analysis: `${d}担当スタッフの稼働 or 需要不足の可能性。`,
+          action: `${d}メニュー強化施策、 担当スタッフのシフト見直し、 集客導線確認。`,
+        });
+      } else if (pct >= 130) {
+        insights.push({
+          severity: 'good',
+          store: `ELLE宮古島 ${d}部門`,
+          title: `${d}部門 ペース ${pct.toFixed(0)}% — 好調`,
+          value: `${fmt(sales)} / 月予算 ${fmt(monthly)}`,
+          analysis: `需要 or オペレーション改善が効いてる。`,
+          action: `予算上方修正、 さらなる強化 (スタッフ追加・メニュー拡充) 検討。`,
+        });
+      }
+    }
+  }
+
+  // 7. スタッフギャップ (TOP vs 平均、 育成余地検知)
+  for (const r of SCOPE.storeRows) {
+    if (r.isBeforeOpen) continue;
+    const rows = (DATA.staff_rows || []).filter(s => s.store === r.sid && s.month === SCOPE.month && !s.hidden);
+    if (rows.length < 3) continue;
+    const sorted = [...rows].sort((a,b) => b.total_sales - a.total_sales);
+    const top = sorted[0];
+    const avgOthers = sorted.slice(1).reduce((a,s) => a + s.total_sales, 0) / (sorted.length - 1);
+    if (avgOthers <= 0) continue;
+    const ratio = top.total_sales / avgOthers;
+    if (ratio >= 2) {
+      insights.push({
+        severity: 'info',
+        store: r.store.name,
+        title: `TOPスタッフ ${top.name} が他平均の ${ratio.toFixed(1)}倍 — 育成余地大`,
+        value: `${top.name} ${fmt(top.total_sales)} ↔ 他平均 ${fmt(Math.round(avgOthers))}`,
+        analysis: `集客力 / 接客力 / 指名取得力 に大きい差。 下位スタッフの伸びしろあり。`,
+        action: `${top.name}さん の手法を OJT / マニュアル化、 月1回の勉強会開催。`,
+      });
+    }
+  }
+
+  // 8. 外部メディア (HPB 評価が低い場合)
+  const external = DATA.external || {};
+  const hpbLatest = (external.hotpepper || []).slice(-1)[0];
+  if (hpbLatest) {
+    for (const r of SCOPE.storeRows) {
+      if (r.isBeforeOpen) continue;
+      const hp = (hpbLatest.stores || {})[r.sid];
+      if (!hp) continue;
+      const rating = hp.avg_rating != null ? hp.avg_rating : hp.rating;
+      if (rating == null) continue;
+      if (rating < 4.0) {
+        insights.push({
+          severity: 'warn',
+          store: r.store.name,
+          title: `HPB評価 ★${rating} — 4.0未満は集客に響く`,
+          value: `口コミ ${hp.total_review_count || hp.review_count || "?"}件`,
+          analysis: `HPB の評価4.0未満は新規流入に大きく影響。`,
+          action: `最近の低評価レビュー確認 → スタッフ全員にフィードバック共有。 次回予約時に口コミ依頼。`,
+        });
+      }
+    }
+  }
+
+  // 9. 採用ファネル (停滞検知)
+  const recs = ((DATA.recruitment || {}).candidates || []);
+  const thisMonth = `${SCOPE.month.slice(0,4)}-${SCOPE.month.slice(4,6)}`;
+  const monthApplied = recs.filter(c => (c.applied_date || "").startsWith(thisMonth)).length;
+  if (monthApplied === 0 && parseInt(SCOPE.month.slice(4,6)) <= new Date().getMonth() + 1) {
+    insights.push({
+      severity: 'warn',
+      store: '採用',
+      title: `今月応募 0件`,
+      value: ``,
+      analysis: `募集経路の露出不足 or 競合 / 季節要因。`,
+      action: `Beauty Work / リジョブ の掲載内容見直し、 リファラル促進キャンペーン検討。`,
+    });
+  }
+
+  // === Render ===
+  if (!insights.length) {
+    root.innerHTML = `<div class="text-center text-sm text-gray-500 py-8">
+      <div class="text-2xl mb-2">✨</div>
+      <div>今月は特筆すべき診断項目なし — 主要指標 全て健全範囲内</div>
+    </div>`;
+    return;
+  }
+  // severity 順にソート (warn → good → info)
+  const sevOrder = { warn: 0, good: 1, info: 2 };
+  insights.sort((a, b) => (sevOrder[a.severity] || 9) - (sevOrder[b.severity] || 9));
+  const sevStyle = (s) => {
+    if (s === 'warn') return { bg: 'bg-amber-50', border: 'border-amber-300', dot: 'text-amber-600', icon: '⚠' };
+    if (s === 'good') return { bg: 'bg-emerald-50', border: 'border-emerald-300', dot: 'text-emerald-600', icon: '✓' };
+    return { bg: 'bg-blue-50', border: 'border-blue-300', dot: 'text-blue-600', icon: 'ℹ' };
+  };
+  root.innerHTML = insights.map(it => {
+    const s = sevStyle(it.severity);
+    return `<div class="rounded-lg border-2 ${s.border} ${s.bg} p-4">
+      <div class="flex items-start gap-3">
+        <span class="text-xl flex-shrink-0 ${s.dot}">${s.icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline gap-2 flex-wrap mb-1">
+            <span class="text-[11px] font-bold text-gray-500 uppercase">${it.store}</span>
+            <span class="font-bold text-sm text-gray-900">${it.title}</span>
+          </div>
+          ${it.value ? `<div class="text-xs text-gray-700 mb-1.5 kpi-num">${it.value}</div>` : ""}
+          <div class="text-xs text-gray-700 mb-1.5">🔍 <strong>解析:</strong> ${it.analysis}</div>
+          <div class="text-xs text-gray-700">💡 <strong>アクション:</strong> ${it.action}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
 }
 
 function drawMgmtCompanyTrend() {
