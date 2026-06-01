@@ -304,14 +304,24 @@ def main() -> int:
 
     if not found_any:
         print(f"[parse_cost_ratios] ⚠️ Box xlsx 全て不存在 — Box Drive 起動 or パス確認", file=sys.stderr)
-        # 空でも生成しないと UI が壊れる、 でも既存があれば残す
+        # 既存 JSON があれば 維持 (上書きで履歴消えるのを防ぐ)
         if OUTPUT.exists():
             print(f"  → 既存 {OUTPUT.name} 維持")
             return 0
-        # 初回で何も無い場合は空 schema を書く
+        # 初回で何も無い場合のみ 空 schema を書く
         out = {"_comment": "Box xlsx 未取得", "targets": {}, "monthly": {}, "fy_average": {}, "sources": []}
         OUTPUT.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0
+
+    # 🛡 Box 接続できたが パース結果が空 (構造変化 or 一時障害) なら 既存維持
+    if not all_monthly and OUTPUT.exists():
+        try:
+            existing = json.loads(OUTPUT.read_text(encoding="utf-8"))
+            if existing.get("monthly"):
+                print(f"[parse_cost_ratios] ⚠️ パース結果が空 — 既存データ ({len(existing['monthly'])}ヶ月) を維持して上書きしない", file=sys.stderr)
+                return 0
+        except Exception:
+            pass
 
     out = {
         "_comment": "HANABI 原価管理表 (Box xlsx) から自動生成。 scripts/parse_cost_ratios.py。 手動編集禁止 (上書き)。",

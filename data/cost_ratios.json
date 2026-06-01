@@ -1,11 +1,289 @@
 {
   "_comment": "HANABI 原価管理表 (Box xlsx) から自動生成。 scripts/parse_cost_ratios.py。 手動編集禁止 (上書き)。",
-  "targets": {},
-  "monthly": {},
-  "fy_average": {},
+  "targets": {
+    "FY25": {
+      "tsunashima": 0.085,
+      "miyakojima_hair": 0.085,
+      "miyakojima_eye": 0.05,
+      "miyakojima_nail": 0.06
+    },
+    "FY26": {
+      "tsunashima": 0.08,
+      "miyakojima_hair": 0.08,
+      "miyakojima_eye": 0.05,
+      "miyakojima_nail": 0.07
+    }
+  },
+  "monthly": {
+    "202505": {
+      "tsunashima": {
+        "sales": 3917978,
+        "cost": 341436,
+        "ratio": 0.087146
+      }
+    },
+    "202506": {
+      "tsunashima": {
+        "sales": 3569456,
+        "cost": 308157,
+        "ratio": 0.086332
+      }
+    },
+    "202507": {
+      "tsunashima": {
+        "sales": 3439450,
+        "cost": 306230,
+        "ratio": 0.089035
+      }
+    },
+    "202508": {
+      "tsunashima": {
+        "sales": 3239274,
+        "cost": 279353,
+        "ratio": 0.086239
+      }
+    },
+    "202509": {
+      "tsunashima": {
+        "sales": 3297605,
+        "cost": 313528,
+        "ratio": 0.095077
+      },
+      "miyakojima_total": {
+        "sales": 5803489,
+        "cost": 366088,
+        "ratio": 0.063081
+      },
+      "miyakojima_hair": {
+        "sales": 2263040,
+        "cost": 242243,
+        "ratio": 0.107043
+      },
+      "miyakojima_eye": {
+        "sales": 3011758,
+        "cost": 69675,
+        "ratio": 0.023134
+      },
+      "miyakojima_nail": {
+        "sales": 528691,
+        "cost": 54170,
+        "ratio": 0.102461
+      }
+    },
+    "202510": {
+      "tsunashima": {
+        "sales": 3236434,
+        "cost": 297811,
+        "ratio": 0.092018
+      },
+      "miyakojima_total": {
+        "sales": 5801635,
+        "cost": 284513,
+        "ratio": 0.04904
+      },
+      "miyakojima_hair": {
+        "sales": 1936600,
+        "cost": 190053,
+        "ratio": 0.098137
+      },
+      "miyakojima_eye": {
+        "sales": 3076111,
+        "cost": 83860,
+        "ratio": 0.027262
+      },
+      "miyakojima_nail": {
+        "sales": 788924,
+        "cost": 10600,
+        "ratio": 0.013436
+      }
+    },
+    "202511": {
+      "tsunashima": {
+        "sales": 2927436,
+        "cost": 229098,
+        "ratio": 0.078259
+      },
+      "miyakojima_total": {
+        "sales": 5801635,
+        "cost": 202984,
+        "ratio": 0.034987
+      },
+      "miyakojima_hair": {
+        "sales": 1936600,
+        "cost": 124312,
+        "ratio": 0.064191
+      },
+      "miyakojima_eye": {
+        "sales": 3076111,
+        "cost": 78672,
+        "ratio": 0.025575
+      },
+      "miyakojima_nail": {
+        "sales": 788924,
+        "cost": 0,
+        "ratio": 0
+      }
+    },
+    "202512": {
+      "tsunashima": {
+        "sales": 4069248,
+        "cost": 340168,
+        "ratio": 0.083595
+      },
+      "miyakojima_total": {
+        "sales": 6528299,
+        "cost": 172335,
+        "ratio": 0.026398
+      },
+      "miyakojima_hair": {
+        "sales": 2099177,
+        "cost": 140892,
+        "ratio": 0.067118
+      },
+      "miyakojima_eye": {
+        "sales": 3324649,
+        "cost": 24473,
+        "ratio": 0.007361
+      },
+      "miyakojima_nail": {
+        "sales": 1104473,
+        "cost": 6970,
+        "ratio": 0.006311
+      }
+    },
+    "202601": {
+      "tsunashima": {
+        "sales": 2759798,
+        "cost": 208705,
+        "ratio": 0.075623
+      },
+      "miyakojima_total": {
+        "sales": 5712588,
+        "cost": 728633,
+        "ratio": 0.127549
+      },
+      "miyakojima_hair": {
+        "sales": 1908617,
+        "cost": 318660,
+        "ratio": 0.166959
+      },
+      "miyakojima_eye": {
+        "sales": 2772435,
+        "cost": 183705,
+        "ratio": 0.066261
+      },
+      "miyakojima_nail": {
+        "sales": 1031536,
+        "cost": 226268,
+        "ratio": 0.219351
+      }
+    },
+    "202602": {
+      "tsunashima": {
+        "sales": 3135329,
+        "cost": 271198,
+        "ratio": 0.086497
+      },
+      "miyakojima_total": {
+        "sales": 5954105,
+        "cost": 607158,
+        "ratio": 0.101973
+      },
+      "miyakojima_hair": {
+        "sales": 2006772,
+        "cost": 310141,
+        "ratio": 0.154547
+      },
+      "miyakojima_eye": {
+        "sales": 3004229,
+        "cost": 249893,
+        "ratio": 0.08318
+      },
+      "miyakojima_nail": {
+        "sales": 943104,
+        "cost": 47124,
+        "ratio": 0.049967
+      }
+    },
+    "202603": {
+      "tsunashima": {
+        "sales": 3583991,
+        "cost": 285128,
+        "ratio": 0.079556
+      },
+      "miyakojima_total": {
+        "sales": 6212429,
+        "cost": 311554,
+        "ratio": 0.05015
+      },
+      "miyakojima_hair": {
+        "sales": 2296753,
+        "cost": 150994,
+        "ratio": 0.065742
+      },
+      "miyakojima_eye": {
+        "sales": 2660296,
+        "cost": 121238,
+        "ratio": 0.045573
+      },
+      "miyakojima_nail": {
+        "sales": 1255380,
+        "cost": 39322,
+        "ratio": 0.031323
+      }
+    },
+    "202604": {
+      "tsunashima": {
+        "sales": 3397452,
+        "cost": 320873,
+        "ratio": 0.094445
+      },
+      "miyakojima_total": {
+        "sales": 4810602,
+        "cost": 368662,
+        "ratio": 0.076635
+      },
+      "miyakojima_hair": {
+        "sales": 1589371,
+        "cost": 195153,
+        "ratio": 0.122786
+      },
+      "miyakojima_eye": {
+        "sales": 2006483,
+        "cost": 114165,
+        "ratio": 0.056898
+      },
+      "miyakojima_nail": {
+        "sales": 1214748,
+        "cost": 59344,
+        "ratio": 0.048853
+      }
+    }
+  },
+  "fy_average": {
+    "FY25": {
+      "tsunashima": 0.086152,
+      "miyakojima_total": 0.066227,
+      "miyakojima_hair": 0.105815,
+      "miyakojima_eye": 0.041906,
+      "miyakojima_nail": 0.058963
+    },
+    "FY26": {}
+  },
   "notes": {
     "hair": "※HAIRはエクステを抜いた原価率を転記 (在庫管理表ベース)"
   },
-  "sources": [],
-  "parsed_at": "2026-06-01T08:34:17.430175+09:00"
+  "sources": [
+    {
+      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/HANABI_原価計算表_ver0.9.xlsx",
+      "fy": "FY25",
+      "months": 12
+    },
+    {
+      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/HABABI_FY26予実管理表.xlsx",
+      "fy": "FY26",
+      "months": 0
+    }
+  ],
+  "parsed_at": "2026-06-01T09:16:04.495467+09:00"
 }
