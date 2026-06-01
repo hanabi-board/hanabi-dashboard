@@ -3278,6 +3278,18 @@ function renderFyProgress() {
   const cmMonth = parseInt(currentMonth.slice(4,6));
   const currentFY = cmMonth >= 5 ? (cmYear % 100) : ((cmYear - 1) % 100);
   const prevFY = currentFY - 1;
+
+  // 🚨 2026-06-01: FY26 未満 (FY25以前) は予算/実績データが揃ってないので FY進捗カードを非表示
+  // budgets.json の fiscal_year より前の FY は「履歴扱い、 月別データのみ閲覧可」
+  const budgetsFY = (DATA.budgets || {}).fiscal_year || "FY26";
+  const budgetsFYNum = parseInt(budgetsFY.replace("FY", "")) || 26;
+  if (currentFY < budgetsFYNum) {
+    root.innerHTML = `<div class="md:col-span-3 text-xs text-gray-400 text-center py-3 italic">
+      FY${String(currentFY).padStart(2,"0")} は履歴データのみ・通期実績は ${budgetsFY} から表示
+    </div>`;
+    return;
+  }
+
   const fyMonths = buildFyMonthList(currentFY);
   const prevFyMonths = buildFyMonthList(prevFY);
   const fyLabel = `FY${String(currentFY).padStart(2,"0")}`;
