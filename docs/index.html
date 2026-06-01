@@ -3097,7 +3097,8 @@ function renderAlerts() {
   const t = SCOPE.totals;
 
   // 当月にデータが全く無い (営業前、 月初日 等) ならアラート非表示
-  if (!t.sales && !t.customers && !t.expected) { root.innerHTML = ""; return; }
+  // expected は target ベースで計算されるので 0 にならない、 sales/customers の実績で判定
+  if (!t.sales && !t.customers) { root.innerHTML = ""; return; }
 
   // 1. 全社ペース達成率
   const pacePct = t.expected ? (t.sales / t.expected * 100) : 0;
