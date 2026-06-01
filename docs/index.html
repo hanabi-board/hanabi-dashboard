@@ -209,7 +209,6 @@
     <button class="tab-btn" data-tab="menu">メニュー別</button>
     <button class="tab-btn" data-tab="annual">年度レポート</button>
     <button class="tab-btn" data-tab="management">マネジメント</button>
-    <button class="tab-btn" data-tab="customers">顧客分析</button>
     <button class="tab-btn" data-tab="recruit">採用</button>
   </div>
 </nav>
@@ -553,30 +552,9 @@
     </div>
   </div>
 
-  <!-- =========== Tab: 顧客分析 =========== -->
-  <div class="tab-panel" data-panel="customers">
-    <div class="mb-4">
-      <h2 class="text-2xl font-bold">顧客分析</h2>
-      <div class="text-sm text-gray-500 mt-1">失客 / 年代別 — Uレジ情報分析から取得 (月1回更新)</div>
-    </div>
-    <div class="mb-5 text-xs bg-amber-50 border-l-4 border-amber-400 px-3 py-2.5 flex items-start gap-2">
-      <span class="text-base">📅</span>
-      <div>
-        <strong class="text-amber-800">月1回更新</strong> — 毎月1日朝の自動デプロイで取得されます。
-      </div>
-    </div>
+  <!-- =========== Tab: 顧客分析 — 2026-06-01 削除 (scraper が dom-fallback で構造化失敗、 復旧難) -->
+  <!-- 必要なら scrape_jouhou.py を構造化対応に直して再追加可能 -->
 
-    <!-- セクションタブ (顧客分析の中で切替) -->
-    <!-- 2026-06-01: 曜日別・再来店 は scraper が壊れている (rows: [] dom-fallback も失敗) ため非表示。
-                    必要なら scraper 復旧後に再追加。 -->
-    <div class="flex gap-2 mb-4 border-b border-gray-200">
-      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="lost">失客分析</button>
-      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="age">年代別</button>
-    </div>
-
-    <!-- Section content -->
-    <div id="customersContent" class="space-y-4"></div>
-  </div>
 
   <!-- =========== Tab 6: 採用 =========== -->
   <div class="tab-panel" data-panel="recruit">
@@ -1439,7 +1417,7 @@ function render(month) {
   renderGrowthView();
   renderAnnualReport();
   renderManagementTab();
-  renderCustomersTab();
+  // renderCustomersTab(); // 2026-06-01: 顧客分析タブ削除
   renderRecruitTab();
   renderStatusPanel();
   renderStoreCompare();
