@@ -92,10 +92,26 @@ def get_target_ym() -> str:
 
 
 def read_meisai(store_name_jp: str, ym: str) -> list[dict]:
-    """ナイスネイル meisai CSV を読み込んで対象YMの取引行リストを返す"""
-    path = NICENAIL_DATA / f"meisai_{store_name_jp}.csv"
-    if not path.exists():
-        print(f"  ⚠️ meisai CSV not found: {path}", file=sys.stderr)
+    """ナイスネイル meisai CSV を読み込んで対象YMの取引行リストを返す。
+
+    🚨 2026-06-01 修正: meisai_<store>.csv は 当月リクエストレスポンス用で、
+       salon-dashboard の auto-download が月初に当月分 DL → 空ファイル ("Data does not exist")
+       で上書きする仕様。 結果 前月末日のデータが消える事故が頻発。
+
+    対応: 累積版 meisai_<store>_history.csv を優先して読む。 履歴ファイルは
+       salon-dashboard が deploy_auto.sh [0a/4] [0b/4] で重複排除付きで appendし続ける
+       完全な真実のソース。 履歴ファイルが無い時のみ 当月版にフォールバック。
+    """
+    history_path = NICENAIL_DATA / f"meisai_{store_name_jp}_history.csv"
+    current_path = NICENAIL_DATA / f"meisai_{store_name_jp}.csv"
+    if history_path.exists():
+        path = history_path
+        print(f"  source: {path.name} (累積版)")
+    elif current_path.exists():
+        path = current_path
+        print(f"  source: {path.name} (当月版 fallback、 履歴ファイル無し)", file=sys.stderr)
+    else:
+        print(f"  ⚠️ meisai CSV not found: {history_path} / {current_path}", file=sys.stderr)
         return []
     rows = []
     try:

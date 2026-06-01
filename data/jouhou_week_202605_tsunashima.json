@@ -1,0 +1,16 @@
+{
+  "report_type": "week",
+  "label": "202605",
+  "store_id": "tsunashima",
+  "store_code": "001",
+  "date_from": "20260501",
+  "date_to": "20260531",
+  "scraped_at": "2026-06-01T09:30:27",
+  "rows": [],
+  "by_tab": {
+    "_default": {
+      "rows": [],
+      "debug": "dom-fallback"
+    }
+  }
+}
