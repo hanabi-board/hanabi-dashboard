@@ -443,7 +443,17 @@ def main():
 
     # All months and stores observed
     months = sorted({s["month"] for s in staff_rows} | {d["date"][:4] + d["date"][5:7] for d in daily_rows})
-    latest_month = months[-1] if months else None
+    # latest_month は「実データのある最新月」 を採用
+    # (6/1 朝のように 当月セル存在するが 売上0 の状態を除外、 デフォルト月選択で前月を表示)
+    data_months = []
+    for m in months:
+        has_data = any(
+            (monthly.get(sid, {}).get(m) or {}).get("total_sales", 0) > 0
+            for sid in STORES
+        )
+        if has_data:
+            data_months.append(m)
+    latest_month = data_months[-1] if data_months else (months[-1] if months else None)
 
     # Build summary KPIs for the latest month
     summary = {

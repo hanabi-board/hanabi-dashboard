@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T09:53:11",
+  "generated_at": "2026-06-01T09:58:56",
   "stores": {
     "tsunashima": {
       "name": "Hanabi 綱島店",
@@ -101,9 +101,9 @@
     "202605",
     "202606"
   ],
-  "latest_month": "202606",
+  "latest_month": "202605",
   "summary": {
-    "latest_month": "202606",
+    "latest_month": "202605",
     "stores": {
       "tsunashima": {
         "name": "Hanabi 綱島店",
@@ -155,28 +155,154 @@
     ],
     "by_store": {
       "tsunashima": {
-        "monthly": null,
-        "daily_sum_sales": 0,
-        "daily_sum_target": 0,
-        "days_recorded": 0
+        "monthly": {
+          "total_sales": 4007171,
+          "tech_sales": 3688662,
+          "tech_sales_nominated": 2724387,
+          "tech_sales_free": 964275,
+          "tech_sales_male": 581730,
+          "tech_sales_female": 2982006,
+          "tech_customers_male": 80,
+          "tech_customers_female": 233,
+          "shop_sales": 318509,
+          "hpb_sales": 2167309,
+          "other_coupon_sales": 793326,
+          "customers": 357,
+          "tech_customers": 343,
+          "tech_customers_nominated": 256,
+          "tech_customers_free": 87,
+          "staff_count": 7,
+          "by_dept": {
+            "ヘア": {
+              "sales": 4007171,
+              "customers": 357,
+              "staff_count": 7
+            },
+            "アイ": {
+              "sales": 0,
+              "customers": 0,
+              "staff_count": 0
+            },
+            "ネイル": {
+              "sales": 0,
+              "customers": 0,
+              "staff_count": 0
+            }
+          },
+          "staff": [
+            "水野 友里",
+            "水野 陽平",
+            "名嘉眞 美里",
+            "渡辺 真也",
+            "上江洲 花鈴",
+            "馬場 美沙紀",
+            "未設定"
+          ]
+        },
+        "daily_sum_sales": 4007171,
+        "daily_sum_target": 4280000,
+        "days_recorded": 31
       },
       "miyakojima": {
-        "monthly": null,
-        "daily_sum_sales": 0,
-        "daily_sum_target": 0,
-        "days_recorded": 0
+        "monthly": {
+          "total_sales": 5080955,
+          "tech_sales": 4922037,
+          "tech_sales_nominated": 1956802,
+          "tech_sales_free": 2965235,
+          "tech_sales_male": 249809,
+          "tech_sales_female": 3170219,
+          "tech_customers_male": 38,
+          "tech_customers_female": 410,
+          "shop_sales": 158918,
+          "hpb_sales": 1889686,
+          "other_coupon_sales": 1125331,
+          "customers": 675,
+          "tech_customers": 667,
+          "tech_customers_nominated": 249,
+          "tech_customers_free": 418,
+          "staff_count": 8,
+          "by_dept": {
+            "ヘア": {
+              "sales": 1639616,
+              "customers": 175,
+              "staff_count": 3
+            },
+            "アイ": {
+              "sales": 2150401,
+              "customers": 300,
+              "staff_count": 3
+            },
+            "ネイル": {
+              "sales": 1290938,
+              "customers": 200,
+              "staff_count": 2
+            }
+          },
+          "staff": [
+            "佐久間 理加",
+            "山尾 奈穂",
+            "大橋 未来",
+            "内藤 ひなき",
+            "一宮 有澄",
+            "宮里 乃の子",
+            "水野 陽平",
+            "未設定"
+          ]
+        },
+        "daily_sum_sales": 5080955,
+        "daily_sum_target": 5200000,
+        "days_recorded": 30
       },
       "shinyokohama": {
-        "monthly": null,
-        "daily_sum_sales": 0,
+        "monthly": {
+          "total_sales": 115082,
+          "tech_sales": 106780,
+          "tech_sales_nominated": 40535,
+          "tech_sales_free": 66245,
+          "tech_sales_male": 0,
+          "tech_sales_female": 0,
+          "tech_customers_male": 0,
+          "tech_customers_female": 0,
+          "shop_sales": 8302,
+          "hpb_sales": 0,
+          "other_coupon_sales": 0,
+          "customers": 21,
+          "tech_customers": 21,
+          "tech_customers_nominated": 7,
+          "tech_customers_free": 14,
+          "staff_count": 3,
+          "by_dept": {
+            "ヘア": {
+              "sales": 0,
+              "customers": 0,
+              "staff_count": 0
+            },
+            "アイ": {
+              "sales": 0,
+              "customers": 0,
+              "staff_count": 0
+            },
+            "ネイル": {
+              "sales": 115082,
+              "customers": 21,
+              "staff_count": 3
+            }
+          },
+          "staff": [
+            "Risa",
+            "□Natsuki",
+            "★Mariko"
+          ]
+        },
+        "daily_sum_sales": 115082,
         "daily_sum_target": 0,
-        "days_recorded": 0
+        "days_recorded": 3
       }
     },
     "company_total": {
-      "total_sales": 0,
+      "total_sales": 9203208,
       "customers": 0,
-      "target": 0
+      "target": 9480000
     }
   },
   "monthly_by_store": {
