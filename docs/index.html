@@ -3107,13 +3107,18 @@ function drawMenu() {
 function renderAlerts() {
   const root = document.getElementById("alertsPanel");
   if (!root) return;
-  if (currentMonth !== DATA.latest_month) { root.innerHTML = ""; return; }  // only on current month
+  // アラートは「今日のカレンダー月 (=リアルタイム監視対象)」 で かつデータあり の時のみ表示
+  // 過去月 (5月見てるけど今日は 6/1 等) や 当月でもデータなし (6/1 朝) では非表示
+  const todayYM = (() => {
+    const d = new Date();
+    return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0");
+  })();
+  if (currentMonth !== todayYM) { root.innerHTML = ""; return; }
 
   const alerts = [];  // {severity: 'critical'|'warn'|'good'|'info', icon, title, detail}
   const t = SCOPE.totals;
 
-  // 🚨 当月にデータが全く無い (営業前、 月初日 等) ならアラート非表示
-  // 売上0/客数0/期待値0 = まだデータ取得前 → アラート出しても誤解を招くだけ
+  // 当月にデータが全く無い (営業前、 月初日 等) ならアラート非表示
   if (!t.sales && !t.customers && !t.expected) { root.innerHTML = ""; return; }
 
   // 1. 全社ペース達成率
