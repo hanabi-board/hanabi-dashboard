@@ -3282,11 +3282,29 @@ function renderRealtimeBanner() {
     </div>`;
 }
 
+// 任意の FY の月リストを生成 (5月始まり、 翌4月締め)
+function buildFyMonthList(fy) {
+  // fy = 26 → 2026/5 ~ 2027/4
+  const startYear = 2000 + fy;
+  const months = [];
+  for (let m = 5; m <= 12; m++) months.push(`${startYear}${String(m).padStart(2,"0")}`);
+  for (let m = 1; m <= 4; m++) months.push(`${startYear+1}${String(m).padStart(2,"0")}`);
+  return months;
+}
+
 function renderFyProgress() {
   const root = document.getElementById("fyProgressCards");
   if (!root) return;
-  const fy26Months = ["202605","202606","202607","202608","202609","202610","202611","202612","202701","202702","202703","202704"];
-  const fy25Months = ["202505","202506","202507","202508","202509","202510","202511","202512","202601","202602","202603","202604"];
+  // 🆕 currentMonth が属する FY を動的に取得 (5月以降=当年、 1-4月=前年)
+  const cmYear = parseInt(currentMonth.slice(0,4));
+  const cmMonth = parseInt(currentMonth.slice(4,6));
+  const currentFY = cmMonth >= 5 ? (cmYear % 100) : ((cmYear - 1) % 100);
+  const prevFY = currentFY - 1;
+  const fyMonths = buildFyMonthList(currentFY);
+  const prevFyMonths = buildFyMonthList(prevFY);
+  const fyLabel = `FY${String(currentFY).padStart(2,"0")}`;
+  const prevFyLabel = `FY${String(prevFY).padStart(2,"0")}`;
+
   const salesFor = (sid, ym) => {
     const ds = (DATA.daily_by_store[sid] || {})[ym] || [];
     const s = ds.reduce((a,d) => a + d.sales, 0);
@@ -3298,52 +3316,59 @@ function renderFyProgress() {
   const allStoresFY = Object.keys(DATA.stores || {});
   const sumFYAll = (months) => months.reduce((a, m) => a + allStoresFY.reduce((b, sid) => b + salesFor(sid, m), 0), 0);
   const monthSumFY = (m) => allStoresFY.reduce((a, sid) => a + salesFor(sid, m), 0);
-  const fy26Total = sumFYAll(fy26Months);
-  const fy25Total = sumFYAll(fy25Months);
-  const fy26Budget = ((DATA.budgets || {}).annual || {}).company || 0;
+  const fyTotal = sumFYAll(fyMonths);
+  const prevFyTotal = sumFYAll(prevFyMonths);
+  // 当年度予算: budgets.annual.company が当FYのもの (FY切替時に admin で更新する想定)
+  const fyBudget = ((DATA.budgets || {}).annual || {}).company || 0;
 
-  // Months elapsed in FY26 (count months that have actual data)
+  // Months elapsed in selected FY (count months that have actual data)
   let monthsElapsed = 0;
-  for (const m of fy26Months) {
+  for (const m of fyMonths) {
     if (monthSumFY(m) > 0) monthsElapsed++;
     else break;
   }
-  // For currently-in-progress month, we have partial data — use ratio
-  const dailyElapsedFraction = SCOPE.globalElapsedDays / SCOPE.daysInMonth;
+  // For currently-in-progress month, we have partial data — use ratio (only if viewing in-progress month)
+  const isInProgress = currentMonth === fyMonths[Math.max(0, monthsElapsed - 1)];
+  const dailyElapsedFraction = isInProgress ? (SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 1;
   const monthsEffective = monthsElapsed - 1 + dailyElapsedFraction;
-  const annualProjection = monthsEffective > 0 ? Math.round(fy26Total / monthsEffective * 12) : 0;
-  const annualBudgetPct = fy26Budget ? (fy26Total / fy26Budget * 100) : 0;
-  const annualProjPct = fy26Budget ? (annualProjection / fy26Budget * 100) : 0;
-  // FY25 same period (months elapsed worth in FY25)
-  const fy25SamePeriod = fy25Months.slice(0, monthsElapsed - 1).reduce((a, m) => a + monthSumFY(m), 0)
-    + (fy25Months[monthsElapsed - 1] ? monthSumFY(fy25Months[monthsElapsed - 1]) * dailyElapsedFraction : 0);
-  const yoyYtdPct = fy25SamePeriod ? (fy26Total / fy25SamePeriod * 100) : 0;
+  const annualProjection = monthsEffective > 0 ? Math.round(fyTotal / monthsEffective * 12) : 0;
+  const annualBudgetPct = fyBudget ? (fyTotal / fyBudget * 100) : 0;
+  const annualProjPct = fyBudget ? (annualProjection / fyBudget * 100) : 0;
+  // 前FY同期 (months elapsed worth in prev FY)
+  const prevFySamePeriod = prevFyMonths.slice(0, monthsElapsed - 1).reduce((a, m) => a + monthSumFY(m), 0)
+    + (prevFyMonths[monthsElapsed - 1] ? monthSumFY(prevFyMonths[monthsElapsed - 1]) * dailyElapsedFraction : 0);
+  const yoyYtdPct = prevFySamePeriod ? (fyTotal / prevFySamePeriod * 100) : 0;
+
+  // FY 完了済みなら 「進行中」 文言を変える
+  const isComplete = monthsElapsed === 12 && !isInProgress;
+  const headerLabel = isComplete ? `${fyLabel} 通期実績` : `${fyLabel} 通期実績 (累計)`;
+  const projectionLabel = isComplete ? `${fyLabel} 通期実績` : `${fyLabel} 通期着地予測`;
 
   root.innerHTML = `
     <div class="card p-4">
-      <div class="text-xs text-gray-500 mb-1">FY26 通期実績 (累計)</div>
-      <div class="text-2xl font-bold kpi-num">${fmt(fy26Total)}</div>
+      <div class="text-xs text-gray-500 mb-1">${headerLabel}</div>
+      <div class="text-2xl font-bold kpi-num">${fmt(fyTotal)}</div>
       <div class="text-xs mt-1">
         <span class="${pctClass(annualBudgetPct*12/Math.max(monthsEffective,1))} font-semibold">${annualBudgetPct.toFixed(2)}%</span>
-        <span class="text-gray-400">/ 年予算 ${fmtM(fy26Budget)}</span>
+        <span class="text-gray-400">/ 年予算 ${fmtM(fyBudget)}</span>
       </div>
       <div class="progress-track mt-2"><div class="progress-fill" style="width:${Math.min(100,annualBudgetPct)}%; background:${pctColor(annualBudgetPct*12/Math.max(monthsEffective,1))}"></div></div>
       <div class="text-[11px] text-gray-500 mt-1">${monthsEffective.toFixed(1)}ヶ月経過 / 12ヶ月</div>
     </div>
     <div class="card p-4">
-      <div class="text-xs text-gray-500 mb-1">FY26 通期着地予測</div>
+      <div class="text-xs text-gray-500 mb-1">${projectionLabel}</div>
       <div class="text-2xl font-bold kpi-num ${pctClass(annualProjPct)}">${annualProjection ? fmt(annualProjection) : "—"}</div>
       <div class="text-xs mt-1">
         <span class="${pctClass(annualProjPct)} font-semibold">${annualProjPct.toFixed(1)}%</span>
         <span class="text-gray-400">vs 年予算</span>
       </div>
-      <div class="text-[11px] mt-2 ${(annualProjection - fy26Budget) >= 0 ? 'pct-good' : 'pct-bad'} font-semibold">${annualProjection >= fy26Budget ? "達成見込み" : `▼ ${fmt(Math.abs(annualProjection - fy26Budget))}`}</div>
+      <div class="text-[11px] mt-2 ${(annualProjection - fyBudget) >= 0 ? 'pct-good' : 'pct-bad'} font-semibold">${annualProjection >= fyBudget ? "達成見込み" : `▼ ${fmt(Math.abs(annualProjection - fyBudget))}`}</div>
     </div>
     <div class="card p-4">
       <div class="text-xs text-gray-500 mb-1">FY累計 vs 前年同期</div>
-      <div class="text-2xl font-bold kpi-num ${pctClass(yoyYtdPct)}">${fy25SamePeriod ? yoyYtdPct.toFixed(1) + "%" : "—"}</div>
-      <div class="text-xs mt-1 text-gray-500">FY25 同期 ${fmt(Math.round(fy25SamePeriod))}</div>
-      <div class="text-[11px] text-gray-500 mt-2">FY25 通期実績: ${fmt(fy25Total)}</div>
+      <div class="text-2xl font-bold kpi-num ${pctClass(yoyYtdPct)}">${prevFySamePeriod ? yoyYtdPct.toFixed(1) + "%" : "—"}</div>
+      <div class="text-xs mt-1 text-gray-500">${prevFyLabel} 同期 ${fmt(Math.round(prevFySamePeriod))}</div>
+      <div class="text-[11px] text-gray-500 mt-2">${prevFyLabel} 通期実績: ${fmt(prevFyTotal)}</div>
     </div>
   `;
 }
@@ -6054,8 +6079,10 @@ function renderCustomersSubtab(subtab) {
     return;
   }
 
-  // Period selector + 最新取得日表示
-  const latestPeriod = availablePeriods[0];
+  // Period 決定: 選択中の月 (currentMonth) を優先、 データなければ直近月に fallback
+  // (月セレクター変更で顧客分析も同期して切替)
+  let displayPeriod = availablePeriods.includes(currentMonth) ? currentMonth : availablePeriods[0];
+  const latestPeriod = displayPeriod;
   const latestByStore = jouhouData[latestPeriod] || {};
   // 全店舗の中で最新の scraped_at を取得
   let latestScrapedAt = null;
@@ -6074,7 +6101,7 @@ function renderCustomersSubtab(subtab) {
       stalenessLabel = `<span class="text-gray-500">最終更新 ${dateStr}</span>`;
     }
   }
-  const periodOpts = availablePeriods.map(p => `<option value="${p}">${p}</option>`).join("");
+  const periodOpts = availablePeriods.map(p => `<option value="${p}"${p === displayPeriod ? " selected" : ""}>${p}</option>`).join("");
   content.innerHTML = `
     <div class="flex flex-wrap items-center gap-3 mb-3 text-xs">
       <span class="text-gray-500">期間</span>
@@ -6084,6 +6111,7 @@ function renderCustomersSubtab(subtab) {
     <div id="customersGrid" class="grid lg:grid-cols-2 gap-3"></div>
   `;
   const sel = document.getElementById("customersPeriodSel");
+  sel.value = displayPeriod;  // 明示的に同期
   // サブタブ (顧客別区分 / 年代別 / 曜日別 等) の動的選択肢
   const buildSubtabBar = (byStoreData) => {
     // by_tab keys を全店舗から union
