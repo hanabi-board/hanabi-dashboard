@@ -3312,8 +3312,7 @@ function renderFyProgress() {
   const monthSumFY = (m) => allStoresFY.reduce((a, sid) => a + salesFor(sid, m), 0);
   const fyTotal = sumFYAll(fyMonths);
   const prevFyTotal = sumFYAll(prevFyMonths);
-  // 予算: budgets.json は 1FYのみ保持 (現状 FY26)、 他FY 表示時は予算情報なし扱い
-  const budgetsFY = (DATA.budgets || {}).fiscal_year;  // 例: "FY26"
+  // 予算: budgetsFY は上で宣言済、 表示FY と一致時のみ予算データを使う
   const budgetMatchesCurrent = budgetsFY === fyLabel;
   const fyBudget = budgetMatchesCurrent ? (((DATA.budgets || {}).annual || {}).company || 0) : 0;
 
