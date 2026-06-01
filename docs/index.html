@@ -1161,6 +1161,9 @@ document.getElementById("printBtn").addEventListener("click", () => {
 
 // === Tabs ===
 function activateTab(tabName) {
+  // 削除されたタブ (例: customers) が localStorage に残ってる場合は summary にフォールバック
+  const validTabBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+  if (!validTabBtn) tabName = "summary";
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tabName));
   document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.dataset.panel === tabName));
   localStorage.setItem("hanabi_tab", tabName);
