@@ -3318,8 +3318,10 @@ function renderFyProgress() {
   const monthSumFY = (m) => allStoresFY.reduce((a, sid) => a + salesFor(sid, m), 0);
   const fyTotal = sumFYAll(fyMonths);
   const prevFyTotal = sumFYAll(prevFyMonths);
-  // 当年度予算: budgets.annual.company が当FYのもの (FY切替時に admin で更新する想定)
-  const fyBudget = ((DATA.budgets || {}).annual || {}).company || 0;
+  // 予算: budgets.json は 1FYのみ保持 (現状 FY26)、 他FY 表示時は予算情報なし扱い
+  const budgetsFY = (DATA.budgets || {}).fiscal_year;  // 例: "FY26"
+  const budgetMatchesCurrent = budgetsFY === fyLabel;
+  const fyBudget = budgetMatchesCurrent ? (((DATA.budgets || {}).annual || {}).company || 0) : 0;
 
   // Months elapsed in selected FY (count months that have actual data)
   let monthsElapsed = 0;
@@ -3344,18 +3346,32 @@ function renderFyProgress() {
   const headerLabel = isComplete ? `${fyLabel} 通期実績` : `${fyLabel} 通期実績 (累計)`;
   const projectionLabel = isComplete ? `${fyLabel} 通期実績` : `${fyLabel} 通期着地予測`;
 
-  root.innerHTML = `
-    <div class="card p-4">
-      <div class="text-xs text-gray-500 mb-1">${headerLabel}</div>
-      <div class="text-2xl font-bold kpi-num">${fmt(fyTotal)}</div>
-      <div class="text-xs mt-1">
+  // カード1: 通期実績 (累計) — 予算あり/なしで表示分岐
+  const card1Budget = budgetMatchesCurrent
+    ? `<div class="text-xs mt-1">
         <span class="${pctClass(annualBudgetPct*12/Math.max(monthsEffective,1))} font-semibold">${annualBudgetPct.toFixed(2)}%</span>
         <span class="text-gray-400">/ 年予算 ${fmtM(fyBudget)}</span>
       </div>
       <div class="progress-track mt-2"><div class="progress-fill" style="width:${Math.min(100,annualBudgetPct)}%; background:${pctColor(annualBudgetPct*12/Math.max(monthsEffective,1))}"></div></div>
-      <div class="text-[11px] text-gray-500 mt-1">${monthsEffective.toFixed(1)}ヶ月経過 / 12ヶ月</div>
-    </div>
-    <div class="card p-4">
+      <div class="text-[11px] text-gray-500 mt-1">${monthsEffective.toFixed(1)}ヶ月経過 / 12ヶ月</div>`
+    : `<div class="text-[11px] text-gray-400 mt-1">過去FY (予算データなし)</div>
+      <div class="text-[11px] text-gray-500 mt-1">${monthsEffective.toFixed(1)}ヶ月経過 / 12ヶ月</div>`;
+
+  // カード2: 着地予測 — 完了済FYなら通期実績表示、 予算なしの場合は YoY 軸に
+  let card2;
+  if (isComplete) {
+    // 完了済 FY: シンプルに「通期実績」 + 前年比
+    const yoyTotalPct = prevFyTotal ? (fyTotal / prevFyTotal * 100) : 0;
+    card2 = `<div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">${fyLabel} 通期実績 (完了)</div>
+      <div class="text-2xl font-bold kpi-num">${fmt(fyTotal)}</div>
+      <div class="text-xs mt-1">
+        <span class="${pctClass(yoyTotalPct)} font-semibold">${prevFyTotal ? yoyTotalPct.toFixed(1) + '%' : '—'}</span>
+        <span class="text-gray-400">vs ${prevFyLabel} 通期</span>
+      </div>
+    </div>`;
+  } else if (budgetMatchesCurrent) {
+    card2 = `<div class="card p-4">
       <div class="text-xs text-gray-500 mb-1">${projectionLabel}</div>
       <div class="text-2xl font-bold kpi-num ${pctClass(annualProjPct)}">${annualProjection ? fmt(annualProjection) : "—"}</div>
       <div class="text-xs mt-1">
@@ -3363,7 +3379,23 @@ function renderFyProgress() {
         <span class="text-gray-400">vs 年予算</span>
       </div>
       <div class="text-[11px] mt-2 ${(annualProjection - fyBudget) >= 0 ? 'pct-good' : 'pct-bad'} font-semibold">${annualProjection >= fyBudget ? "達成見込み" : `▼ ${fmt(Math.abs(annualProjection - fyBudget))}`}</div>
+    </div>`;
+  } else {
+    // 予算なし、 進行中だが過去FY: 着地予測のみ
+    card2 = `<div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">${fyLabel} 通期着地予測</div>
+      <div class="text-2xl font-bold kpi-num">${annualProjection ? fmt(annualProjection) : "—"}</div>
+      <div class="text-[11px] text-gray-400 mt-1">過去FY (予算データなし)</div>
+    </div>`;
+  }
+
+  root.innerHTML = `
+    <div class="card p-4">
+      <div class="text-xs text-gray-500 mb-1">${headerLabel}</div>
+      <div class="text-2xl font-bold kpi-num">${fmt(fyTotal)}</div>
+      ${card1Budget}
     </div>
+    ${card2}
     <div class="card p-4">
       <div class="text-xs text-gray-500 mb-1">FY累計 vs 前年同期</div>
       <div class="text-2xl font-bold kpi-num ${pctClass(yoyYtdPct)}">${prevFySamePeriod ? yoyYtdPct.toFixed(1) + "%" : "—"}</div>
