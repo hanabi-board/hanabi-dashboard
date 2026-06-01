@@ -65,44 +65,45 @@ if [ "$STASHED" = "1" ]; then
   git stash pop 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ stash pop に失敗 (手動確認: git stash list)"
 fi
 
-# 1. Uレジから最新CSV DL (current month)
+# 1. Uレジから最新CSV DL
+#    Uレジは前日のデータが当日朝に確定する仕様。 朝 8:30 の launchd は前日分を取りに行く。
+#    🚨 月初日 (1日) は当月の営業がまだ始まってないので 当月 DL はスキップ、 前月分のみ取得
+#       (2026-06-01 修正: 6/1 朝に 6月分 DL は無意味 = 空 or エラー、 5月分 DL のみ実施)
 YM=$(date +%Y%m)
-log "[1/5] Uレジ自動DL ($YM)"
-if ! python3 scripts/auto_download.py "$YM" 2>&1 | tee -a "$LOG_FILE"; then
-  log "❌ Uレジ自動DL に失敗 (部分失敗 or 全失敗)。 過去データのまま続行せず、 ここで終了"
-  notify "HANABI Dashboard 自動更新 失敗" "Uレジ DL 失敗"
-  mail_failure "Uレジ自動DL に失敗。 logs/deploy_$(date +%Y%m%d)_*.log で詳細確認 (どの店舗・レポートが失敗したか出力されてます)"
-  exit 1
-fi
-
-# 1c. ナイスネイル → HANABI 集約変換 (新横浜店等、 ナイスネイル運営 HANABI 予算管理の店舗)
-# ナイスネイル auto-deploy が 8:00 に meisai_*.csv を更新済の前提
-log "[1c/5] ナイスネイル → HANABI 集約変換 ($YM)"
-python3 scripts/aggregate_nicenail_to_hanabi.py "$YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ ナイスネイル変換失敗 — 続行 (前回データ使用)"
-
-# 2. 月初日 (1日) なら前月の最終日も補完取得 (前月CSVが空のままにならないように)
 DAY=$(date +%d)
 if [ "$DAY" = "01" ]; then
   PREV_YM=$(date -v -1m +%Y%m 2>/dev/null || date -d "-1 month" +%Y%m)
-  log "[1b/5] 月初なので前月($PREV_YM)も補完取得"
+  log "[1/5] 月初日: 当月($YM) DL スキップ (営業前のため)、 前月($PREV_YM) のみ取得"
   if ! python3 scripts/auto_download.py "$PREV_YM" 2>&1 | tee -a "$LOG_FILE"; then
-    log "❌ 前月分 Uレジ自動DL に失敗 — 当月分は更新済なので続行 (前月確定値は手動再実行で補完してください)"
-    notify "HANABI Dashboard 月初補完 失敗" "前月分 DL 失敗"
-    mail_failure "月初の前月分 ($PREV_YM) 補完取得に失敗。 翌日朝 or 手動で再実行が必要"
-    # 致命ではないので exit せず続行 (当月データはあるので)
+    log "❌ 前月分 Uレジ自動DL に失敗"
+    notify "HANABI Dashboard 月初 DL 失敗" "前月分 DL 失敗"
+    mail_failure "月初の前月分 ($PREV_YM) DL に失敗。 翌日朝 or 手動で再実行が必要"
+    exit 1
   fi
+  log "[1c/5] 月初日: ナイスネイル → HANABI 集約変換 ($PREV_YM)"
+  python3 scripts/aggregate_nicenail_to_hanabi.py "$PREV_YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ ナイスネイル変換失敗 — 続行"
+else
+  log "[1/5] Uレジ自動DL ($YM)"
+  if ! python3 scripts/auto_download.py "$YM" 2>&1 | tee -a "$LOG_FILE"; then
+    log "❌ Uレジ自動DL に失敗 (部分失敗 or 全失敗)。 過去データのまま続行せず、 ここで終了"
+    notify "HANABI Dashboard 自動更新 失敗" "Uレジ DL 失敗"
+    mail_failure "Uレジ自動DL に失敗。 logs/deploy_$(date +%Y%m%d)_*.log で詳細確認"
+    exit 1
+  fi
+  log "[1c/5] ナイスネイル → HANABI 集約変換 ($YM)"
+  python3 scripts/aggregate_nicenail_to_hanabi.py "$YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ ナイスネイル変換失敗 — 続行 (前回データ使用)"
 fi
 
 # 3. メニュー別実績 (情報分析→技術の実績) スクレイプ
 #    Note: メニュー別はUレジに公式CSV出力がないためHTMLスクレイプ。
 #          失敗してもメインのデータデプロイは続行する (|| true で non-fatal)。
-log "[2/5] メニュー別 scrape ($YM)"
-python3 scripts/scrape_menu.py "$YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ menu scrape failed — 続行 (前回データ使用)"
-
-# 月初日のみ前月分メニューも再取得 (月末確定値の反映)
+#    月初日は同様に 当月メニュー scrape スキップ、 前月のみ
 if [ "$DAY" = "01" ]; then
-  log "[2b/5] 月初なので前月($PREV_YM)メニューも補完取得"
+  log "[2/5] 月初日: 前月($PREV_YM) メニュー scrape のみ"
   python3 scripts/scrape_menu.py "$PREV_YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ prev menu scrape failed — 続行"
+else
+  log "[2/5] メニュー別 scrape ($YM)"
+  python3 scripts/scrape_menu.py "$YM" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ menu scrape failed — 続行 (前回データ使用)"
 fi
 
 # 3c. 原価管理表 (Box xlsx) パース — 自動取り込み 廃止 (2026-06-01)
