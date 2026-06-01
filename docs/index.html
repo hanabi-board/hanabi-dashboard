@@ -557,21 +557,21 @@
   <div class="tab-panel" data-panel="customers">
     <div class="mb-4">
       <h2 class="text-2xl font-bold">顧客分析</h2>
-      <div class="text-sm text-gray-500 mt-1">失客 / 曜日別 / 年代別 / 再来店 — Uレジ情報分析から取得 (月1回更新)</div>
+      <div class="text-sm text-gray-500 mt-1">失客 / 年代別 — Uレジ情報分析から取得 (月1回更新)</div>
     </div>
     <div class="mb-5 text-xs bg-amber-50 border-l-4 border-amber-400 px-3 py-2.5 flex items-start gap-2">
       <span class="text-base">📅</span>
       <div>
-        <strong class="text-amber-800">月1回更新</strong> — 毎月1日朝に自動取得されます。
+        <strong class="text-amber-800">月1回更新</strong> — 毎月1日朝の自動デプロイで取得されます。
       </div>
     </div>
 
     <!-- セクションタブ (顧客分析の中で切替) -->
+    <!-- 2026-06-01: 曜日別・再来店 は scraper が壊れている (rows: [] dom-fallback も失敗) ため非表示。
+                    必要なら scraper 復旧後に再追加。 -->
     <div class="flex gap-2 mb-4 border-b border-gray-200">
       <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="lost">失客分析</button>
-      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="week">曜日別</button>
       <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="age">年代別</button>
-      <button class="customers-subtab-btn px-3 py-2 text-sm font-semibold text-gray-700 border-b-2 border-transparent" data-subtab="repeat">再来店</button>
     </div>
 
     <!-- Section content -->
@@ -5989,8 +5989,9 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// === 顧客分析タブ (失客 / 曜日別 / 年代別 / 再来店) ===
+// === 顧客分析タブ (失客 / 年代別) — 2026-06-01: 曜日別・再来店 は scraper 故障で非表示 ===
 const CUSTOMERS_SUBTAB_KEY = "hanabi_customers_subtab";
+const VALID_CUSTOMERS_SUBTABS = ["lost", "age"];  // week / repeat は scraper 復旧後に追加
 function renderCustomersTab() {
   if (!document.getElementById("customersContent")) return;
   // Wire subtab buttons (once)
@@ -6005,7 +6006,9 @@ function renderCustomersTab() {
       });
     });
   }
-  const saved = localStorage.getItem(CUSTOMERS_SUBTAB_KEY) || "lost";
+  let saved = localStorage.getItem(CUSTOMERS_SUBTAB_KEY) || "lost";
+  // 旧設定 (week / repeat) のフォールバック
+  if (!VALID_CUSTOMERS_SUBTABS.includes(saved)) saved = "lost";
   renderCustomersSubtab(saved);
 }
 function renderCustomersSubtab(subtab) {

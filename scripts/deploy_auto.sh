@@ -115,6 +115,21 @@ fi
 # log "[2c/5] 原価管理表 (Box xlsx) パース"
 # python3 scripts/parse_cost_ratios.py 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ 原価管理表 パース失敗 — 続行"
 
+# 3d. 月初日のみ: 顧客分析 (情報分析 scrape) + 外部メディア (HotPepper/Instagram)
+#     2026-06-01: monthly_jouhou.sh から統合 (別 launchd 廃止)
+#     週次データ取りに行く必要なし (月1回更新で十分)
+#     週日別 (week) と 再来店 (repeat) は scraper 故障で取得失敗のため除外、 age + lost のみ
+if [ "$DAY" = "01" ]; then
+  log "[2d/5] 月初日: 顧客分析 (年代別 + 失客) scrape — 対象 $PREV_YM"
+  for r in age lost; do
+    log "  → scrape_jouhou.py $r $PREV_YM"
+    python3 scripts/scrape_jouhou.py "$r" "$PREV_YM" 2>&1 | tee -a "$LOG_FILE" || log "    ⚠️ $r 失敗 — 続行"
+    sleep 30  # Uレジ bot detection 回避
+  done
+  log "[2e/5] 月初日: 外部メディア (HotPepper + Instagram) scrape"
+  python3 scripts/scrape_external.py all 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ external 失敗 — 続行"
+fi
+
 # 4. JSON再生成
 log "[3/5] generate.py"
 python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
