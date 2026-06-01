@@ -5753,11 +5753,8 @@ function renderMgmtReview() {
     const ctx = (contexts[sec.id] || "").trim();
     const summary = (summaries[sec.id] || "").trim();
     const insights = insightsBySec[sec.id] || [];
-    const ctxHtml = ctx
-      ? `<div class="mb-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded p-2">
-          <span class="font-bold text-gray-500">📌 前提:</span> ${renderReviewMemo(ctx)}
-        </div>`
-      : "";
+    // 2026-06-01: 前提は UI 非表示 (Claude プロンプトには引き続き渡される、 内部利用のみ)
+    const ctxHtml = "";
     // フォールバック時は ラベルを 「YYYY年M月分の振り返り」 に変える (誤読防止)
     const summaryLabel = usingFallback
       ? `📝 ${fallbackMonth.slice(0,4)}年${parseInt(fallbackMonth.slice(4,6))}月分の振り返り`
