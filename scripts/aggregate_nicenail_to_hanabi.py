@@ -94,57 +94,72 @@ def get_target_ym() -> str:
 def read_meisai(store_name_jp: str, ym: str) -> list[dict]:
     """ナイスネイル meisai CSV を読み込んで対象YMの取引行リストを返す。
 
-    🚨 2026-06-01 修正: meisai_<store>.csv は 当月リクエストレスポンス用で、
-       salon-dashboard の auto-download が月初に当月分 DL → 空ファイル ("Data does not exist")
-       で上書きする仕様。 結果 前月末日のデータが消える事故が頻発。
+    🚨 2026-06-02 修正: history + 当月版 両方読んで merge (会計ID で dedupe)
+       理由:
+       - history は 月初に salon-dashboard の monthly_append.py が前月分追記 (月1回)
+       - 当月進行中データは 当月版 (毎朝更新)
+       - つまり 当月選択時は 当月版を見ないと 当月分が見えない
+       - 月末選択時は history が完全 (当月版が空上書きされる事故もある)
+       - 両方読んで会計IDで重複排除すれば 全期間の真実が取れる
 
-    対応: 累積版 meisai_<store>_history.csv を優先して読む。 履歴ファイルは
-       salon-dashboard が deploy_auto.sh [0a/4] [0b/4] で重複排除付きで appendし続ける
-       完全な真実のソース。 履歴ファイルが無い時のみ 当月版にフォールバック。
+    優先順位:
+    1. 当月版 (進行中の最新データ、 当月分のみ)
+    2. history (確定済の過去月分、 完全な累積)
     """
     history_path = NICENAIL_DATA / f"meisai_{store_name_jp}_history.csv"
     current_path = NICENAIL_DATA / f"meisai_{store_name_jp}.csv"
-    if history_path.exists():
-        path = history_path
-        print(f"  source: {path.name} (累積版)")
-    elif current_path.exists():
-        path = current_path
-        print(f"  source: {path.name} (当月版 fallback、 履歴ファイル無し)", file=sys.stderr)
-    else:
-        print(f"  ⚠️ meisai CSV not found: {history_path} / {current_path}", file=sys.stderr)
-        return []
-    rows = []
-    try:
-        with open(path, encoding="shift_jis", errors="replace") as f:
-            reader = csv.DictReader(f)
-            for r in reader:
-                d = r.get("会計日", "").strip()
-                if not d or len(d) < 6:
-                    continue
-                # YYYYMMDD → match YYYYMM
-                if d[:6] != ym:
-                    continue
-                kubun = r.get("区分", "").strip()
-                menu = r.get("メニュー・店販・割引・サービス・オプション", "").strip()
-                if menu in EXCLUDE_MENUS:
-                    continue
-                rows.append({
-                    "date": d,  # YYYYMMDD
-                    "time": r.get("会計時間", ""),
-                    "kaikei_id": r.get("会計ID", ""),
-                    "kubun": kubun,  # 施術 / 店販 等
-                    "category": r.get("カテゴリ", "").strip(),
-                    "menu": menu,
-                    "unit_price": _to_int(r.get("単価", "0")),
-                    "qty": _to_int(r.get("個数", "1")),
-                    "amount": _to_int(r.get("金額", "0")),
-                    "staff": r.get("スタッフ", "").strip(),
-                    "shimei": r.get("指名", "").strip(),
-                    "new_or_repeat": r.get("新規再来", "").strip(),  # 新規 / 再来
-                })
-    except Exception as e:
-        print(f"  ⚠️ failed to read {path}: {e}", file=sys.stderr)
-        return []
+
+    rows_by_key = {}  # 会計ID::行内ハッシュ → row (重複排除キー)
+    sources = []
+
+    for path, label in [(current_path, "当月版"), (history_path, "累積版")]:
+        if not path.exists():
+            continue
+        try:
+            with open(path, encoding="shift_jis", errors="replace") as f:
+                reader = csv.DictReader(f)
+                count = 0
+                for r in reader:
+                    d = r.get("会計日", "").strip()
+                    if not d or len(d) < 6:
+                        continue
+                    # YYYYMMDD → match YYYYMM
+                    if d[:6] != ym:
+                        continue
+                    kubun = r.get("区分", "").strip()
+                    menu = r.get("メニュー・店販・割引・サービス・オプション", "").strip()
+                    if menu in EXCLUDE_MENUS:
+                        continue
+                    # 重複排除キー: 会計ID + メニュー名 + 金額 (同一会計ID 内の複数行も保持)
+                    kid = r.get("会計ID", "")
+                    dedup_key = f"{kid}::{menu}::{r.get('金額', '0')}"
+                    if dedup_key in rows_by_key:
+                        continue
+                    rows_by_key[dedup_key] = {
+                        "date": d,
+                        "time": r.get("会計時間", ""),
+                        "kaikei_id": kid,
+                        "kubun": kubun,
+                        "category": r.get("カテゴリ", "").strip(),
+                        "menu": menu,
+                        "unit_price": _to_int(r.get("単価", "0")),
+                        "qty": _to_int(r.get("個数", "1")),
+                        "amount": _to_int(r.get("金額", "0")),
+                        "staff": r.get("スタッフ", "").strip(),
+                        "shimei": r.get("指名", "").strip(),
+                        "new_or_repeat": r.get("新規再来", "").strip(),
+                    }
+                    count += 1
+                if count > 0:
+                    sources.append(f"{path.name} ({label}: {count}件)")
+        except Exception as e:
+            print(f"  ⚠️ read failed {path.name}: {e}", file=sys.stderr)
+
+    rows = list(rows_by_key.values())
+    if sources:
+        print(f"  source: {' + '.join(sources)}")
+    elif not history_path.exists() and not current_path.exists():
+        print(f"  ⚠️ meisai CSV not found: {history_path.name} / {current_path.name}", file=sys.stderr)
     return rows
 
 
