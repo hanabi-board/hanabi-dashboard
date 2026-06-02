@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T10:36:29",
+  "generated_at": "2026-06-02T10:47:23",
   "stores": {
     "tsunashima": {
       "name": "Hanabi 綱島店",
@@ -101,9 +101,9 @@
     "202605",
     "202606"
   ],
-  "latest_month": "202605",
+  "latest_month": "202606",
   "summary": {
-    "latest_month": "202605",
+    "latest_month": "202606",
     "stores": {
       "tsunashima": {
         "name": "Hanabi 綱島店",
@@ -156,27 +156,27 @@
     "by_store": {
       "tsunashima": {
         "monthly": {
-          "total_sales": 4007171,
-          "tech_sales": 3688662,
-          "tech_sales_nominated": 2724387,
-          "tech_sales_free": 964275,
-          "tech_sales_male": 581730,
-          "tech_sales_female": 2982006,
-          "tech_customers_male": 80,
-          "tech_customers_female": 233,
-          "shop_sales": 318509,
-          "hpb_sales": 2167309,
-          "other_coupon_sales": 793326,
-          "customers": 357,
-          "tech_customers": 343,
-          "tech_customers_nominated": 256,
-          "tech_customers_free": 87,
-          "staff_count": 7,
+          "total_sales": 133407,
+          "tech_sales": 129607,
+          "tech_sales_nominated": 110135,
+          "tech_sales_free": 19472,
+          "tech_sales_male": 14500,
+          "tech_sales_female": 106107,
+          "tech_customers_male": 1,
+          "tech_customers_female": 8,
+          "shop_sales": 3800,
+          "hpb_sales": 44018,
+          "other_coupon_sales": 43499,
+          "customers": 11,
+          "tech_customers": 11,
+          "tech_customers_nominated": 9,
+          "tech_customers_free": 2,
+          "staff_count": 4,
           "by_dept": {
             "ヘア": {
-              "sales": 4007171,
-              "customers": 357,
-              "staff_count": 7
+              "sales": 133407,
+              "customers": 11,
+              "staff_count": 4
             },
             "アイ": {
               "sales": 0,
@@ -191,118 +191,69 @@
           },
           "staff": [
             "水野 友里",
-            "水野 陽平",
-            "名嘉眞 美里",
             "渡辺 真也",
             "上江洲 花鈴",
-            "馬場 美沙紀",
-            "未設定"
+            "馬場 美沙紀"
           ]
         },
-        "daily_sum_sales": 4007171,
-        "daily_sum_target": 4280000,
-        "days_recorded": 31
+        "daily_sum_sales": 133407,
+        "daily_sum_target": 4012500,
+        "days_recorded": 1
       },
       "miyakojima": {
         "monthly": {
-          "total_sales": 5080955,
-          "tech_sales": 4922037,
-          "tech_sales_nominated": 1956802,
-          "tech_sales_free": 2965235,
-          "tech_sales_male": 249809,
-          "tech_sales_female": 3170219,
-          "tech_customers_male": 38,
-          "tech_customers_female": 410,
-          "shop_sales": 158918,
-          "hpb_sales": 1889686,
-          "other_coupon_sales": 1125331,
-          "customers": 675,
-          "tech_customers": 667,
-          "tech_customers_nominated": 249,
-          "tech_customers_free": 418,
-          "staff_count": 8,
+          "total_sales": 5745,
+          "tech_sales": 5745,
+          "tech_sales_nominated": 5745,
+          "tech_sales_free": 0,
+          "tech_sales_male": 0,
+          "tech_sales_female": 5745,
+          "tech_customers_male": 0,
+          "tech_customers_female": 1,
+          "shop_sales": 0,
+          "hpb_sales": 3545,
+          "other_coupon_sales": 0,
+          "customers": 1,
+          "tech_customers": 1,
+          "tech_customers_nominated": 1,
+          "tech_customers_free": 0,
+          "staff_count": 1,
           "by_dept": {
             "ヘア": {
-              "sales": 1639616,
-              "customers": 175,
-              "staff_count": 3
+              "sales": 0,
+              "customers": 0,
+              "staff_count": 0
             },
             "アイ": {
-              "sales": 2150401,
-              "customers": 300,
-              "staff_count": 3
+              "sales": 5745,
+              "customers": 1,
+              "staff_count": 1
             },
             "ネイル": {
-              "sales": 1290938,
-              "customers": 200,
-              "staff_count": 2
+              "sales": 0,
+              "customers": 0,
+              "staff_count": 0
             }
           },
           "staff": [
-            "佐久間 理加",
-            "山尾 奈穂",
-            "大橋 未来",
-            "内藤 ひなき",
-            "一宮 有澄",
-            "宮里 乃の子",
-            "水野 陽平",
-            "未設定"
+            "宮里 乃の子"
           ]
         },
-        "daily_sum_sales": 5080955,
-        "daily_sum_target": 5200000,
-        "days_recorded": 30
+        "daily_sum_sales": 5745,
+        "daily_sum_target": 0,
+        "days_recorded": 1
       },
       "shinyokohama": {
-        "monthly": {
-          "total_sales": 115082,
-          "tech_sales": 106780,
-          "tech_sales_nominated": 40535,
-          "tech_sales_free": 66245,
-          "tech_sales_male": 0,
-          "tech_sales_female": 0,
-          "tech_customers_male": 0,
-          "tech_customers_female": 0,
-          "shop_sales": 8302,
-          "hpb_sales": 0,
-          "other_coupon_sales": 0,
-          "customers": 21,
-          "tech_customers": 21,
-          "tech_customers_nominated": 7,
-          "tech_customers_free": 14,
-          "staff_count": 3,
-          "by_dept": {
-            "ヘア": {
-              "sales": 0,
-              "customers": 0,
-              "staff_count": 0
-            },
-            "アイ": {
-              "sales": 0,
-              "customers": 0,
-              "staff_count": 0
-            },
-            "ネイル": {
-              "sales": 115082,
-              "customers": 21,
-              "staff_count": 3
-            }
-          },
-          "staff": [
-            "Risa",
-            "□Natsuki",
-            "★Mariko"
-          ]
-        },
-        "daily_sum_sales": 115082,
+        "monthly": null,
+        "daily_sum_sales": 0,
         "daily_sum_target": 0,
-        "days_recorded": 3
+        "days_recorded": 0
       }
     },
     "company_total": {
-      "total_sales": 9203208,
+      "total_sales": 139152,
       "customers": 0,
-      "target": 9480000
+      "target": 4012500
     }
   },
   "monthly_by_store": {
@@ -1354,6 +1305,47 @@
           "名嘉眞 美里",
           "ネイル スタッフ",
           "岸本 一馬"
+        ]
+      },
+      "202606": {
+        "total_sales": 133407,
+        "tech_sales": 129607,
+        "tech_sales_nominated": 110135,
+        "tech_sales_free": 19472,
+        "tech_sales_male": 14500,
+        "tech_sales_female": 106107,
+        "tech_customers_male": 1,
+        "tech_customers_female": 8,
+        "shop_sales": 3800,
+        "hpb_sales": 44018,
+        "other_coupon_sales": 43499,
+        "customers": 11,
+        "tech_customers": 11,
+        "tech_customers_nominated": 9,
+        "tech_customers_free": 2,
+        "staff_count": 4,
+        "by_dept": {
+          "ヘア": {
+            "sales": 133407,
+            "customers": 11,
+            "staff_count": 4
+          },
+          "アイ": {
+            "sales": 0,
+            "customers": 0,
+            "staff_count": 0
+          },
+          "ネイル": {
+            "sales": 0,
+            "customers": 0,
+            "staff_count": 0
+          }
+        },
+        "staff": [
+          "水野 友里",
+          "渡辺 真也",
+          "上江洲 花鈴",
+          "馬場 美沙紀"
         ]
       },
       "202207": {
@@ -2674,6 +2666,44 @@
           "宮里 乃の子",
           "水野 陽平",
           "指名なし"
+        ]
+      },
+      "202606": {
+        "total_sales": 5745,
+        "tech_sales": 5745,
+        "tech_sales_nominated": 5745,
+        "tech_sales_free": 0,
+        "tech_sales_male": 0,
+        "tech_sales_female": 5745,
+        "tech_customers_male": 0,
+        "tech_customers_female": 1,
+        "shop_sales": 0,
+        "hpb_sales": 3545,
+        "other_coupon_sales": 0,
+        "customers": 1,
+        "tech_customers": 1,
+        "tech_customers_nominated": 1,
+        "tech_customers_free": 0,
+        "staff_count": 1,
+        "by_dept": {
+          "ヘア": {
+            "sales": 0,
+            "customers": 0,
+            "staff_count": 0
+          },
+          "アイ": {
+            "sales": 5745,
+            "customers": 1,
+            "staff_count": 1
+          },
+          "ネイル": {
+            "sales": 0,
+            "customers": 0,
+            "staff_count": 0
+          }
+        },
+        "staff": [
+          "宮里 乃の子"
         ]
       },
       "202602": {
@@ -17604,20 +17634,20 @@
           "date": "2026-06-02",
           "weekday": "火",
           "new": 0,
-          "repeat": 0,
+          "repeat": 1,
           "referral": 0,
           "nominated": 0,
-          "customers": 0,
+          "customers": 1,
           "customer_target": 0,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
-          "sales_other": 0,
-          "sales": 0,
+          "sales_other": 5745,
+          "sales": 5745,
           "sales_target": 0,
           "sales_pct": 0.0,
-          "spend_per_customer": 0,
-          "reservations_next": 19
+          "spend_per_customer": 5745,
+          "reservations_next": 20
         },
         {
           "store": "miyakojima",
@@ -17637,7 +17667,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 16
+          "reservations_next": 18
         },
         {
           "store": "miyakojima",
@@ -17677,7 +17707,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 25
+          "reservations_next": 24
         },
         {
           "store": "miyakojima",
@@ -17697,7 +17727,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 30
+          "reservations_next": 29
         },
         {
           "store": "miyakojima",
@@ -17717,7 +17747,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 15
+          "reservations_next": 16
         },
         {
           "store": "miyakojima",
@@ -17737,7 +17767,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 10
+          "reservations_next": 12
         },
         {
           "store": "miyakojima",
@@ -17757,7 +17787,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 18
+          "reservations_next": 23
         },
         {
           "store": "miyakojima",
@@ -17797,7 +17827,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 11
+          "reservations_next": 13
         },
         {
           "store": "miyakojima",
@@ -17817,7 +17847,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 12
+          "reservations_next": 13
         },
         {
           "store": "miyakojima",
@@ -17837,7 +17867,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 7
+          "reservations_next": 8
         },
         {
           "store": "miyakojima",
@@ -17877,7 +17907,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 3
+          "reservations_next": 7
         },
         {
           "store": "miyakojima",
@@ -17897,7 +17927,7 @@
           "sales_target": 0,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 3
+          "reservations_next": 5
         },
         {
           "store": "miyakojima",
@@ -38373,21 +38403,21 @@
           "store": "tsunashima",
           "date": "2026-06-01",
           "weekday": "月",
-          "new": 0,
-          "repeat": 0,
+          "new": 3,
+          "repeat": 8,
           "referral": 0,
           "nominated": 0,
-          "customers": 0,
-          "customer_target": 0,
-          "customer_pct": 0.0,
-          "sales_grand_menu": 0,
-          "sales_coupon": 0,
-          "sales_other": 0,
-          "sales": 0,
-          "sales_target": 0,
-          "sales_pct": 0.0,
-          "spend_per_customer": 0,
-          "reservations_next": 7
+          "customers": 11,
+          "customer_target": 12,
+          "customer_pct": 91.67,
+          "sales_grand_menu": 42090,
+          "sales_coupon": 87517,
+          "sales_other": 3800,
+          "sales": 133407,
+          "sales_target": 133750,
+          "sales_pct": 109.72,
+          "spend_per_customer": 12128,
+          "reservations_next": 11
         },
         {
           "store": "tsunashima",
@@ -38398,16 +38428,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 5
+          "reservations_next": 7
         },
         {
           "store": "tsunashima",
@@ -38418,16 +38448,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 6
+          "reservations_next": 7
         },
         {
           "store": "tsunashima",
@@ -38438,13 +38468,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 3
@@ -38458,16 +38488,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 4
+          "reservations_next": 5
         },
         {
           "store": "tsunashima",
@@ -38478,16 +38508,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 13
+          "reservations_next": 14
         },
         {
           "store": "tsunashima",
@@ -38498,13 +38528,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 10
@@ -38518,16 +38548,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 1
+          "reservations_next": 3
         },
         {
           "store": "tsunashima",
@@ -38538,16 +38568,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 5
+          "reservations_next": 6
         },
         {
           "store": "tsunashima",
@@ -38558,13 +38588,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 4
@@ -38578,16 +38608,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 3
+          "reservations_next": 2
         },
         {
           "store": "tsunashima",
@@ -38598,13 +38628,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 6
@@ -38618,13 +38648,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 10
@@ -38638,13 +38668,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 3
@@ -38658,13 +38688,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 12,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 1
@@ -38678,13 +38708,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 0
@@ -38698,16 +38728,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 6
+          "reservations_next": 7
         },
         {
           "store": "tsunashima",
@@ -38718,13 +38748,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 5
@@ -38738,13 +38768,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 2
@@ -38758,13 +38788,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 9
@@ -38778,16 +38808,16 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
-          "reservations_next": 2
+          "reservations_next": 3
         },
         {
           "store": "tsunashima",
@@ -38798,13 +38828,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 0
@@ -38818,13 +38848,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 4
@@ -38838,13 +38868,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 4
@@ -38858,13 +38888,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 3
@@ -38878,13 +38908,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 5
@@ -38898,13 +38928,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 5
@@ -38918,13 +38948,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 1
@@ -38938,13 +38968,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 4
@@ -38958,13 +38988,13 @@
           "referral": 0,
           "nominated": 0,
           "customers": 0,
-          "customer_target": 0,
+          "customer_target": 13,
           "customer_pct": 0.0,
           "sales_grand_menu": 0,
           "sales_coupon": 0,
           "sales_other": 0,
           "sales": 0,
-          "sales_target": 0,
+          "sales_target": 133750,
           "sales_pct": 0.0,
           "spend_per_customer": 0,
           "reservations_next": 2
@@ -53172,10 +53202,10 @@
       },
       "202606": {
         "new": 0,
-        "repeat": 0,
+        "repeat": 1,
         "referral": 0,
         "nominated": 0,
-        "customers": 0
+        "customers": 1
       },
       "202601": {
         "new": 248,
@@ -53411,11 +53441,11 @@
         "customers": 299
       },
       "202606": {
-        "new": 0,
-        "repeat": 0,
+        "new": 3,
+        "repeat": 8,
         "referral": 0,
         "nominated": 0,
-        "customers": 0
+        "customers": 11
       },
       "202212": {
         "new": 92,
@@ -60970,6 +61000,146 @@
     },
     {
       "store": "tsunashima",
+      "month": "202606",
+      "name": "水野 友里",
+      "category": "",
+      "work_days": 0,
+      "total_sales": 37654,
+      "customers": 2,
+      "spend_per_customer": 18827,
+      "tech_sales": 33854,
+      "tech_customers": 2,
+      "tech_sales_nominated": 33854,
+      "tech_customers_nominated": 2,
+      "tech_sales_free": 0,
+      "tech_customers_free": 0,
+      "tech_sales_male": 0,
+      "tech_customers_male": 0,
+      "tech_sales_female": 33854,
+      "tech_customers_female": 2,
+      "shop_sales": 3800,
+      "shop_customers": 1,
+      "shop_pct": 10.09,
+      "purchase_pct": 50.0,
+      "hpb_sales": 0,
+      "other_coupon_sales": 25854,
+      "dept_sales": {
+        "ヘア": 37654,
+        "アイ": 0,
+        "ネイル": 0
+      },
+      "primary_dept": "ヘア",
+      "_nn_op_count": 0,
+      "_nn_op_rate": 0,
+      "hidden": false
+    },
+    {
+      "store": "tsunashima",
+      "month": "202606",
+      "name": "渡辺 真也",
+      "category": "",
+      "work_days": 0,
+      "total_sales": 62117,
+      "customers": 5,
+      "spend_per_customer": 12423,
+      "tech_sales": 62117,
+      "tech_customers": 5,
+      "tech_sales_nominated": 42645,
+      "tech_customers_nominated": 3,
+      "tech_sales_free": 19472,
+      "tech_customers_free": 2,
+      "tech_sales_male": 14500,
+      "tech_customers_male": 1,
+      "tech_sales_female": 47617,
+      "tech_customers_female": 4,
+      "shop_sales": 0,
+      "shop_customers": 0,
+      "shop_pct": 0.0,
+      "purchase_pct": 0.0,
+      "hpb_sales": 33127,
+      "other_coupon_sales": 4490,
+      "dept_sales": {
+        "ヘア": 62117,
+        "アイ": 0,
+        "ネイル": 0
+      },
+      "primary_dept": "ヘア",
+      "_nn_op_count": 0,
+      "_nn_op_rate": 0,
+      "hidden": false
+    },
+    {
+      "store": "tsunashima",
+      "month": "202606",
+      "name": "上江洲 花鈴",
+      "category": "",
+      "work_days": 0,
+      "total_sales": 9000,
+      "customers": 2,
+      "spend_per_customer": 4500,
+      "tech_sales": 9000,
+      "tech_customers": 2,
+      "tech_sales_nominated": 9000,
+      "tech_customers_nominated": 2,
+      "tech_sales_free": 0,
+      "tech_customers_free": 0,
+      "tech_sales_male": 0,
+      "tech_customers_male": 0,
+      "tech_sales_female": 0,
+      "tech_customers_female": 0,
+      "shop_sales": 0,
+      "shop_customers": 0,
+      "shop_pct": 0.0,
+      "purchase_pct": 0.0,
+      "hpb_sales": 0,
+      "other_coupon_sales": 0,
+      "dept_sales": {
+        "ヘア": 9000,
+        "アイ": 0,
+        "ネイル": 0
+      },
+      "primary_dept": "ヘア",
+      "_nn_op_count": 0,
+      "_nn_op_rate": 0,
+      "hidden": false
+    },
+    {
+      "store": "tsunashima",
+      "month": "202606",
+      "name": "馬場 美沙紀",
+      "category": "",
+      "work_days": 0,
+      "total_sales": 24636,
+      "customers": 2,
+      "spend_per_customer": 12318,
+      "tech_sales": 24636,
+      "tech_customers": 2,
+      "tech_sales_nominated": 24636,
+      "tech_customers_nominated": 2,
+      "tech_sales_free": 0,
+      "tech_customers_free": 0,
+      "tech_sales_male": 0,
+      "tech_customers_male": 0,
+      "tech_sales_female": 24636,
+      "tech_customers_female": 2,
+      "shop_sales": 0,
+      "shop_customers": 0,
+      "shop_pct": 0.0,
+      "purchase_pct": 0.0,
+      "hpb_sales": 10891,
+      "other_coupon_sales": 13155,
+      "dept_sales": {
+        "ヘア": 24636,
+        "アイ": 0,
+        "ネイル": 0
+      },
+      "primary_dept": "ヘア",
+      "_nn_op_count": 0,
+      "_nn_op_rate": 0,
+      "hidden": false
+    },
+    {
+      "store": "tsunashima",
       "month": "202207",
       "name": "熊沢 恵斗",
       "category": "",
@@ -62539,6 +62709,41 @@
         "ネイル": 0
       },
       "primary_dept": "ヘア",
+      "_nn_op_count": 0,
+      "_nn_op_rate": 0,
+      "hidden": false
+    },
+    {
+      "store": "miyakojima",
+      "month": "202606",
+      "name": "宮里 乃の子",
+      "category": "",
+      "work_days": 0,
+      "total_sales": 5745,
+      "customers": 1,
+      "spend_per_customer": 5745,
+      "tech_sales": 5745,
+      "tech_customers": 1,
+      "tech_sales_nominated": 5745,
+      "tech_customers_nominated": 1,
+      "tech_sales_free": 0,
+      "tech_customers_free": 0,
+      "tech_sales_male": 0,
+      "tech_customers_male": 0,
+      "tech_sales_female": 5745,
+      "tech_customers_female": 1,
+      "shop_sales": 0,
+      "shop_customers": 0,
+      "shop_pct": 0.0,
+      "purchase_pct": 0.0,
+      "hpb_sales": 3545,
+      "other_coupon_sales": 0,
+      "dept_sales": {
+        "ヘア": 0,
+        "アイ": 5745,
+        "ネイル": 0
+      },
+      "primary_dept": "アイ",
       "_nn_op_count": 0,
       "_nn_op_rate": 0,
       "hidden": false
@@ -68242,25 +68447,21 @@
     "202606": 30
   },
   "uregi_top_snapshot": {
-    "snapshot_time": "2026/06/01 08:31:21",
+    "snapshot_time": "2026/06/02 10:45:33",
     "today_sales": "0人(0人)",
     "today_customers": "0人(0人)",
-    "today_avg": "0人/0人",
-    "today_active_staff": "0人/0人",
+    "today_avg": "3人/9人",
+    "today_active_staff": "3人/9人",
     "today_reservation_rate": "0件/7件",
     "current_store_code": "001",
     "weekly_reservations": [
       {
-        "date": "6/1(月)",
+        "date": "6/2(火)",
         "count": "7件"
       },
       {
-        "date": "6/2(火)",
-        "count": "5件"
-      },
-      {
         "date": "6/3(水)",
-        "count": "6件"
+        "count": "7件"
       },
       {
         "date": "6/4(木)",
@@ -68268,15 +68469,19 @@
       },
       {
         "date": "6/5(金)",
-        "count": "4件"
+        "count": "5件"
       },
       {
         "date": "6/6(土)",
-        "count": "13件"
+        "count": "14件"
       },
       {
         "date": "6/7(日)",
         "count": "10件"
+      },
+      {
+        "date": "6/8(月)",
+        "count": "3件"
       }
     ]
   },
@@ -150695,11 +150900,11 @@
           "row_number": "1",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カットカラー",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "3",
+          "count_ratio": "27.3",
+          "total_price": "27218",
+          "price_ratio": "21.0",
+          "unit_price": "9073",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151091,11 +151296,11 @@
           "row_number": "34",
           "category_status_name": "HPBクーポン",
           "commodity_name": "カット美髪カラー髪質改善エステ",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "16800",
+          "price_ratio": "13.0",
+          "unit_price": "16800",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151163,13 +151368,13 @@
           "row_number": "40",
           "category_status_name": "カット",
           "commodity_name": "*前髪カット",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "2000",
+          "price_ratio": "1.5",
+          "unit_price": "2000",
           "prev_total_price": "1000",
-          "year_on_year_price": "0.0%"
+          "year_on_year_price": "200.0%"
         },
         {
           "row_number": "41",
@@ -151192,30 +151397,30 @@
           "total_price": "0",
           "price_ratio": "0.0",
           "unit_price": "0",
-          "prev_total_price": "4000",
+          "prev_total_price": "8000",
           "year_on_year_price": "0.0%"
         },
         {
           "row_number": "43",
           "category_status_name": "BMクーポン",
           "commodity_name": "カットカラー",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "9982",
+          "price_ratio": "7.7",
+          "unit_price": "9982",
           "prev_total_price": "19053",
-          "year_on_year_price": "0.0%"
+          "year_on_year_price": "52.4%"
         },
         {
           "row_number": "44",
           "category_status_name": "BMクーポン",
           "commodity_name": "カットカラーAujua",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "11853",
+          "price_ratio": "9.1",
+          "unit_price": "11853",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151228,7 +151433,7 @@
           "total_price": "0",
           "price_ratio": "0.0",
           "unit_price": "0",
-          "prev_total_price": "0",
+          "prev_total_price": "12709",
           "year_on_year_price": "0.0%"
         },
         {
@@ -151240,18 +151445,18 @@
           "total_price": "0",
           "price_ratio": "0.0",
           "unit_price": "0",
-          "prev_total_price": "0",
+          "prev_total_price": "11800",
           "year_on_year_price": "0.0%"
         },
         {
           "row_number": "47",
           "category_status_name": "BMクーポン",
           "commodity_name": "カット美髪カラー美髪tr",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "14527",
+          "price_ratio": "11.2",
+          "unit_price": "14527",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151535,13 +151740,13 @@
           "row_number": "71",
           "category_status_name": "変更料",
           "commodity_name": "カラー変更",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "4",
+          "count_ratio": "36.4",
+          "total_price": "5337",
+          "price_ratio": "4.1",
+          "unit_price": "1334",
           "prev_total_price": "1345",
-          "year_on_year_price": "0.0%"
+          "year_on_year_price": "396.8%"
         },
         {
           "row_number": "72",
@@ -151595,11 +151800,11 @@
           "row_number": "76",
           "category_status_name": "変更料",
           "commodity_name": "トリートメント追加1980",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "1800",
+          "price_ratio": "1.4",
+          "unit_price": "1800",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151643,11 +151848,11 @@
           "row_number": "80",
           "category_status_name": "カラー",
           "commodity_name": "*フルカラー",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "7000",
+          "price_ratio": "5.4",
+          "unit_price": "7000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151679,11 +151884,11 @@
           "row_number": "83",
           "category_status_name": "カラー",
           "commodity_name": "*ハイライト",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "4000",
+          "price_ratio": "3.1",
+          "unit_price": "4000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151787,11 +151992,11 @@
           "row_number": "92",
           "category_status_name": "パーマ",
           "commodity_name": "*ノーマルパーマ",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "10000",
+          "price_ratio": "7.7",
+          "unit_price": "10000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -151835,25 +152040,25 @@
           "row_number": "96",
           "category_status_name": "縮毛矯正",
           "commodity_name": "*縮毛矯正",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
-          "prev_total_price": "0",
-          "year_on_year_price": "0.0%"
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "5000",
+          "price_ratio": "3.9",
+          "unit_price": "5000",
+          "prev_total_price": "13000",
+          "year_on_year_price": "38.5%"
         },
         {
           "row_number": "97",
           "category_status_name": "縮毛矯正",
           "commodity_name": "*部分縮毛矯正",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "7000",
+          "price_ratio": "5.4",
+          "unit_price": "7000",
           "prev_total_price": "7000",
-          "year_on_year_price": "0.0%"
+          "year_on_year_price": "100.0%"
         },
         {
           "row_number": "98",
@@ -151919,11 +152124,11 @@
           "row_number": "103",
           "category_status_name": "トリートメント",
           "commodity_name": "*AujuaクイックTR",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "9.1",
+          "total_price": "4000",
+          "price_ratio": "3.1",
+          "unit_price": "4000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -152183,25 +152388,25 @@
           "row_number": "125",
           "category_status_name": "指名料",
           "commodity_name": "*¥550",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
-          "prev_total_price": "5350",
-          "year_on_year_price": "0.0%"
+          "count": "5",
+          "count_ratio": "45.5",
+          "total_price": "2500",
+          "price_ratio": "1.9",
+          "unit_price": "500",
+          "prev_total_price": "6850",
+          "year_on_year_price": "36.5%"
         },
         {
           "row_number": "126",
           "category_status_name": "指名料",
           "commodity_name": "*330",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "2",
+          "count_ratio": "18.2",
+          "total_price": "590",
+          "price_ratio": "0.5",
+          "unit_price": "295",
           "prev_total_price": "300",
-          "year_on_year_price": "0.0%"
+          "year_on_year_price": "196.7%"
         },
         {
           "row_number": "127",
@@ -153517,11 +153722,11 @@
           "row_number": "103",
           "category_status_name": "まつげエクステ",
           "commodity_name": "ダブルフラット変更",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "100.0",
+          "total_price": "2000",
+          "price_ratio": "34.8",
+          "unit_price": "2000",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -154681,11 +154886,11 @@
           "row_number": "200",
           "category_status_name": "I指名料",
           "commodity_name": "I指名料+220円",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "100.0",
+          "total_price": "200",
+          "price_ratio": "3.5",
+          "unit_price": "200",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
@@ -155017,11 +155222,11 @@
           "row_number": "228",
           "category_status_name": "IHPBクーポン",
           "commodity_name": "60本リペア",
-          "count": "0",
-          "count_ratio": "0.0",
-          "total_price": "0",
-          "price_ratio": "0.0",
-          "unit_price": "0",
+          "count": "1",
+          "count_ratio": "100.0",
+          "total_price": "3545",
+          "price_ratio": "61.7",
+          "unit_price": "3545",
           "prev_total_price": "0",
           "year_on_year_price": "0.0%"
         },
