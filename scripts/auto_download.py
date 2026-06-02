@@ -58,12 +58,35 @@ def load_env() -> dict:
 
 def login(page: Page, env: dict, log_dir: Path):
     print("→ login")
-    page.goto(env["URegi_LOGIN_URL"], wait_until="networkidle")
+    # 🛡 2026-06-02 修正: ログインページ goto に リトライ + 戦略フォールバック を追加
+    # 旧: networkidle 30秒固定 → 朝の Uレジサーバー混雑で goto timeout (2026-06-02 8:38 事故)
+    # 新: 3回まで再試行、 2回目以降は domcontentloaded で緩める (downloadsフェーズと同じパターン)
+    last_err = None
+    for attempt in range(3):
+        try:
+            wait_strategy = "networkidle" if attempt == 0 else "domcontentloaded"
+            timeout_ms = 30000 if attempt == 0 else 45000
+            page.goto(env["URegi_LOGIN_URL"], wait_until=wait_strategy, timeout=timeout_ms)
+            break
+        except Exception as e:
+            last_err = e
+            backoff = 5 * (attempt + 1)
+            print(f"  ⚠️ login goto attempt {attempt+1}/3 failed: {type(e).__name__}. Waiting {backoff}s before retry...")
+            time.sleep(backoff)
+    else:
+        raise last_err
+
     page.fill("[name='company_code']", env["URegi_COMPANY"])
     page.fill("[name='user_id']", env["URegi_USER"])
     page.fill("[name='password']", env["URegi_PW"])
-    with page.expect_navigation(wait_until="networkidle", timeout=20000):
-        page.click("[name='login']")
+    # ログイン後のナビゲーションも 失敗時に緩める
+    try:
+        with page.expect_navigation(wait_until="networkidle", timeout=20000):
+            page.click("[name='login']")
+    except Exception as e:
+        print(f"  ⚠️ navigation networkidle timeout, fall back to domcontentloaded")
+        with page.expect_navigation(wait_until="domcontentloaded", timeout=30000):
+            page.click("[name='login']")
     page.screenshot(path=str(log_dir / "01_after_login.png"))
     print(f"  ✓ logged in: {page.url}")
 
