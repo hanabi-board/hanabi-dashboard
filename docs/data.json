@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T08:37:48",
+  "generated_at": "2026-06-04T08:57:03",
   "stores": {
     "tsunashima": {
       "name": "Hanabi 綱島店",
@@ -251,21 +251,21 @@
       },
       "shinyokohama": {
         "monthly": {
-          "total_sales": 65261,
-          "tech_sales": 59910,
-          "tech_sales_nominated": 0,
-          "tech_sales_free": 59910,
+          "total_sales": 105311,
+          "tech_sales": 96220,
+          "tech_sales_nominated": 6440,
+          "tech_sales_free": 89780,
           "tech_sales_male": 0,
           "tech_sales_female": 0,
           "tech_customers_male": 0,
           "tech_customers_female": 0,
-          "shop_sales": 5351,
+          "shop_sales": 9091,
           "hpb_sales": 0,
           "other_coupon_sales": 0,
-          "customers": 12,
-          "tech_customers": 12,
-          "tech_customers_nominated": 0,
-          "tech_customers_free": 12,
+          "customers": 19,
+          "tech_customers": 19,
+          "tech_customers_nominated": 1,
+          "tech_customers_free": 18,
           "staff_count": 2,
           "by_dept": {
             "ヘア": {
@@ -279,23 +279,23 @@
               "staff_count": 0
             },
             "ネイル": {
-              "sales": 65261,
-              "customers": 12,
+              "sales": 105311,
+              "customers": 19,
               "staff_count": 2
             }
           },
           "staff": [
-            "□Natsuki",
-            "Risa"
+            "Risa",
+            "□Natsuki"
           ]
         },
-        "daily_sum_sales": 65261,
+        "daily_sum_sales": 105311,
         "daily_sum_target": 0,
-        "days_recorded": 2
+        "days_recorded": 3
       }
     },
     "company_total": {
-      "total_sales": 634104,
+      "total_sales": 674154,
       "customers": 0,
       "target": 4012500
     }
@@ -2947,21 +2947,21 @@
     },
     "shinyokohama": {
       "202606": {
-        "total_sales": 65261,
-        "tech_sales": 59910,
-        "tech_sales_nominated": 0,
-        "tech_sales_free": 59910,
+        "total_sales": 105311,
+        "tech_sales": 96220,
+        "tech_sales_nominated": 6440,
+        "tech_sales_free": 89780,
         "tech_sales_male": 0,
         "tech_sales_female": 0,
         "tech_customers_male": 0,
         "tech_customers_female": 0,
-        "shop_sales": 5351,
+        "shop_sales": 9091,
         "hpb_sales": 0,
         "other_coupon_sales": 0,
-        "customers": 12,
-        "tech_customers": 12,
-        "tech_customers_nominated": 0,
-        "tech_customers_free": 12,
+        "customers": 19,
+        "tech_customers": 19,
+        "tech_customers_nominated": 1,
+        "tech_customers_free": 18,
         "staff_count": 2,
         "by_dept": {
           "ヘア": {
@@ -2975,14 +2975,14 @@
             "staff_count": 0
           },
           "ネイル": {
-            "sales": 65261,
-            "customers": 12,
+            "sales": 105311,
+            "customers": 19,
             "staff_count": 2
           }
         },
         "staff": [
-          "□Natsuki",
-          "Risa"
+          "Risa",
+          "□Natsuki"
         ]
       },
       "202605": {
@@ -53162,20 +53162,20 @@
           "store": "shinyokohama",
           "date": "2026-06-03",
           "weekday": "水",
-          "new": 0,
+          "new": 7,
           "repeat": 0,
           "referral": 0,
-          "nominated": 0,
-          "customers": 0,
+          "nominated": 1,
+          "customers": 7,
           "customer_target": 0,
           "customer_pct": 0.0,
-          "sales_grand_menu": 0,
+          "sales_grand_menu": 36310,
           "sales_coupon": 0,
-          "sales_other": 0,
-          "sales": 0,
+          "sales_other": 3740,
+          "sales": 40050,
           "sales_target": 0,
           "sales_pct": 0.0,
-          "spend_per_customer": 0,
+          "spend_per_customer": 5721,
           "reservations_next": 0
         },
         {
@@ -54302,11 +54302,11 @@
         "customers": 21
       },
       "202606": {
-        "new": 12,
+        "new": 19,
         "repeat": 0,
         "referral": 0,
-        "nominated": 0,
-        "customers": 12
+        "nominated": 1,
+        "customers": 19
       }
     }
   },
@@ -57114,71 +57114,71 @@
     {
       "store": "shinyokohama",
       "month": "202606",
-      "name": "□Natsuki",
+      "name": "Risa",
       "category": "",
-      "work_days": 1,
-      "total_sales": 32901,
-      "customers": 6,
-      "spend_per_customer": 5483,
-      "tech_sales": 29970,
-      "tech_customers": 6,
+      "work_days": 2,
+      "total_sales": 54265,
+      "customers": 10,
+      "spend_per_customer": 5426,
+      "tech_sales": 49700,
+      "tech_customers": 10,
       "tech_sales_nominated": 0,
       "tech_customers_nominated": 0,
-      "tech_sales_free": 29970,
-      "tech_customers_free": 6,
+      "tech_sales_free": 49700,
+      "tech_customers_free": 10,
       "tech_sales_male": 0,
       "tech_customers_male": 0,
       "tech_sales_female": 0,
       "tech_customers_female": 0,
-      "shop_sales": 2931,
+      "shop_sales": 4565,
       "shop_customers": 0,
-      "shop_pct": 8.91,
+      "shop_pct": 8.41,
       "purchase_pct": 0.0,
       "hpb_sales": 0,
       "other_coupon_sales": 0,
       "dept_sales": {
         "ヘア": 0,
         "アイ": 0,
-        "ネイル": 29970
+        "ネイル": 49700
       },
       "primary_dept": "ネイル",
-      "_nn_op_count": 8,
-      "_nn_op_rate": 133.3,
+      "_nn_op_count": 14,
+      "_nn_op_rate": 140.0,
       "hidden": false
     },
     {
       "store": "shinyokohama",
       "month": "202606",
-      "name": "Risa",
+      "name": "□Natsuki",
       "category": "",
-      "work_days": 1,
-      "total_sales": 32360,
-      "customers": 6,
-      "spend_per_customer": 5393,
-      "tech_sales": 29940,
-      "tech_customers": 6,
-      "tech_sales_nominated": 0,
-      "tech_customers_nominated": 0,
-      "tech_sales_free": 29940,
-      "tech_customers_free": 6,
+      "work_days": 2,
+      "total_sales": 51046,
+      "customers": 9,
+      "spend_per_customer": 5671,
+      "tech_sales": 46520,
+      "tech_customers": 9,
+      "tech_sales_nominated": 6440,
+      "tech_customers_nominated": 1,
+      "tech_sales_free": 40080,
+      "tech_customers_free": 8,
       "tech_sales_male": 0,
       "tech_customers_male": 0,
       "tech_sales_female": 0,
       "tech_customers_female": 0,
-      "shop_sales": 2420,
+      "shop_sales": 4526,
       "shop_customers": 0,
-      "shop_pct": 7.48,
+      "shop_pct": 8.87,
       "purchase_pct": 0.0,
       "hpb_sales": 0,
       "other_coupon_sales": 0,
       "dept_sales": {
         "ヘア": 0,
         "アイ": 0,
-        "ネイル": 29940
+        "ネイル": 46520
       },
       "primary_dept": "ネイル",
-      "_nn_op_count": 7,
-      "_nn_op_rate": 116.7,
+      "_nn_op_count": 14,
+      "_nn_op_rate": 155.6,
       "hidden": false
     },
     {
@@ -156572,11 +156572,31 @@
       "shinyokohama": [
         {
           "commodity_name": "【オフ無料】月替わり60種類から選ぶトレンドネイル",
-          "count": 2,
-          "total_price": 9580,
+          "count": 3,
+          "total_price": 14370,
           "unit_price": 4790,
           "category_status_name": "トレンド",
           "category": "トレンド",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
+          "commodity_name": "オフ無料☆ジェルネイル 月替わりマグネットネイル 4,990円",
+          "count": 2,
+          "total_price": 9980,
+          "unit_price": 4990,
+          "category_status_name": "トレンド",
+          "category": "トレンド",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
+          "commodity_name": "オフ無料☆潤艶ちゅるんワンカラー 4,320円",
+          "count": 2,
+          "total_price": 8640,
+          "unit_price": 4320,
+          "category_status_name": "ベースコース",
+          "category": "ベースコース",
           "year_on_year_price": "",
           "year_on_year_count": ""
         },
@@ -156587,6 +156607,26 @@
           "unit_price": 5990,
           "category_status_name": "フット",
           "category": "フット",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
+          "commodity_name": "オフ無料☆ジェルネイル ワンホンネイル 5,990円",
+          "count": 1,
+          "total_price": 5990,
+          "unit_price": 5990,
+          "category_status_name": "持ち込み",
+          "category": "持ち込み",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
+          "commodity_name": "【オフ無料】持ち込みデザインコース",
+          "count": 1,
+          "total_price": 5790,
+          "unit_price": 5790,
+          "category_status_name": "持ち込み",
+          "category": "持ち込み",
           "year_on_year_price": "",
           "year_on_year_count": ""
         },
@@ -156631,22 +156671,12 @@
           "year_on_year_count": ""
         },
         {
-          "commodity_name": "オフ無料☆ジェルネイル 月替わりマグネットネイル 4,990円",
+          "commodity_name": "オフ無料☆ジェルネイル 月替わり60種類から選ぶトレンドネイル 4,990円",
           "count": 1,
           "total_price": 4990,
           "unit_price": 4990,
           "category_status_name": "トレンド",
           "category": "トレンド",
-          "year_on_year_price": "",
-          "year_on_year_count": ""
-        },
-        {
-          "commodity_name": "オフ無料☆潤艶ちゅるんワンカラー 4,320円",
-          "count": 1,
-          "total_price": 4320,
-          "unit_price": 4320,
-          "category_status_name": "ベースコース",
-          "category": "ベースコース",
           "year_on_year_price": "",
           "year_on_year_count": ""
         },
@@ -156671,12 +156701,32 @@
           "year_on_year_count": ""
         },
         {
+          "commodity_name": "パラジェル【385円】",
+          "count": 10,
+          "total_price": 3850,
+          "unit_price": 385,
+          "category_status_name": "未分類",
+          "category": "未分類",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
           "commodity_name": "【オフ無料】人気No.1 ワンカラー",
           "count": 1,
           "total_price": 3790,
           "unit_price": 3790,
           "category_status_name": "ベースコース",
           "category": "ベースコース",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
+          "commodity_name": "【ハンド】ソフトジェルネイルオフ",
+          "count": 1,
+          "total_price": 3790,
+          "unit_price": 3790,
+          "category_status_name": "未分類",
+          "category": "未分類",
           "year_on_year_price": "",
           "year_on_year_count": ""
         },
@@ -156691,20 +156741,20 @@
           "year_on_year_count": ""
         },
         {
-          "commodity_name": "パラジェル【385円】",
-          "count": 6,
+          "commodity_name": "フィルイン【330円】",
+          "count": 7,
           "total_price": 2310,
-          "unit_price": 385,
+          "unit_price": 330,
           "category_status_name": "未分類",
           "category": "未分類",
           "year_on_year_price": "",
           "year_on_year_count": ""
         },
         {
-          "commodity_name": "フィルイン【330円】",
-          "count": 4,
-          "total_price": 1320,
-          "unit_price": 330,
+          "commodity_name": "【通常】W発酵化粧水  1,650円",
+          "count": 1,
+          "total_price": 1650,
+          "unit_price": 1650,
           "category_status_name": "未分類",
           "category": "未分類",
           "year_on_year_price": "",
@@ -156722,9 +156772,19 @@
         },
         {
           "commodity_name": "フィルイン【550円】(通常ベースジェル用)",
-          "count": 1,
-          "total_price": 550,
+          "count": 2,
+          "total_price": 1100,
           "unit_price": 550,
+          "category_status_name": "未分類",
+          "category": "未分類",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
+          "commodity_name": "ライトオプション・ちょこっとパーツ【110円】",
+          "count": 3,
+          "total_price": 330,
+          "unit_price": 110,
           "category_status_name": "未分類",
           "category": "未分類",
           "year_on_year_price": "",
@@ -156741,10 +156801,20 @@
           "year_on_year_count": ""
         },
         {
-          "commodity_name": "ライトオプション・ちょこっとパーツ【110円】",
-          "count": 2,
+          "commodity_name": "ベーシックオプション・店舗ミキシング【330円】",
+          "count": 1,
+          "total_price": 330,
+          "unit_price": 330,
+          "category_status_name": "未分類",
+          "category": "未分類",
+          "year_on_year_price": "",
+          "year_on_year_count": ""
+        },
+        {
+          "commodity_name": "ハードコート1本【220円】",
+          "count": 1,
           "total_price": 220,
-          "unit_price": 110,
+          "unit_price": 220,
           "category_status_name": "未分類",
           "category": "未分類",
           "year_on_year_price": "",
@@ -156762,7 +156832,7 @@
         },
         {
           "commodity_name": "ハンド付替ソフトジェルオフ",
-          "count": 7,
+          "count": 12,
           "total_price": 0,
           "unit_price": 0,
           "category_status_name": "未分類",
@@ -322410,14 +322480,14 @@
   "nicenail_extras": {
     "shinyokohama": {
       "202606": {
-        "sales": 65261,
-        "customers": 12,
-        "op_count": 15,
-        "op_rate": 125.0,
-        "daily_per_staff": 32630,
-        "kadou_rate": 6.0,
-        "active_days": 2,
-        "staff_days": 2,
+        "sales": 105311,
+        "customers": 19,
+        "op_count": 28,
+        "op_rate": 147.4,
+        "daily_per_staff": 26327,
+        "kadou_rate": 4.75,
+        "active_days": 3,
+        "staff_days": 4,
         "ym": "202606"
       },
       "202605": {
