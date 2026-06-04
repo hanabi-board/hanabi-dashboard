@@ -23,10 +23,13 @@ notify() {
   osascript -e "display notification \"$msg\" with title \"$title\" sound name \"Basso\"" 2>/dev/null || true
 }
 
-# 失敗時のメール通知
+# 失敗時のメール通知 + LINE WORKS Bot 通知
 mail_failure() {
   local error_msg="$1"
+  local step="${2:-不明なステップ}"
   python3 "$ROOT/scripts/notify.py" failure "$(date '+%Y-%m-%d %H:%M:%S')" "$error_msg" 2>&1 | tee -a "$LOG_FILE" || true
+  # LINE WORKS Bot にも失敗通知 (実装済なら、 認証情報未配置時はスキップ)
+  python3 "$ROOT/scripts/notify_lineworks.py" hanabi failure "$step" "$error_msg" "$LOG_FILE" 2>&1 | tee -a "$LOG_FILE" || true
 }
 
 # エラー時のtrap: 通知して終了
@@ -176,6 +179,8 @@ TSU_CNT=$([ -n "$TSU_CSV" ] && wc -l < "$TSU_CSV" | tr -d ' ' || echo "—")
 ELE_CNT=$([ -n "$ELE_CSV" ] && wc -l < "$ELE_CSV" | tr -d ' ' || echo "—")
 SUMMARY="${YM} CSV: 綱島=${TSU_CNT}行 / 宮古島=${ELE_CNT}行 (git push: ${PUSHED})"
 python3 "$ROOT/scripts/notify.py" success "$FINISH_TIME" "$SUMMARY" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ メール送信失敗"
+# LINE WORKS Bot にも成功通知 (店舗別実績 + 全社合計)
+python3 "$ROOT/scripts/notify_lineworks.py" hanabi success 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ LINE WORKS 通知失敗"
 
 # 古いログを削除（30日以上）
 find "$LOG_DIR" -name "deploy_*.log" -mtime +30 -delete 2>/dev/null || true
