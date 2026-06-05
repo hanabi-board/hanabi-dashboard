@@ -207,7 +207,7 @@ def build_hanabi_success(highlights: list[str]) -> str:
 # ===================== ナイスネイル 集計 =====================
 NICENAIL_HTML = Path("/Users/yoheimizuno/salon-dashboard/dist/index.html")
 NICENAIL_TARGETS = Path("/Users/yoheimizuno/salon-dashboard/data/targets.json")
-NICENAIL_URL = "https://nicenail-dashboard-fc.netlify.app/"
+NICENAIL_URL = "https://salondashboard.denko-japan.co.jp/"
 
 
 def extract_monthly_records(html: str) -> dict:
