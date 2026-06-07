@@ -43,6 +43,41 @@ JST = ZoneInfo("Asia/Tokyo")
 CONFIG_BASE = Path.home() / ".config" / "lineworks"
 SEP = "━━━━━━━━━━━━━━━━━"
 
+# 残り日数 N 日以下で lastweek セクション 自動追加
+LASTWEEK_THRESHOLD_DAYS = 7
+
+
+def _now() -> datetime:
+    """現在日時 (テスト用: NOTIFY_TEST_DATE=YYYY-MM-DD 環境変数で上書き可能)"""
+    import os
+    test_date = os.environ.get("NOTIFY_TEST_DATE")
+    if test_date:
+        try:
+            dt = datetime.strptime(test_date, "%Y-%m-%d")
+            return dt.replace(tzinfo=JST, hour=8, minute=0, second=0)
+        except ValueError:
+            pass
+    return datetime.now(JST)
+
+
+def _remaining_days(now: datetime) -> tuple[int, int]:
+    """残り日数 (今日含む) と 月の総日数 を返す"""
+    import datetime as _dt
+    if now.month == 12:
+        next_m = datetime(now.year + 1, 1, 1, tzinfo=JST)
+    else:
+        next_m = datetime(now.year, now.month + 1, 1, tzinfo=JST)
+    last_d = (next_m - _dt.timedelta(days=1)).day
+    remaining = max(0, last_d - now.day + 1)
+    return remaining, last_d
+
+
+def _prev_ym(now: datetime) -> str:
+    """前月の YYYYMM を返す"""
+    py = now.year if now.month > 1 else now.year - 1
+    pm = now.month - 1 if now.month > 1 else 12
+    return f"{py}{pm:02d}"
+
 
 # ===================== 共通: 認証 + 送信 =====================
 def load_lineworks_config(project: str) -> dict:
@@ -133,7 +168,7 @@ def aggregate_hanabi() -> dict:
         return {}
     try:
         d = json.loads(HANABI_DATA.read_text(encoding="utf-8"))
-        now = datetime.now(JST)
+        now = _now()
         ym = f"{now.year}{now.month:02d}"
         mbs = d.get("monthly_by_store", {})
         any_data = any(((mbs.get(s, {}).get(ym, {}) or {}).get("total_sales", 0) > 0)
@@ -172,7 +207,10 @@ def aggregate_hanabi() -> dict:
 
 
 def build_hanabi_success(highlights: list[str]) -> str:
-    now = datetime.now(JST)
+    now = _now()
+    # 月初 1日: 前月確定 (monthend) に切替
+    if now.day == 1:
+        return build_hanabi_monthend(_prev_ym(now))
     data = aggregate_hanabi()
     lines = ["✅ HANABI 自動更新 完了", fmt_date_label(now), ""]
     if highlights:
@@ -200,6 +238,12 @@ def build_hanabi_success(highlights: list[str]) -> str:
             f"  {fmt_money(data['total_sales'])}  /  {data['total_customers']}名",
             SEP, "",
         ]
+    # 残り日数 ≤ 7 なら ラストスパート セクション 追加
+    remaining_days, _ = _remaining_days(now)
+    if 0 < remaining_days <= LASTWEEK_THRESHOLD_DAYS:
+        lastweek_section = build_hanabi_lastweek_section(now, remaining_days)
+        if lastweek_section:
+            lines += [lastweek_section, ""]
     lines += ["🔗 ダッシュボード", HANABI_URL]
     return "\n".join(lines)
 
@@ -230,7 +274,7 @@ def aggregate_nicenail() -> dict:
         mr = extract_monthly_records(html)
         if not mr:
             return {}
-        now = datetime.now(JST)
+        now = _now()
         # ナイスネイル の月キー形式: "YYYY-MM"
         ym_key = f"{now.year}-{now.month:02d}"
         records = mr.get(ym_key, [])
@@ -320,7 +364,10 @@ def aggregate_nicenail() -> dict:
 
 
 def build_nicenail_success(highlights: list[str]) -> str:
-    now = datetime.now(JST)
+    now = _now()
+    # 月初 1日: 前月確定 (monthend) に切替
+    if now.day == 1:
+        return build_nicenail_monthend(_prev_ym(now))
     data = aggregate_nicenail()
     lines = ["✅ ナイスネイルFC 自動更新 完了", fmt_date_label(now), ""]
     if highlights:
@@ -352,7 +399,406 @@ def build_nicenail_success(highlights: list[str]) -> str:
             f"OP比率  {data['op_pct_total']:.1f}%",
             "", SEP, "",
         ]
+    # 残り日数 ≤ 7 なら ラストスパート セクション 追加
+    remaining_days, _ = _remaining_days(now)
+    if 0 < remaining_days <= LASTWEEK_THRESHOLD_DAYS:
+        lastweek_section = build_nicenail_lastweek_section(now, remaining_days)
+        if lastweek_section:
+            lines += [lastweek_section, ""]
     lines += ["🔗 ダッシュボード", NICENAIL_URL]
+    return "\n".join(lines)
+
+
+# ===================== HANABI 残り1週間アラート =====================
+HANABI_BUDGETS = Path("/Users/yoheimizuno/hanabi-dashboard/data/budgets.json")
+
+
+def get_hanabi_budgets(ym: str) -> dict:
+    """HANABI budgets.json から指定月の予算を取得 (ym = 'YYYYMM')"""
+    if not HANABI_BUDGETS.exists():
+        return {}
+    try:
+        b = json.loads(HANABI_BUDGETS.read_text(encoding="utf-8"))
+        monthly = b.get("monthly", {})
+        dept_monthly = b.get("monthly_dept_miyakojima", {})
+        result = {
+            "tsunashima":   monthly.get("tsunashima", {}).get(ym, 0),
+            "miyakojima":   monthly.get("miyakojima", {}).get(ym, 0),
+            "shinyokohama": monthly.get("shinyokohama", {}).get(ym, 0),
+            "miyakojima_dept": dept_monthly.get(ym, {}),
+        }
+        return result
+    except Exception as e:
+        print(f"  warn: HANABI budgets.json 読み込み失敗: {e}", file=sys.stderr)
+        return {}
+
+
+def build_hanabi_lastweek_section(now: datetime = None, remaining_days: int = None) -> str:
+    """HANABI ラストスパートセクション (success に embed 用、 ヘッダーなし内側のみ)"""
+    if now is None:
+        now = _now()
+    data = aggregate_hanabi()
+    if not data:
+        return ""
+    ym = data["ym"]
+    if remaining_days is None:
+        remaining_days, _ = _remaining_days(now)
+    budgets = get_hanabi_budgets(ym)
+    lines = [
+        SEP,
+        f"🔥 ラストスパート (残り{remaining_days}日)",
+        SEP,
+        "",
+        "🏪 店舗別 予算まで残り",
+    ]
+    total_sales = 0
+    total_budget = 0
+    sid_map = {"Hanabi綱島店": "tsunashima", "ELLE by Hanabi宮古島店": "miyakojima", "ナイスネイル新横浜店": "shinyokohama"}
+    for s in data["stores"]:
+        sid = sid_map.get(s["label"], "")
+        budget = budgets.get(sid, 0)
+        sales = s["sales"]
+        remaining = max(0, budget - sales)
+        per_day = int(remaining / remaining_days) if remaining_days > 0 else 0
+        pct = sales / budget * 100 if budget else 0
+        total_sales += sales
+        total_budget += budget
+        lines.append(f"🏪 {s['label']}  ({pct:.0f}%)")
+        lines.append(f"   残り {fmt_money(remaining)} → {fmt_money(per_day)}/日")
+        if s.get("dept"):
+            dept_budgets = budgets.get("miyakojima_dept", {})
+            for dept_label, dept_data in s["dept"].items():
+                d_sales = dept_data.get("sales", 0)
+                d_budget = dept_budgets.get(dept_label, 0)
+                d_remaining = max(0, d_budget - d_sales)
+                d_per_day = int(d_remaining / remaining_days) if remaining_days > 0 else 0
+                d_pct = d_sales / d_budget * 100 if d_budget else 0
+                d_icon = {"ヘア": "💇", "アイ": "👁", "ネイル": "💅"}.get(dept_label, "・")
+                lines.append(f"     {d_icon} {dept_label} ({d_pct:.0f}%) 残り {fmt_money(d_remaining)} → {fmt_money(d_per_day)}/日")
+        lines.append("")
+    total_remaining = max(0, total_budget - total_sales)
+    total_per_day = int(total_remaining / remaining_days) if remaining_days > 0 else 0
+    total_pct = total_sales / total_budget * 100 if total_budget else 0
+    lines += [
+        f"✨ 全社  予算 {total_pct:.0f}%  残り {fmt_money_short(total_remaining)} → {fmt_money(total_per_day)}/日",
+    ]
+    return "\n".join(lines)
+
+
+def build_hanabi_lastweek() -> str:
+    """HANABI 残り1週間 アラート (standalone モード用、 ヘッダー付き)"""
+    now = _now()
+    remaining_days, _ = _remaining_days(now)
+    section = build_hanabi_lastweek_section(now, remaining_days)
+    if not section:
+        return ""
+    lines = [
+        f"🔥 HANABI ラストスパート (残り{remaining_days}日)",
+        fmt_date_label(now),
+        "",
+        section,
+        "",
+        "🔗 ダッシュボード",
+        HANABI_URL,
+    ]
+    return "\n".join(lines)
+
+
+# ===================== ナイスネイル 残り1週間アラート =====================
+def build_nicenail_lastweek_section(now: datetime = None, remaining_days: int = None) -> str:
+    """ナイスネイル ラストスパートセクション (success に embed 用、 ヘッダーなし)"""
+    if now is None:
+        now = _now()
+    data = aggregate_nicenail()
+    if not data:
+        return ""
+    if remaining_days is None:
+        remaining_days, _ = _remaining_days(now)
+    lines = [
+        SEP,
+        f"🔥 ラストスパート (残り{remaining_days}日)",
+        SEP,
+        "",
+        "🏪 店舗別 予算 / 目標まで残り",
+    ]
+    for r in data["stores"]:
+        sales = r["sales"]
+        budget = int(r["forecast"] / (r["budget_fc"] / 100)) if r["budget_fc"] > 0 else 0
+        target = int(r["forecast"] / (r["target_fc"] / 100)) if r["target_fc"] > 0 else 0
+        budget_remaining = max(0, budget - sales)
+        target_remaining = max(0, target - sales)
+        budget_per_day = int(budget_remaining / remaining_days) if remaining_days > 0 else 0
+        target_per_day = int(target_remaining / remaining_days) if remaining_days > 0 else 0
+        lines.append(f"🏪 {r['store']}")
+        lines.append(f"   予算まで {fmt_money(budget_remaining)} → {fmt_money(budget_per_day)}/日")
+        lines.append(f"   目標まで {fmt_money(target_remaining)} → {fmt_money(target_per_day)}/日")
+    total = data["total"]
+    total_budget_remaining = max(0, total["budget"] - total["sales"])
+    total_target_remaining = max(0, total["target"] - total["sales"])
+    total_budget_per_day = int(total_budget_remaining / remaining_days) if remaining_days > 0 else 0
+    total_target_per_day = int(total_target_remaining / remaining_days) if remaining_days > 0 else 0
+    lines += [
+        "",
+        f"✨ 全社  予算まで {fmt_money_short(total_budget_remaining)} → {fmt_money(total_budget_per_day)}/日",
+        f"       目標まで {fmt_money_short(total_target_remaining)} → {fmt_money(total_target_per_day)}/日",
+    ]
+    return "\n".join(lines)
+
+
+def build_nicenail_lastweek() -> str:
+    """ナイスネイル 残り1週間 アラート (standalone モード用、 ヘッダー付き)"""
+    now = _now()
+    remaining_days, _ = _remaining_days(now)
+    section = build_nicenail_lastweek_section(now, remaining_days)
+    if not section:
+        return ""
+    lines = [
+        f"🔥 ナイスネイルFC ラストスパート (残り{remaining_days}日)",
+        fmt_date_label(now),
+        "",
+        section,
+        "",
+        "🔗 ダッシュボード",
+        NICENAIL_URL,
+    ]
+    return "\n".join(lines)
+
+
+# ===================== HANABI 月終了サマリー =====================
+def aggregate_hanabi_specific_month(target_ym: str) -> dict:
+    """HANABI: 指定月の実績を集計 (target_ym = 'YYYYMM')"""
+    if not HANABI_DATA.exists():
+        return {}
+    try:
+        d = json.loads(HANABI_DATA.read_text(encoding="utf-8"))
+        mbs = d.get("monthly_by_store", {})
+        result = {"ym": target_ym, "stores": [], "total_sales": 0, "total_customers": 0}
+        store_meta = [
+            ("tsunashima",   "Hanabi綱島店",         False),
+            ("miyakojima",   "ELLE by Hanabi宮古島店", True),
+            ("shinyokohama", "ナイスネイル新横浜店",    False),
+        ]
+        for sid, label, with_dept in store_meta:
+            ms = (mbs.get(sid, {}) or {}).get(target_ym, {}) or {}
+            sales = ms.get("total_sales", 0)
+            customers = ms.get("customers", 0)
+            store_data = {"label": label, "sid": sid, "sales": sales, "customers": customers, "dept": None}
+            if with_dept:
+                by_dept = ms.get("by_dept", {}) or {}
+                store_data["dept"] = {
+                    "ヘア":   by_dept.get("ヘア",   {}),
+                    "アイ":   by_dept.get("アイ",   {}),
+                    "ネイル": by_dept.get("ネイル", {}),
+                }
+            result["stores"].append(store_data)
+            result["total_sales"] += sales
+            result["total_customers"] += customers
+        return result
+    except Exception as e:
+        print(f"  warn: HANABI 月別集計失敗: {e}", file=sys.stderr)
+        return {}
+
+
+def build_hanabi_monthend(target_ym: str = None) -> str:
+    """HANABI 月終了サマリー (前月確定値)"""
+    now = _now()
+    if target_ym is None:
+        # 前月を自動判定
+        py = now.year if now.month > 1 else now.year - 1
+        pm = now.month - 1 if now.month > 1 else 12
+        target_ym = f"{py}{pm:02d}"
+    data = aggregate_hanabi_specific_month(target_ym)
+    if not data:
+        return ""
+    budgets = get_hanabi_budgets(target_ym)
+    y, m = target_ym[:4], int(target_ym[4:6])
+    lines = [
+        f"🏁 HANABI {y}/{m}月 確定",
+        fmt_date_label(now),
+        "",
+        SEP,
+        f"📊 {y}/{m}月 最終結果",
+        SEP,
+        "",
+        "🏪 店舗別",
+    ]
+    achieved = 0
+    total_stores_with_budget = 0
+    total_budget = 0
+    for s in data["stores"]:
+        budget = budgets.get(s["sid"], 0)
+        sales = s["sales"]
+        if budget > 0:
+            total_stores_with_budget += 1
+            total_budget += budget
+            pct = sales / budget * 100
+            if pct >= 100:
+                achieved += 1
+            icon = "🏆" if pct >= 100 else "🏪" if pct >= 85 else "⚠️"
+        else:
+            pct = 0
+            icon = "🏪"
+        lines.append(f"{icon} {s['label']}")
+        if budget > 0:
+            lines.append(f"   売上 {fmt_money(sales)}  /  予算 {fmt_money(budget)}  ({pct:.0f}%)")
+        else:
+            lines.append(f"   売上 {fmt_money(sales)}  /  {s['customers']}名")
+        if s.get("dept"):
+            dept_budgets = budgets.get("miyakojima_dept", {})
+            for dept_label, dept_data in s["dept"].items():
+                d_sales = dept_data.get("sales", 0)
+                d_budget = dept_budgets.get(dept_label, 0)
+                d_pct = d_sales / d_budget * 100 if d_budget else 0
+                d_icon_pct = "🏆" if d_pct >= 100 else "  " if d_pct >= 85 else "⚠️"
+                d_icon = {"ヘア": "💇", "アイ": "👁", "ネイル": "💅"}.get(dept_label, "・")
+                lines.append(f"     {d_icon} {dept_label}: {fmt_money(d_sales)} / {fmt_money(d_budget)} ({d_pct:.0f}%) {d_icon_pct}")
+        lines.append("")
+    total_pct = data["total_sales"] / total_budget * 100 if total_budget else 0
+    lines += [
+        SEP,
+        "✨ 全社合計",
+        SEP,
+        "",
+        f"売上     {fmt_money_short(data['total_sales'])}",
+    ]
+    if total_budget > 0:
+        lines.append(f"予算     {fmt_money_short(total_budget)} ({total_pct:.0f}%)")
+        lines.append(f"予算達成 {achieved}/{total_stores_with_budget} 店舗")
+    lines += [
+        f"客数     {data['total_customers']:,}名",
+        "",
+        SEP,
+        "",
+        "🔗 ダッシュボード",
+        HANABI_URL,
+    ]
+    return "\n".join(lines)
+
+
+# ===================== ナイスネイル 月終了サマリー =====================
+def aggregate_nicenail_specific_month(target_ym: str) -> dict:
+    """ナイスネイル: 指定月 (YYYYMM) の実績を集計"""
+    if not NICENAIL_HTML.exists() or not NICENAIL_TARGETS.exists():
+        return {}
+    try:
+        html = NICENAIL_HTML.read_text(encoding="utf-8")
+        mr = extract_monthly_records(html)
+        if not mr:
+            return {}
+        ym_key = f"{target_ym[:4]}-{target_ym[4:6]}"
+        records = mr.get(ym_key, [])
+        if not records:
+            return {}
+        records = [r for r in records if not r.get("is_cancel_only")]
+        targets_data = json.loads(NICENAIL_TARGETS.read_text(encoding="utf-8"))
+        # 月別 targets: stores の history か stores 直
+        history = targets_data.get("history", {})
+        if target_ym in history:
+            targets = history[target_ym].get("stores", {})
+        else:
+            targets = targets_data.get("stores", {})
+
+        by_store = defaultdict(lambda: {"sales": 0, "visits": 0, "options": 0, "tenhan": 0})
+        for r in records:
+            s = r.get("store", "")
+            by_store[s]["sales"] += r.get("amount", 0)
+            by_store[s]["visits"] += 1
+            by_store[s]["options"] += r.get("options", 0)
+            by_store[s]["tenhan"] += r.get("tenhan", 0)
+
+        stores_result = []
+        total = {"sales": 0, "visits": 0, "options": 0, "budget": 0, "target": 0}
+        achieved_budget = 0
+        achieved_target = 0
+        for store_full, agg in by_store.items():
+            if store_full not in targets:
+                continue
+            t = targets[store_full]
+            budget = t.get("budget", 0)
+            target = t.get("target", 0)
+            budget_pct = agg["sales"] / budget * 100 if budget else 0
+            target_pct = agg["sales"] / target * 100 if target else 0
+            if budget_pct >= 100: achieved_budget += 1
+            if target_pct >= 100: achieved_target += 1
+            stores_result.append({
+                "store": store_full.replace("店", ""),
+                "sales": agg["sales"],
+                "visits": agg["visits"],
+                "options": agg["options"],
+                "budget": budget,
+                "target": target,
+                "budget_pct": budget_pct,
+                "target_pct": target_pct,
+            })
+            total["sales"] += agg["sales"]
+            total["visits"] += agg["visits"]
+            total["options"] += agg["options"]
+            total["budget"] += budget
+            total["target"] += target
+        # 予算達成率順
+        stores_result.sort(key=lambda x: -x["budget_pct"])
+        return {
+            "ym": target_ym,
+            "stores": stores_result,
+            "total": total,
+            "achieved_budget": achieved_budget,
+            "achieved_target": achieved_target,
+            "store_count": len(stores_result),
+            "avg_total": total["sales"] // total["visits"] if total["visits"] else 0,
+            "op_pct_total": total["options"] / total["visits"] * 100 if total["visits"] else 0,
+        }
+    except Exception as e:
+        print(f"  warn: ナイスネイル 月別集計失敗: {e}", file=sys.stderr)
+        return {}
+
+
+def build_nicenail_monthend(target_ym: str = None) -> str:
+    """ナイスネイル 月終了サマリー (前月確定値)"""
+    now = _now()
+    if target_ym is None:
+        py = now.year if now.month > 1 else now.year - 1
+        pm = now.month - 1 if now.month > 1 else 12
+        target_ym = f"{py}{pm:02d}"
+    data = aggregate_nicenail_specific_month(target_ym)
+    if not data:
+        return ""
+    y, m = target_ym[:4], int(target_ym[4:6])
+    lines = [
+        f"🏁 ナイスネイルFC {y}/{m}月 確定",
+        fmt_date_label(now),
+        "",
+        SEP,
+        f"📊 {y}/{m}月 最終結果 (予算達成率順)",
+        SEP,
+        "",
+        "🏪 店舗別",
+    ]
+    for r in data["stores"]:
+        icon = "🏆" if r["budget_pct"] >= 100 else "🏪" if r["budget_pct"] >= 85 else "⚠️"
+        lines.append(f"{icon} {r['store']:<5} 予算 {r['budget_pct']:>3.0f}% / 目標 {r['target_pct']:>3.0f}%  {fmt_money(r['sales'])}")
+    total = data["total"]
+    total_budget_pct = total["sales"] / total["budget"] * 100 if total["budget"] else 0
+    total_target_pct = total["sales"] / total["target"] * 100 if total["target"] else 0
+    lines += [
+        "",
+        SEP,
+        "✨ 全社サマリー",
+        SEP,
+        "",
+        f"売上       {fmt_money_short(total['sales'])}",
+        f"予算       {fmt_money_short(total['budget'])}  ({total_budget_pct:.0f}%)",
+        f"目標       {fmt_money_short(total['target'])}  ({total_target_pct:.0f}%)",
+        f"予算達成   {data['achieved_budget']}/{data['store_count']} 店舗",
+        f"目標達成   {data['achieved_target']}/{data['store_count']} 店舗",
+        f"客数       {total['visits']:,}名",
+        f"客単価     {fmt_money(data['avg_total'])}",
+        f"OP比率     {data['op_pct_total']:.1f}%",
+        "",
+        SEP,
+        "",
+        "🔗 ダッシュボード",
+        NICENAIL_URL,
+    ]
     return "\n".join(lines)
 
 
@@ -396,8 +842,16 @@ def detect_highlights(project: str) -> list[str]:
 
 # ===================== エントリポイント =====================
 def main():
+    # --dry-run フラグ抽出 (sys.argv から除去)
+    dry_run = "--dry-run" in sys.argv
+    if dry_run:
+        sys.argv = [a for a in sys.argv if a != "--dry-run"]
+
     if len(sys.argv) < 3:
         print(__doc__)
+        print("\n使い方:")
+        print("  notify_lineworks.py {hanabi|nicenail} {success|failure|test|lastweek|monthend} [args] [--dry-run]")
+        print("  --dry-run: 送信せず stdout にメッセージを出力 (確認用)")
         sys.exit(1)
 
     project = sys.argv[1]
@@ -407,28 +861,48 @@ def main():
         print(f"未知の project: {project} (hanabi or nicenail)", file=sys.stderr)
         sys.exit(1)
 
-    cfg = load_lineworks_config(project)
-
+    msg = None
     if mode == "success":
         highlights = detect_highlights(project)
         if project == "hanabi":
             msg = build_hanabi_success(highlights)
         else:
             msg = build_nicenail_success(highlights)
-        ok = send_text(cfg, msg)
     elif mode == "failure":
         step = sys.argv[3] if len(sys.argv) > 3 else "不明なステップ"
         error_msg = sys.argv[4] if len(sys.argv) > 4 else "不明なエラー"
         log_file = sys.argv[5] if len(sys.argv) > 5 else ""
         msg = build_failure_message(project, step, error_msg, log_file)
-        ok = send_text(cfg, msg)
     elif mode == "test":
         msg = f"🧪 {project} 通知テスト  {datetime.now(JST).strftime('%Y/%m/%d %H:%M:%S')}\nLINE WORKS Bot 接続確認"
-        ok = send_text(cfg, msg)
+    elif mode == "lastweek":
+        # 残り1週間 アラート
+        if project == "hanabi":
+            msg = build_hanabi_lastweek()
+        else:
+            msg = build_nicenail_lastweek()
+    elif mode == "monthend":
+        # 月終了サマリー (前月分)
+        target_ym = sys.argv[3] if len(sys.argv) > 3 else None
+        if project == "hanabi":
+            msg = build_hanabi_monthend(target_ym)
+        else:
+            msg = build_nicenail_monthend(target_ym)
     else:
         print(f"未知の mode: {mode}", file=sys.stderr)
         sys.exit(1)
 
+    if not msg:
+        print(f"✗ {project} {mode} メッセージ生成失敗 (データ不足等)", file=sys.stderr)
+        sys.exit(1)
+
+    if dry_run:
+        print(msg)
+        print(f"\n--- (dry-run: 上記メッセージは送信していません) ---")
+        return
+
+    cfg = load_lineworks_config(project)
+    ok = send_text(cfg, msg)
     if ok:
         print(f"✓ {project} {mode} 通知 送信成功")
     else:
