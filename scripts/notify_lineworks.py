@@ -124,7 +124,7 @@ def pace_icon(fc: float) -> str:
 
 # ===================== HANABI 集計 =====================
 HANABI_DATA = Path("/Users/yoheimizuno/hanabi-dashboard/docs/data.json")
-HANABI_URL = "https://hanabi-board.github.io/hanabi-dashboard/"
+HANABI_URL = "https://dashboard.hanabi2020.co.jp/"
 
 
 def aggregate_hanabi() -> dict:

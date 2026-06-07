@@ -3,7 +3,7 @@
 HANABI グループ用 経営ダッシュボード。 サロン事業部とは完全独立。
 毎朝3分で経営の全体像を把握する CEO ビュー。
 
-🔗 **公開URL**: https://hanabi-board.github.io/hanabi-dashboard/
+🔗 **公開URL**: https://dashboard.hanabi2020.co.jp/
 
 ## ローカル起動
 

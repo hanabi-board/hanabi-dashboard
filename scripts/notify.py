@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DASHBOARD_URL = "https://hanabi-board.github.io/hanabi-dashboard/"
+DASHBOARD_URL = "https://dashboard.hanabi2020.co.jp/"
 
 
 def load_env():
