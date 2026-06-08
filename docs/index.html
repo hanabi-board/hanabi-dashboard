@@ -2569,6 +2569,7 @@ async function saveRecruitForm(e) {
       // DATA.recruitment も最新版で更新 (次回保存も最新基準に)
       DATA.recruitment = cleaned;
       mergeLocalRecruitOverrides();
+      renderRecruitTab();  // 🔄 push 成功で override 消えたので バナー再描画 (= 警告バナー非表示化)
       showToast("✓ GitHub反映成功 · 他端末にも順次反映 (1-3分)", "good");
     } catch (err) {
       showToast("⚠️ GitHub反映失敗: " + err.message + " (ローカル保存は維持)", "error");
@@ -2604,6 +2605,7 @@ async function deleteRecruitCurrent() {
       const o2 = _loadRecruitOverrides();
       delete o2[id];  // override no longer needed
       _saveRecruitOverrides(o2);
+      renderRecruitTab();  // 🔄 push 成功で override 消えたので バナー再描画
       showToast("✓ GitHub反映成功", "good");
     } catch (err) {
       showToast("⚠️ GitHub反映失敗: " + err.message, "error");
