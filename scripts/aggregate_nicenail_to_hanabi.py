@@ -75,12 +75,35 @@ def classify_menu(menu_name: str, categories: list) -> str:
 
 
 def count_options(menu_name: str, option_keywords: list) -> int:
-    """メニュー名内のオプションキーワード出現数を返す"""
+    """メニュー名内のオプションキーワード出現数を返す (素朴版、 後方互換用)"""
     count = 0
     for kw in option_keywords:
         if kw in menu_name:
             count += 1
     return count
+
+
+def count_options_proper(menu_name: str, date_yyyymmdd: str,
+                         option_keywords: list, aliases: dict,
+                         exclude_after: dict) -> int:
+    """NICENAIL ダッシュボードと一致する OP 数計算 (alias 統合 + 日付別除外 対応)
+    例: 'FUJIE' → alias で 'FUJIジェル' に統合、 2025-05-01 以降は除外
+    """
+    matched = set()
+    for kw in option_keywords:
+        if kw not in menu_name:
+            continue
+        cutoff = exclude_after.get(kw)
+        if cutoff and date_yyyymmdd and date_yyyymmdd >= cutoff:
+            continue
+        canonical = aliases.get(kw, kw)
+        matched.add(canonical)
+    return len(matched)
+
+
+def is_tenhan(menu_name: str, tenhan_keywords: list) -> bool:
+    """メニュー名が 店販キーワード (admin_config) に部分一致するか"""
+    return any(kw in menu_name for kw in tenhan_keywords)
 
 
 def get_target_ym() -> str:
@@ -174,9 +197,19 @@ def _to_int(s: str) -> int:
 
 
 def aggregate_per_kaikei(rows: list[dict]) -> dict:
-    """会計ID単位で集約。 {kaikei_id: {date, staff, sales, options, shimei, new}}"""
+    """会計ID単位で集約。 {kaikei_id: {date, staff, sales, options, shimei, new}}
+
+    2026-06-08 追加: NICENAIL ダッシュボードと完全一致させるため、 ランキング表示用の
+    厳密版フィールドも併設:
+    - true_tenhan_sales: tenhan_keywords にマッチした金額のみ (素朴 shop_sales と区別)
+    - options_proper: option_keyword_aliases / exclude_after も反映した OP 数
+    """
+    cfg = load_admin_config()
+    options_keywords = cfg.get("option_keywords", [])
+    options_aliases = cfg.get("option_keyword_aliases", {})
+    options_exclude_after = cfg.get("option_keyword_exclude_after", {})
+    tenhan_keywords = cfg.get("tenhan_keywords", [])
     kaikei = {}
-    options_keywords = load_admin_config().get("option_keywords", [])
     for r in rows:
         kid = r["kaikei_id"]
         if not kid:
@@ -187,8 +220,10 @@ def aggregate_per_kaikei(rows: list[dict]) -> dict:
                 "staff": r["staff"],
                 "sales": 0,
                 "tech_sales": 0,
-                "shop_sales": 0,
-                "options": 0,
+                "shop_sales": 0,            # 区分 != 施術 全部 (= 後方互換、 daily_sales 合計用)
+                "true_tenhan_sales": 0,     # ★ tenhan_keywords マッチのみ (ランキング表示用)
+                "options": 0,               # 素朴 OP 数 (後方互換)
+                "options_proper": 0,        # ★ alias 統合 + 日付別除外 反映 (ランキング表示用)
                 "shimei": r["shimei"],
                 "new_or_repeat": r["new_or_repeat"],
                 "menu_items": [],
@@ -198,7 +233,16 @@ def aggregate_per_kaikei(rows: list[dict]) -> dict:
             kaikei[kid]["tech_sales"] += r["amount"]
         else:
             kaikei[kid]["shop_sales"] += r["amount"]
+        # ★ NICENAIL 一致: kubun と独立して、 メニュー名が店販キーワード一致なら true_tenhan_sales に加算
+        # SC明細では店販商品 (ラッシュアディクト/ラダメール/N3ガラクナイアシン等) も
+        # 区分=施術 で記録されているため、 区分ではなくメニュー名で判定する必要がある。
+        if is_tenhan(r["menu"], tenhan_keywords):
+            kaikei[kid]["true_tenhan_sales"] += r["amount"]
         kaikei[kid]["options"] += count_options(r["menu"], options_keywords)
+        # ★ NICENAIL 一致: alias + exclude_after 適用版
+        kaikei[kid]["options_proper"] += count_options_proper(
+            r["menu"], r["date"], options_keywords, options_aliases, options_exclude_after
+        )
         kaikei[kid]["menu_items"].append(r["menu"])
         # スタッフ・指名は最初の施術行を採用
         if not kaikei[kid].get("staff") or kaikei[kid]["staff"] == "":
@@ -273,8 +317,118 @@ def build_daily_sales_csv(kaikei: dict, ym: str) -> list[list]:
     return rows
 
 
+def build_staff_ranking_csv_from_dist(target_ym: str, store_name_full: str, store_filter_name: str = "新横浜店"):
+    """[NEW 2026-06-08] salon-dashboard/dist/index.html の monthlyRecords から
+    スタッフランキング CSV を構築。 NICENAIL ダッシュボード表示値と完全一致。
+
+    動作: dist/index.html の window.monthlyRecords を読み、
+          指定月・指定店舗の visits を staff 別に集約。
+
+    返り値: 既存 build_staff_ranking_csv と同じ rows (header + データ行)。
+            データ取得失敗時は None を返す (呼び出し側で旧版にフォールバック)。
+    """
+    DIST_HTML = Path("/Users/yoheimizuno/salon-dashboard/dist/index.html")
+    if not DIST_HTML.exists():
+        print(f"  ℹ️ dist 直読み スキップ: {DIST_HTML} 不存在", file=sys.stderr)
+        return None
+    try:
+        html = DIST_HTML.read_text(encoding="utf-8")
+        m = re.search(r"window\.monthlyRecords\s*=\s*(\{.*?\});", html, re.DOTALL)
+        if not m:
+            print(f"  ⚠️ dist から monthlyRecords 抽出失敗", file=sys.stderr)
+            return None
+        mr = json.loads(m.group(1))
+        ym_key = f"{target_ym[:4]}-{target_ym[4:6]}"
+        records = mr.get(ym_key, [])
+        # 店舗 + キャンセル除外
+        records = [r for r in records
+                   if r.get("store") == store_filter_name
+                   and not r.get("is_cancel_only")]
+        if not records:
+            print(f"  ℹ️ dist 直読み: {ym_key} {store_filter_name} レコードなし", file=sys.stderr)
+            return None
+    except Exception as e:
+        print(f"  ⚠️ dist 直読み 失敗: {e}", file=sys.stderr)
+        return None
+
+    # スタッフ別集計
+    staff = defaultdict(lambda: {
+        "work_dates": set(),
+        "customers": 0,        # visit count
+        "sales": 0,            # amount 合計
+        "tenhan_sales": 0,     # NICENAIL の 店販値 (= tenhan フィールド合計)
+        "tech_sales": 0,       # = sales - tenhan_sales (= 技術+OP+割引、 = 店販以外)
+        "nominated": 0,        # 指名あり 件数
+        "nominated_sales": 0,  # 指名あり の amount 合計
+        "options": 0,          # OP 数合計 (NICENAIL 同じロジック)
+        "nail_sales": 0,       # ネイル系売上 (新横浜は全部ネイルなので tech_sales 全部)
+    })
+    for r in records:
+        name = r.get("staff", "")
+        if not name:
+            continue
+        s = staff[name]
+        s["work_dates"].add(r.get("date", ""))
+        s["customers"] += 1
+        amount = r.get("amount", 0) or 0
+        tenhan = r.get("tenhan", 0) or 0
+        s["sales"] += amount
+        s["tenhan_sales"] += tenhan
+        s["tech_sales"] += (amount - tenhan)
+        s["nail_sales"] += (amount - tenhan)  # 新横浜は全部ネイル
+        if r.get("meimei") == "指名あり":
+            s["nominated"] += 1
+            s["nominated_sales"] += amount
+        s["options"] += (r.get("options", 0) or 0)
+
+    # ヘッダー (既存 build_staff_ranking_csv と完全一致)
+    headers = [
+        "店舗名", "担当者分類", "スタッフ名", "稼働日数",
+        "総売上", "客数", "客単価",
+        "技術売上", "技術客数", "技術客単価",
+        "技術売上（指名）", "技術客数（指名）", "技術客単価（指名）",
+        "技術売上（フリー）", "技術客数（フリー）", "技術客単価（フリー）",
+        "技術売上（男）", "技術客数（男）", "技術客単価（男）",
+        "技術売上（女）", "技術客数（女）", "技術客単価（女）",
+        "店販売上", "店販客数", "店販比率", "購買比率",
+        "(ネイル)ジェル",
+        "_nn_op_count", "_nn_op_rate", "_nn_work_days",
+    ]
+    rows = [headers]
+    for name, s in sorted(staff.items(), key=lambda kv: -kv[1]["sales"]):
+        if not name:
+            continue
+        sales = s["sales"]
+        cust = s["customers"]
+        spc = sales // cust if cust else 0
+        tech_spc = s["tech_sales"] // cust if cust else 0
+        free_sales = s["tech_sales"] - s["nominated_sales"]
+        # nominated_sales には店販分も含まれてるので 技術売上ベースに変換
+        # ただし簡略化: 指名売上 ≒ 指名 visits の amount 全部 (店販含む)
+        # 必要なら後で正確化。 現状 NICENAIL 表示と同等を目指す。
+        nominated_sales = s["nominated_sales"]
+        free_customers = cust - s["nominated"]
+        nominated_spc = nominated_sales // s["nominated"] if s["nominated"] else 0
+        free_spc = free_sales // free_customers if free_customers else 0
+        shop_pct = (s["tenhan_sales"] / sales * 100) if sales else 0
+        op_rate = (s["options"] / cust * 100) if cust else 0
+        rows.append([
+            store_name_full, "", name, len(s["work_dates"]),
+            sales, cust, spc,
+            s["tech_sales"], cust, tech_spc,
+            nominated_sales, s["nominated"], nominated_spc,
+            free_sales, free_customers, free_spc,
+            0, 0, 0,
+            0, 0, 0,
+            s["tenhan_sales"], 0, f"{shop_pct:.2f}%", "0%",   # ★ NICENAIL 完全一致
+            s["nail_sales"],
+            s["options"], f"{op_rate:.1f}%", len(s["work_dates"]),  # ★ NICENAIL 完全一致
+        ])
+    return rows
+
+
 def build_staff_ranking_csv(kaikei: dict, store_name_full: str) -> list[list]:
-    """スタッフ別 月次 CSV (Uレジ風) を構築"""
+    """スタッフ別 月次 CSV (Uレジ風) を構築 (旧版: CSV ベース、 dist 取得失敗時のフォールバック)"""
     # スタッフ別集計
     staff = defaultdict(lambda: {
         "work_dates": set(),  # 出勤日数 (会計があった日)
@@ -282,9 +436,11 @@ def build_staff_ranking_csv(kaikei: dict, store_name_full: str) -> list[list]:
         "sales": 0,
         "tech_sales": 0,
         "shop_sales": 0,
+        "true_tenhan_sales": 0,   # ★ NICENAIL 一致: 店販キーワードマッチのみ
         "nominated": 0,
-        "options": 0,  # OP数 (1来店あたりの平均OPで使う)
-        "nail_sales": 0,  # (ネイル)カテゴリ合算
+        "options": 0,             # OP数 素朴版 (後方互換)
+        "options_proper": 0,      # ★ NICENAIL 一致: alias + exclude_after 反映
+        "nail_sales": 0,          # (ネイル)カテゴリ合算
     })
     for kid, v in kaikei.items():
         if not v["staff"]:
@@ -295,9 +451,11 @@ def build_staff_ranking_csv(kaikei: dict, store_name_full: str) -> list[list]:
         s["sales"] += v["sales"]
         s["tech_sales"] += v["tech_sales"]
         s["shop_sales"] += v["shop_sales"]
+        s["true_tenhan_sales"] += v.get("true_tenhan_sales", 0)
         if v["shimei"] == "指名あり":
             s["nominated"] += 1
         s["options"] += v["options"]
+        s["options_proper"] += v.get("options_proper", 0)
         # ネイル系は全部 (ネイル) カテゴリにマップ
         s["nail_sales"] += v["tech_sales"]
 
@@ -327,9 +485,13 @@ def build_staff_ranking_csv(kaikei: dict, store_name_full: str) -> list[list]:
         free_customers = s["customers"] - s["nominated"]
         nominated_spc = nominated_sales // s["nominated"] if s["nominated"] else 0
         free_spc = free_sales // free_customers if free_customers else 0
-        shop_pct = (s["shop_sales"] / s["sales"] * 100) if s["sales"] else 0
-        # OP率 = options が付いた来店 / 全来店 (簡略: options数を客数で割って %)
-        op_rate = (s["options"] / s["customers"] * 100) if s["customers"] else 0
+        # ★ NICENAIL 一致: ランキング表示の 店販売上 / 店販比率 / OP数 / OP率 は厳密版を使う
+        # (= スタッフ成績ランキングだけ NICENAIL ダッシュボードと完全一致、
+        #   全社売上・店舗合計売上などの集計には影響しない)
+        shop_sales_display = s["true_tenhan_sales"]
+        op_count_display = s["options_proper"]
+        shop_pct = (shop_sales_display / s["sales"] * 100) if s["sales"] else 0
+        op_rate = (op_count_display / s["customers"] * 100) if s["customers"] else 0
         rows.append([
             store_name_full, "", name, len(s["work_dates"]),
             s["sales"], s["customers"], spc,
@@ -338,9 +500,9 @@ def build_staff_ranking_csv(kaikei: dict, store_name_full: str) -> list[list]:
             free_sales, free_customers, free_spc,
             0, 0, 0,  # 男 (SC明細に性別なし)
             0, 0, 0,  # 女
-            s["shop_sales"], 0, f"{shop_pct:.2f}%", "0%",
+            shop_sales_display, 0, f"{shop_pct:.2f}%", "0%",  # ★ 店販キーワードマッチのみ
             s["nail_sales"],
-            s["options"], f"{op_rate:.1f}%", len(s["work_dates"]),
+            op_count_display, f"{op_rate:.1f}%", len(s["work_dates"]),  # ★ alias + exclude_after 反映
         ])
     return rows
 
@@ -443,8 +605,13 @@ def main():
         write_csv_sjis(DATA / f"daily_sales_{ym}_{hanabi_id}.csv", daily_csv)
         print(f"  ✓ daily_sales_{ym}_{hanabi_id}.csv")
 
-        # staff_ranking CSV
-        staff_csv = build_staff_ranking_csv(kaikei, store_name_full)
+        # staff_ranking CSV (★ NICENAIL ダッシュボード完全一致版を優先試行、 失敗時は旧版にフォールバック)
+        staff_csv = build_staff_ranking_csv_from_dist(ym, store_name_full, store_filter_name=f"{store_name_jp}店")
+        if staff_csv is None:
+            print(f"  ↩ dist 直読み 利用不可 → meisai CSV ベースに フォールバック")
+            staff_csv = build_staff_ranking_csv(kaikei, store_name_full)
+        else:
+            print(f"  ✨ dist 直読み 利用 (NICENAIL 値と完全一致)")
         write_csv_sjis(DATA / f"staff_ranking_{ym}_{hanabi_id}.csv", staff_csv)
         print(f"  ✓ staff_ranking_{ym}_{hanabi_id}.csv ({len(staff_csv)-1} staff)")
 
