@@ -76,24 +76,28 @@ if [ "$STASHED" = "1" ]; then
   git stash pop 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ stash pop 失敗 (手動確認: git stash list)"
 fi
 
+# 新横浜 再集計 (= daily_sales/staff_ranking/menu/extras を salon 最新で再生成)
 python3 scripts/aggregate_nicenail_to_hanabi.py "$YM" 2>&1 | tee -a "$LOG_FILE"
-python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
 
-# --- Step 3: 差分があれば push (新横浜関連 + data.json のみ) ---
-TARGETS=(
+# --- Step 3: 新横浜の「実データ」 に差分があるか判定 ---
+# 🚨 重要: docs/data.json は generate.py が毎回 generated_at (timestamp) を書き換えるため、
+#   data.json で差分判定すると 中身が同じでも毎日 誤発火 + 誤通知する。
+#   そこで 新横浜の集約結果 (staff_ranking/daily_sales/menu/extras) だけで判定し、
+#   実データが本当に変わった時のみ generate.py → push する。
+SRC_FILES=(
   "data/daily_sales_${YM}_shinyokohama.csv"
   "data/staff_ranking_${YM}_shinyokohama.csv"
   "data/menu_${YM}_shinyokohama.json"
   "data/nicenail_extras_${YM}_shinyokohama.json"
-  "docs/data.json"
 )
-if git diff --quiet -- "${TARGETS[@]}"; then
+if git diff --quiet -- "${SRC_FILES[@]}"; then
   log "  差分なし → 朝の時点で既に最新だった (正常)、 何もしない"
   exit 0
 fi
 
-log "  🔧 差分あり → 朝は新横浜が古かった。 最新 salon データで修復して push"
-git add "${TARGETS[@]}"
+log "  🔧 新横浜の実データに差分あり → 朝は古かった。 data.json 再生成して push"
+python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
+git add "${SRC_FILES[@]}" docs/data.json
 git -c user.email=hanabi-board@local -c user.name="HANABI SelfHeal" \
     commit -q -m "auto(selfheal): 新横浜 最新 salon データで再集計 $(date '+%Y-%m-%d %H:%M')"
 if git push -q origin main; then
