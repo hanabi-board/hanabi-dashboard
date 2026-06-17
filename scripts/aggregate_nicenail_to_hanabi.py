@@ -27,14 +27,16 @@ import sys
 import csv
 import json
 import re
+import os
 from pathlib import Path
-from datetime import date
+from datetime import date, datetime
 from collections import defaultdict
 
 # === 設定 ===
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 NICENAIL_DATA = Path("/Users/yoheimizuno/salon-dashboard/data")
+SALON_DIST = Path("/Users/yoheimizuno/salon-dashboard/dist/index.html")
 
 # ナイスネイル店舗名 → HANABI 店舗ID
 NICENAIL_TO_HANABI = {
@@ -72,6 +74,27 @@ def classify_menu(menu_name: str, categories: list) -> str:
                 if kw == menu_name:
                     return cat["name"]
     return "未分類"
+
+
+def is_salon_dist_fresh() -> bool:
+    """salon-dashboard/dist/index.html が「今日更新済」 か判定。
+
+    2026-06-17 追加 (案2 鮮度ガード):
+    salon (NICENAIL) の auto-deploy が当日まだ完了していない (= dist が前日以前のまま) 状態で
+    HANABI が読むと、 新横浜の数字が古いまま焼き込まれる事故を検知するため。
+    （朝 salon がログイン不調等で遅延すると、 HANABI 8:30 が salon 完了前に走るケースがある）
+
+    判定: dist のファイル更新日 == 今日 なら fresh。
+          dist は salon パイプラインの最後 (download → generate_html) で書かれるため、
+          dist が今日付なら meisai CSV も dist も最新化済とみなせる。
+    """
+    if not SALON_DIST.exists():
+        return False
+    try:
+        mtime_date = datetime.fromtimestamp(SALON_DIST.stat().st_mtime).date()
+        return mtime_date == datetime.now().date()
+    except Exception:
+        return False
 
 
 def count_options(menu_name: str, option_keywords: list) -> int:
@@ -588,6 +611,11 @@ def write_json(path: Path, data):
 def main():
     ym = get_target_ym()
     print(f"=== ナイスネイル → HANABI 集約変換 (対象月: {ym}) ===")
+    # 案2 鮮度ガード: salon dist が本日未更新なら 警告 (= 新横浜が古い可能性、 案3 が後で自己修復)
+    salon_fresh = is_salon_dist_fresh()
+    if not salon_fresh:
+        print("  ⚠️ salon dist が本日未更新です (= NICENAIL の auto-deploy がまだ完了していない可能性)")
+        print("     → 新横浜の数字は前日のままになる場合があります。 selfheal.sh が salon 完了後に自動修復します。")
     total_processed = 0
     for store_name_jp, hanabi_id in NICENAIL_TO_HANABI.items():
         store_name_full = "ナイスネイル 新横浜店"  # ハードコード (1店舗のみ想定)

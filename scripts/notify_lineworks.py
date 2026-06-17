@@ -888,6 +888,31 @@ def main():
             msg = build_hanabi_monthend(target_ym)
         else:
             msg = build_nicenail_monthend(target_ym)
+    elif mode == "selfheal":
+        # 新横浜 自己修復 通知 (= 朝 salon 未完了で古かった数字を後から最新化した時)
+        now = _now()
+        data = aggregate_hanabi()
+        sk = None
+        if data:
+            for s in data.get("stores", []):
+                if s.get("label") == "ナイスネイル新横浜店":
+                    sk = s
+                    break
+        lines = [
+            "🔧 新横浜 自動修復 完了",
+            fmt_date_label(now),
+            "",
+            "朝の更新時に NICENAIL 側がまだ完了しておらず、",
+            "新横浜の数字が前日のままになっていたため、",
+            "最新データで自動的に再集計しました。",
+            "",
+        ]
+        if sk:
+            lines.append(f"🏪 {sk['label']}")
+            lines.append(f"  {fmt_money(sk['sales'])}  /  {sk['customers']}名")
+            lines.append("")
+        lines += ["🔗 ダッシュボード", HANABI_URL]
+        msg = "\n".join(lines)
     else:
         print(f"未知の mode: {mode}", file=sys.stderr)
         sys.exit(1)
