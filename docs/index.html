@@ -6361,6 +6361,7 @@ async function saveStaffProfileForm(e) {
     _saveStaffProfileOverrides(o2);
     DATA.staff_profiles = merged;
     mergeLocalStaffProfileOverrides();
+    renderStaffTab();  // 🔄 push 成功で override 消えたので バナー再描画 (= 未保存警告 非表示化)
     showToast("✓ プロフィール保存 (GitHub反映)", "good");
   } catch (err) {
     showToast("⚠️ GitHub反映失敗: " + err.message + " (ローカル保存は維持)", "error");
@@ -6394,6 +6395,7 @@ async function deleteStaffProfile() {
     const o2 = _loadStaffProfileOverrides();
     delete o2[name];
     _saveStaffProfileOverrides(o2);
+    renderStaffTab();  // 🔄 push 成功で override 消えたので バナー再描画
     showToast("✓ 削除完了 (GitHub反映)", "good");
   } catch (err) {
     showToast("⚠️ GitHub反映失敗: " + err.message + " (ローカル削除は維持)", "error");
