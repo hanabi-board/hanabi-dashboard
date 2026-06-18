@@ -308,14 +308,72 @@ def aggregate_nicenail() -> dict:
         # ターゲット
         targets = json.loads(NICENAIL_TARGETS.read_text(encoding="utf-8")).get("stores", {})
 
-        # 店舗別集計
+        # 店舗別集計 (visits/options/tenhan は通常集計、 sales は異動考慮で forecast 計算する)
         by_store = defaultdict(lambda: {"sales": 0, "visits": 0, "options": 0, "tenhan": 0})
+        # 店舗×スタッフ別 売上集計 (異動考慮 forecast 用)
+        sales_by_store_staff = defaultdict(lambda: defaultdict(int))
         for r in records:
             s = r.get("store", "")
             by_store[s]["sales"] += r.get("amount", 0)
             by_store[s]["visits"] += 1
             by_store[s]["options"] += r.get("options", 0)
             by_store[s]["tenhan"] += r.get("tenhan", 0)
+            sales_by_store_staff[s][r.get("staff", "")] += r.get("amount", 0)
+
+        # 異動履歴ロード (template.html の forecastStoreSalesForMonthEnd と同じ判定)
+        # ロジック: 当月内 since の異動について
+        #   - 異動出 (from===store): since前日まで日割り投影、 異動済(since<=elapsed)はMTDのみ
+        #   - 異動入 (to===store):   since以降の経過日で実績→月残日へ按分
+        #   - 通常スタッフ:           MTD × daysInMonth / elapsed
+        admin_cfg_path = Path("/Users/yoheimizuno/salon-dashboard/data/admin_config.json")
+        transfer_history = {}
+        if admin_cfg_path.exists():
+            try:
+                transfer_history = json.loads(admin_cfg_path.read_text(encoding="utf-8")).get("transfer_history", {})
+            except Exception:
+                transfer_history = {}
+        _y, _m = ym_key.split("-")
+        m_start = f"{_y}{_m}01"
+        m_end = f"{_y}{_m}{days_in_month:02d}"
+        def _base_name(s: str) -> str:
+            return re.sub(r"^[■□●▲★◆☆]+", "", s or "")
+        def _display_name(s: str) -> str:
+            return re.sub(r"^[■□●▲★◆☆]+", "", s or "")
+        def _forecast_store(store_full: str) -> int:
+            """ダッシュボードと同じロジックで店舗の月末売上見込みを返す (異動考慮)"""
+            if elapsed <= 0:
+                return 0
+            total_fc = 0
+            for staff, sales in sales_by_store_staff.get(store_full, {}).items():
+                entries = (
+                    transfer_history.get(_base_name(staff))
+                    or transfer_history.get(_display_name(staff))
+                    or transfer_history.get(staff)
+                    or []
+                )
+                in_month = None
+                for e in entries:
+                    since = (e.get("since") or "").replace("-", "")
+                    if since and m_start <= since <= m_end:
+                        in_month = e
+                        break
+                if in_month and in_month.get("from") == store_full:
+                    s_day = int(in_month.get("since", "")[-2:] or "0")
+                    days_at_this_store = s_day - 1
+                    if days_at_this_store <= 0:
+                        total_fc += sales
+                    elif days_at_this_store <= elapsed:
+                        total_fc += sales  # 既に異動済 → post-transfer 売上は新店舗側
+                    else:
+                        total_fc += round(sales * days_at_this_store / elapsed)
+                elif in_month and in_month.get("to") == store_full:
+                    s_day = int(in_month.get("since", "")[-2:] or "0")
+                    since_elapsed = max(1, elapsed - s_day + 1)
+                    since_total = days_in_month - s_day + 1
+                    total_fc += round(sales * since_total / since_elapsed)
+                else:
+                    total_fc += round(sales * days_in_month / elapsed)
+            return total_fc
 
         stores_result = []
         total = {"sales": 0, "visits": 0, "options": 0, "tenhan": 0, "budget": 0, "target": 0}
@@ -325,7 +383,7 @@ def aggregate_nicenail() -> dict:
             t = targets[store_full]
             budget = t.get("budget", 0)
             target = t.get("target", 0)
-            forecast = int(agg["sales"] * days_in_month / elapsed) if elapsed > 0 else 0
+            forecast = _forecast_store(store_full)
             stores_result.append({
                 "store": store_full.replace("店", ""),
                 "sales": agg["sales"],
@@ -344,7 +402,8 @@ def aggregate_nicenail() -> dict:
 
         # 目標進捗ペース順
         stores_result.sort(key=lambda x: -x["target_fc"])
-        forecast_total = int(total["sales"] * days_in_month / elapsed) if elapsed > 0 else 0
+        # 全社合計は店舗別 forecast (異動考慮済) の合計でダッシュボードと一致させる
+        forecast_total = sum(s["forecast"] for s in stores_result)
 
         return {
             "ym": ym_key.replace("-", ""),
