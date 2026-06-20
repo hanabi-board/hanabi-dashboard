@@ -267,23 +267,23 @@
       },
       "miyakojima_total": {
         "sales": 4922037,
-        "cost": 347993,
-        "ratio": 0.0707
+        "cost": 342602,
+        "ratio": 0.0696
       },
       "miyakojima_hair": {
         "sales": 1407536,
-        "cost": 130853,
-        "ratio": 0.093
+        "cost": 131273,
+        "ratio": 0.0933
       },
       "miyakojima_eye": {
         "sales": 2050856,
-        "cost": 80188,
-        "ratio": 0.0391
+        "cost": 78901,
+        "ratio": 0.0385
       },
       "miyakojima_nail": {
         "sales": 1290938,
-        "cost": 73352,
-        "ratio": 0.0568
+        "cost": 68828,
+        "ratio": 0.0533
       }
     }
   },
