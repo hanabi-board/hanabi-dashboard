@@ -219,9 +219,18 @@ def configure_and_download(page: Page, report: str, year_month: str, store_code:
         page.wait_for_load_state("networkidle", timeout=20000)
     except Exception:
         pass
-    # Wait for grid data + give time for icons to render. 8s padding is critical
-    # (debug confirmed 8s succeeds reliably; shorter waits fail intermittently).
-    time.sleep(8)
+    # 🚨 2026-06-29 修正: 全画面ローディングオーバーレイ (#loadingOverlay.page-loading) が
+    # 消えるまで明示的に待つ。
+    # 旧実装は固定 time.sleep(8) だったが、 2店舗目 (宮古島=002) は店舗切替の再読込 +
+    # 月末でデータ量増で 8秒では足りず、 overlay 残存中に disk アイコンをクリックして
+    # DL が始まらず失敗していた (綱島=001 のデータが残ったまま spinner 表示の状態)。
+    # overlay は読込中のみ DOM に存在し、 完了すると除去される (001 成功時は要素なし)。
+    try:
+        page.wait_for_selector("#loadingOverlay.page-loading", state="hidden", timeout=60000)
+    except Exception:
+        pass
+    # グリッドのアイコン描画が overlay 消滅直後に僅かに遅れる場合の安全パディング
+    time.sleep(3)
     page.screenshot(path=str(log_dir / f"results_{report}_{store_code}.png"), full_page=True)
     (log_dir / f"results_{report}_{store_code}.html").write_text(page.content(), encoding="utf-8")
 
