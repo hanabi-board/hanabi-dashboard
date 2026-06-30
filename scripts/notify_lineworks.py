@@ -451,8 +451,8 @@ def build_nicenail_success(highlights: list[str]) -> str:
             "", SEP, "✨ 全社サマリー", SEP, "",
             f"売上    {fmt_money_short(data['total']['sales'])}",
             f"予測    {fmt_money_short(data['forecast_total'])} (月末)",
-            f"  予算 進捗ペース {data['budget_fc_total']:.0f}% ({pace_icon(data['budget_fc_total'])})",
-            f"  目標 進捗ペース {data['target_fc_total']:.0f}% ({pace_icon(data['target_fc_total'])})",
+            f"  予算 進捗ペース {data['budget_fc_total']:.1f}% ({pace_icon(data['budget_fc_total'])})",
+            f"  目標 進捗ペース {data['target_fc_total']:.1f}% ({pace_icon(data['target_fc_total'])})",
             f"客数    {data['total']['visits']:,}名",
             f"客単価  {fmt_money(data['avg_total'])}",
             f"OP比率  {data['op_pct_total']:.1f}%",
@@ -522,7 +522,7 @@ def build_hanabi_lastweek_section(now: datetime = None, remaining_days: int = No
         pct = sales / budget * 100 if budget else 0
         total_sales += sales
         total_budget += budget
-        lines.append(f"🏪 {s['label']}  ({pct:.0f}%)")
+        lines.append(f"🏪 {s['label']}  ({pct:.1f}%)")
         lines.append(f"   残り {fmt_money(remaining)} → {fmt_money(per_day)}/日")
         if s.get("dept"):
             dept_budgets = budgets.get("miyakojima_dept", {})
@@ -533,13 +533,13 @@ def build_hanabi_lastweek_section(now: datetime = None, remaining_days: int = No
                 d_per_day = int(d_remaining / remaining_days) if remaining_days > 0 else 0
                 d_pct = d_sales / d_budget * 100 if d_budget else 0
                 d_icon = {"ヘア": "💇", "アイ": "👁", "ネイル": "💅"}.get(dept_label, "・")
-                lines.append(f"     {d_icon} {dept_label} ({d_pct:.0f}%) 残り {fmt_money(d_remaining)} → {fmt_money(d_per_day)}/日")
+                lines.append(f"     {d_icon} {dept_label} ({d_pct:.1f}%) 残り {fmt_money(d_remaining)} → {fmt_money(d_per_day)}/日")
         lines.append("")
     total_remaining = max(0, total_budget - total_sales)
     total_per_day = int(total_remaining / remaining_days) if remaining_days > 0 else 0
     total_pct = total_sales / total_budget * 100 if total_budget else 0
     lines += [
-        f"✨ 全社  予算 {total_pct:.0f}%  残り {fmt_money_short(total_remaining)} → {fmt_money(total_per_day)}/日",
+        f"✨ 全社  予算 {total_pct:.1f}%  残り {fmt_money_short(total_remaining)} → {fmt_money(total_per_day)}/日",
     ]
     return "\n".join(lines)
 
@@ -699,7 +699,7 @@ def build_hanabi_monthend(target_ym: str = None) -> str:
             icon = "🏪"
         lines.append(f"{icon} {s['label']}")
         if budget > 0:
-            lines.append(f"   売上 {fmt_money(sales)}  /  予算 {fmt_money(budget)}  ({pct:.0f}%)")
+            lines.append(f"   売上 {fmt_money(sales)}  /  予算 {fmt_money(budget)}  ({pct:.1f}%)")
         else:
             lines.append(f"   売上 {fmt_money(sales)}  /  {s['customers']}名")
         if s.get("dept"):
@@ -710,7 +710,7 @@ def build_hanabi_monthend(target_ym: str = None) -> str:
                 d_pct = d_sales / d_budget * 100 if d_budget else 0
                 d_icon_pct = "🏆" if d_pct >= 100 else "  " if d_pct >= 85 else "⚠️"
                 d_icon = {"ヘア": "💇", "アイ": "👁", "ネイル": "💅"}.get(dept_label, "・")
-                lines.append(f"     {d_icon} {dept_label}: {fmt_money(d_sales)} / {fmt_money(d_budget)} ({d_pct:.0f}%) {d_icon_pct}")
+                lines.append(f"     {d_icon} {dept_label}: {fmt_money(d_sales)} / {fmt_money(d_budget)} ({d_pct:.1f}%) {d_icon_pct}")
         lines.append("")
     total_pct = data["total_sales"] / total_budget * 100 if total_budget else 0
     lines += [
@@ -721,7 +721,7 @@ def build_hanabi_monthend(target_ym: str = None) -> str:
         f"売上     {fmt_money_short(data['total_sales'])}",
     ]
     if total_budget > 0:
-        lines.append(f"予算     {fmt_money_short(total_budget)} ({total_pct:.0f}%)")
+        lines.append(f"予算     {fmt_money_short(total_budget)} ({total_pct:.1f}%)")
         lines.append(f"予算達成 {achieved}/{total_stores_with_budget} 店舗")
     lines += [
         f"客数     {data['total_customers']:,}名",
@@ -834,7 +834,8 @@ def build_nicenail_monthend(target_ym: str = None) -> str:
     ]
     for r in data["stores"]:
         icon = "🏆" if r["budget_pct"] >= 100 else "🏪" if r["budget_pct"] >= 85 else "⚠️"
-        lines.append(f"{icon} {r['store']:<5} 予算 {r['budget_pct']:>3.0f}% / 目標 {r['target_pct']:>3.0f}%  {fmt_money(r['sales'])}")
+        # 🆕 2026-07-01 小数1桁表示 (99.6%が「100%」と丸まって未達アイコンと矛盾するのを解消)
+        lines.append(f"{icon} {r['store']:<5} 予算 {r['budget_pct']:>5.1f}% / 目標 {r['target_pct']:>5.1f}%  {fmt_money(r['sales'])}")
     total = data["total"]
     total_budget_pct = total["sales"] / total["budget"] * 100 if total["budget"] else 0
     total_target_pct = total["sales"] / total["target"] * 100 if total["target"] else 0
@@ -845,8 +846,8 @@ def build_nicenail_monthend(target_ym: str = None) -> str:
         SEP,
         "",
         f"売上       {fmt_money_short(total['sales'])}",
-        f"予算       {fmt_money_short(total['budget'])}  ({total_budget_pct:.0f}%)",
-        f"目標       {fmt_money_short(total['target'])}  ({total_target_pct:.0f}%)",
+        f"予算       {fmt_money_short(total['budget'])}  ({total_budget_pct:.1f}%)",
+        f"目標       {fmt_money_short(total['target'])}  ({total_target_pct:.1f}%)",
         f"予算達成   {data['achieved_budget']}/{data['store_count']} 店舗",
         f"目標達成   {data['achieved_target']}/{data['store_count']} 店舗",
         f"客数       {total['visits']:,}名",
