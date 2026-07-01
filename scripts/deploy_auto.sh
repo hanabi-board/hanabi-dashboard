@@ -173,11 +173,16 @@ log "==== done ===="
 # 成功メール (毎朝必ず送信)
 FINISH_TIME=$(date '+%Y-%m-%d %H:%M:%S')
 # CSV件数の簡易サマリー (data/ の最新 CSV を数える)
-TSU_CSV=$(ls -1 "$ROOT/data/daily_sales_${YM}_tsunashima.csv" 2>/dev/null)
-ELE_CSV=$(ls -1 "$ROOT/data/daily_sales_${YM}_miyakojima.csv" 2>/dev/null)
-TSU_CNT=$([ -n "$TSU_CSV" ] && wc -l < "$TSU_CSV" | tr -d ' ' || echo "—")
-ELE_CNT=$([ -n "$ELE_CSV" ] && wc -l < "$ELE_CSV" | tr -d ' ' || echo "—")
-SUMMARY="${YM} CSV: 綱島=${TSU_CNT}行 / 宮古島=${ELE_CNT}行 (git push: ${PUSHED})"
+# 🚨 2026-07-01 修正: 月初日 (DAY=01) は前月データのみDL済で当月($YM=7月)CSVは未生成。
+#   旧実装は $YM を ls して「ファイルなし→exit 1→ERR trap 誤発火」で、
+#   本体は push 成功済なのに失敗通知が飛ぶ月初誤報バグがあった。
+#   → 月初は前月($PREV_YM)を参照 + ls ではなく -f テストで ERR trap を回避。
+if [ "$DAY" = "01" ]; then SUMMARY_YM="$PREV_YM"; else SUMMARY_YM="$YM"; fi
+TSU_CSV="$ROOT/data/daily_sales_${SUMMARY_YM}_tsunashima.csv"
+ELE_CSV="$ROOT/data/daily_sales_${SUMMARY_YM}_miyakojima.csv"
+TSU_CNT=$([ -f "$TSU_CSV" ] && wc -l < "$TSU_CSV" | tr -d ' ' || echo "—")
+ELE_CNT=$([ -f "$ELE_CSV" ] && wc -l < "$ELE_CSV" | tr -d ' ' || echo "—")
+SUMMARY="${SUMMARY_YM} CSV: 綱島=${TSU_CNT}行 / 宮古島=${ELE_CNT}行 (git push: ${PUSHED})"
 python3 "$ROOT/scripts/notify.py" success "$FINISH_TIME" "$SUMMARY" 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ メール送信失敗"
 # LINE WORKS Bot にも成功通知 (店舗別実績 + 全社合計)
 python3 "$ROOT/scripts/notify_lineworks.py" hanabi success 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ LINE WORKS 通知失敗"
