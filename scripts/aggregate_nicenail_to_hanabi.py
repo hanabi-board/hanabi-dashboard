@@ -16,7 +16,8 @@
 設計:
 - meisai CSV を 1取引=1行 で読み込み (現状 SC明細形式)
 - 同一会計IDの複数行は「1来店」として扱う
-- 売上 = 金額合計 (税抜は SC 側で既に税抜出力)
+- 売上 = 金額合計。 ⚠️ salon-dashboard の明細/monthlyRecords は【税込】。 HANABI は全店【税抜】表示のため、
+  取込時に _to_zeinuki() で ÷1.1 して税抜へ統一する (dist経路・明細経路の両方)。
 - 客数 = unique 会計ID
 - 指名数 = unique 会計ID where 指名="指名あり"
 - OP率 = (オプション付き来店数) / 全来店数
@@ -188,9 +189,9 @@ def read_meisai(store_name_jp: str, ym: str) -> list[dict]:
                         "kubun": kubun,
                         "category": r.get("カテゴリ", "").strip(),
                         "menu": menu,
-                        "unit_price": _to_int(r.get("単価", "0")),
+                        "unit_price": _to_zeinuki(_to_int(r.get("単価", "0"))),
                         "qty": _to_int(r.get("個数", "1")),
-                        "amount": _to_int(r.get("金額", "0")),
+                        "amount": _to_zeinuki(_to_int(r.get("金額", "0"))),  # 税込→税抜 (HANABI統一)
                         "staff": r.get("スタッフ", "").strip(),
                         "shimei": r.get("指名", "").strip(),
                         "new_or_repeat": r.get("新規再来", "").strip(),
@@ -217,6 +218,14 @@ def _to_int(s: str) -> int:
         return int(float(s))
     except ValueError:
         return 0
+
+
+def _to_zeinuki(v: int) -> int:
+    """税込(int) → 税抜(int)。
+    salon-dashboard の明細(meisai)/monthlyRecords は税込。 HANABI は全店 税抜 表示なので、
+    新横浜(ナイスネイル由来)の金額を ÷1.1 して税抜に統一する。
+    salon-dashboard 側の税抜ロジック Math.round(v/1.1) と同一 (template.html の _ex)。"""
+    return round((v or 0) / 1.1)
 
 
 def aggregate_per_kaikei(rows: list[dict]) -> dict:
@@ -403,6 +412,13 @@ def build_staff_ranking_csv_from_dist(target_ym: str, store_name_full: str, stor
             s["nominated"] += 1
             s["nominated_sales"] += amount
         s["options"] += (r.get("options", 0) or 0)
+
+    # 税抜化: dist の monthlyRecords amount は税込。 HANABI は全店 税抜 表示なので、
+    # スタッフ別に集計した金額フィールドを ÷1.1 して税抜へ統一する
+    # (salon-dashboard 自身の税抜ロジック Math.round(total/1.1) と同じ)。
+    for s in staff.values():
+        for _k in ("sales", "tenhan_sales", "tech_sales", "nominated_sales", "nail_sales"):
+            s[_k] = _to_zeinuki(s[_k])
 
     # ヘッダー (既存 build_staff_ranking_csv と完全一致)
     headers = [
