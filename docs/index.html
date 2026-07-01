@@ -2367,7 +2367,7 @@ function renderRecruitTab() {
     });
     const root = document.getElementById("recruitList");
     if (!filtered.length) {
-      root.innerHTML = `<div class="text-center text-sm text-gray-400 py-12">該当応募者なし<br><span class="text-[11px]">右上の「+ 応募者を追加」 から登録できます (本部のみ)</span></div>`;
+      root.innerHTML = `<div class="text-center text-sm text-gray-400 py-12">該当応募者なし<br><span class="text-[11px]">応募者は Notion「採用管理表」 で管理しています (「ダッシュボード表示」 列を設定すると反映)</span></div>`;
       return;
     }
     const statusBadge = (s) => {
@@ -2399,9 +2399,10 @@ function renderRecruitTab() {
         const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
         const hasProfile = c.name && profiles[c.name];
         const onboarding = currentRole === "master" && c.status === "入社" && c.name && !hasProfile;
-        const nameDisplay = currentRole === "master"
-          ? `<a class="recruit-name-link" data-rid="${c.id || ''}">${c.name || "—"}</a>`
-          : (c.name || "—");
+        // 2026-07-01: 採用データは Notion 同期に移行。 ダッシュボードは閲覧専用
+        //   (氏名クリックでの編集モーダルは廃止)。 編集は Notion 採用管理表で行う。
+        //   ただし「入社→プロフィール登録」 導線は残す (下の onboarding ボタン)。
+        const nameDisplay = c.name || "—";
         const notion = c.notion_url ? `<a href="${c.notion_url}" target="_blank" class="text-[11px] text-blue-600 hover:underline whitespace-nowrap ml-1" onclick="event.stopPropagation()">📝 Notion ↗</a>` : "";
         return `<tr class="border-b border-gray-50 hover:bg-gray-50" data-rid="${c.id || ''}">
         <td class="py-2 px-3 text-xs text-gray-600 whitespace-nowrap">${c.applied_date || "—"}</td>
@@ -2442,15 +2443,17 @@ function renderRecruitTab() {
   if (filterSel) {
     filterSel.onchange = drawList;
   }
-  // Show admin actions for master
+  // 2026-07-01: 採用データは Notion「採用管理表」 と同期に移行。 ダッシュボードは閲覧専用。
+  //   追加・編集・エクスポートボタンは非表示 (編集は Notion 側)。
+  //   「入社」 → プロフィール登録の導線 (onboardFromRecruit) は残す。
   const addBtn = document.getElementById("recruitAddBtn");
   const expBtn = document.getElementById("recruitExportBtn");
   const note = document.getElementById("recruitFooterNote");
-  if (currentRole === "master") {
-    if (addBtn) { addBtn.classList.remove("hidden"); addBtn.onclick = () => openRecruitModal(null); }
-    if (expBtn) { expBtn.classList.remove("hidden"); expBtn.onclick = exportRecruitJson; }
-    if (note) note.innerHTML = `行をクリックで詳細・編集 (本部のみ)。 変更は自動で GitHub に反映されます。`;
-  }
+  if (addBtn) addBtn.classList.add("hidden");
+  if (expBtn) expBtn.classList.add("hidden");
+  if (note) note.innerHTML = currentRole === "master"
+    ? `採用データは Notion「採用管理表」 と自動同期しています。 追加・編集・ステータス変更は Notion 側で行ってください (「ダッシュボード表示」 列で段階を選択)。 「入社」 の方は氏名の行の「→ プロフィール登録」 からスタッフ登録できます。`
+    : ``;
   drawList();
 }
 
