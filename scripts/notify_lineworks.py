@@ -804,7 +804,9 @@ def build_hanabi_monthend(target_ym: str = None) -> str:
     kakugen = get_hanabi_kakugen(target_ym) or rule_kakugen(
         target_ym, achieved, total_stores_with_budget, total_pct)
     if kakugen:
-        lines += [SEP, "💬 今月の格言", SEP, "", kakugen, ""]
+        klines = kakugen.split("\n")
+        klines[0] = f"🎓 {klines[0]}"  # 格言本体の頭に 🎓
+        lines += [SEP, "💬 今月の格言", SEP, "", "\n".join(klines), ""]
 
     lines += [
         SEP,
