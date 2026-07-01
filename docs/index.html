@@ -2413,12 +2413,12 @@ function renderRecruitTab() {
         const notion = c.notion_url ? `<a href="${c.notion_url}" target="_blank" class="text-[11px] text-blue-600 hover:underline whitespace-nowrap ml-1" onclick="event.stopPropagation()">📝 Notion ↗</a>` : "";
         return `<tr class="border-b border-gray-50 hover:bg-gray-50" data-rid="${c.id || ''}">
         <td class="py-2 px-3 text-xs text-gray-600 whitespace-nowrap">${c.applied_date || "—"}</td>
-        <td class="py-2 px-3 font-semibold whitespace-nowrap">${nameDisplay}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}${hasProfile ? ` <span class="text-[10px] text-green-600 ml-1" title="プロフィール登録済">●</span>` : ""}${notion}</td>
+        <td class="py-2 px-3 font-semibold whitespace-nowrap">${nameDisplay}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}${hasProfile ? ` <span class="text-[10px] text-green-600 ml-1" title="プロフィール登録済">●</span>` : ""}${canEditProfile ? ` <button class="ml-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-full px-2 py-0.5 align-middle transition-colors" title="プロフィールを編集" onclick="event.stopPropagation(); openStaffProfileModal('${(c.name || '').replace(/'/g,"\\'")}')">✎ 編集</button>` : ""}${notion}</td>
         <td class="py-2 px-3 text-xs">${c.role || "—"}</td>
         <td class="py-2 px-3 text-xs">${c.store_pref || "—"}</td>
         <td class="py-2 px-3 text-xs">${c.experience_years != null ? c.experience_years + "年" : "—"}</td>
         <td class="py-2 px-3 text-xs">${c.source || "—"}</td>
-        <td class="py-2 px-3"><div class="flex flex-col items-start gap-1">${statusBadge(c.status)}${onboarding ? `<button class="inline-flex items-center gap-1 text-[10px] font-medium bg-green-600 text-white rounded-full px-2.5 py-1 hover:bg-green-700 whitespace-nowrap shadow-sm" onclick="event.stopPropagation(); onboardFromRecruit('${(c.id || '').replace(/'/g,"\\'")}')">＋ プロフィール登録</button>` : ""}${canEditProfile ? `<button class="inline-flex items-center gap-1 text-[10px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-full px-2.5 py-1 whitespace-nowrap transition-colors" title="プロフィールを編集" onclick="event.stopPropagation(); openStaffProfileModal('${(c.name || '').replace(/'/g,"\\'")}')">✎ プロフィール編集</button>` : ""}</div></td>
+        <td class="py-2 px-3"><div class="flex flex-col items-start gap-1">${statusBadge(c.status)}${onboarding ? `<button class="inline-flex items-center gap-1 text-[10px] font-medium bg-green-600 text-white rounded-full px-2.5 py-1 hover:bg-green-700 whitespace-nowrap shadow-sm" onclick="event.stopPropagation(); onboardFromRecruit('${(c.id || '').replace(/'/g,"\\'")}')">＋ プロフィール登録</button>` : ""}</div></td>
         <td class="py-2 px-3 text-xs text-gray-600 truncate" style="max-width:200px">${c.notes || ""}</td>
       </tr>`;}).join("")}</tbody>
     </table>`;
