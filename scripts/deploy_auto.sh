@@ -126,6 +126,13 @@ if [ "$DAY" = "01" ]; then
   python3 scripts/scrape_external.py all 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ external 失敗 — 続行"
 fi
 
+# 3e. 採用データ Notion 同期 (2026-07-01 追加)
+#     Notion「株式会社HANABI 採用管理表」 → data/recruitment.json。
+#     水野さんが Notion で編集 → 翌朝ここで自動反映。 non-fatal (失敗しても既存維持で続行)。
+#     認証: .env の NOTION_TOKEN。 未設定/失敗時は既存 recruitment.json のまま。
+log "[2e/5] 採用データ Notion 同期"
+python3 scripts/sync_recruitment_from_notion.py 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ Notion 採用同期 失敗 — 既存 recruitment.json 維持で続行"
+
 # 4. JSON再生成
 log "[3/5] generate.py"
 python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
