@@ -109,7 +109,9 @@ def _rich(prop):
 
 def _date(prop):
     dt = (prop or {}).get("date")
-    return (dt or {}).get("start", "") if dt else ""
+    val = (dt or {}).get("start", "") if dt else ""
+    # 時刻付き (2026-06-29T17:00:00+09:00) は 日付だけにトリム
+    return val[:10] if val else ""
 
 
 def _slug_id(name: str) -> str:
@@ -128,9 +130,11 @@ def transform(pages: list) -> list:
         role_n = _select(p.get("希望職種"))
         src_n = _select(p.get("応募経路"))
         exp_n = _select(p.get("経験"))
+        # 応募日: 「応募日」 列を優先、 無ければ面接日時で代用 (どちらも日付にトリム済)
+        applied = _date(p.get("応募日")) or _date(p.get("面接日時"))
         candidates.append({
             "id": _slug_id(name),
-            "applied_date": _date(p.get("面接日時")),  # Notionに応募日列がないため面接日時を暫定
+            "applied_date": applied,
             "name": name,
             "role": ROLE_MAP.get(role_n, role_n),
             "store_pref": STORE_MAP.get(store_n, store_n),
