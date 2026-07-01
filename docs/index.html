@@ -2399,6 +2399,13 @@ function renderRecruitTab() {
         const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
         const hasProfile = c.name && profiles[c.name];
         const onboarding = currentRole === "master" && c.status === "入社" && c.name && !hasProfile;
+        // 入社済みで既にプロフィール登録済の人は「✎ プロフィール編集」ボタンで直接編集モーダルへ。
+        //   (売上ゼロだとスタッフタブに出ないため、 採用タブが唯一の編集導線になる)
+        //   ただし 売上が入り始めたら (staff_rows に登場) スタッフタブで編集できるので、 このボタンは消す。
+        //   記号プレフィックス (ランク昇格) を除いて突合する。
+        const _rkStrip = n => (n || "").replace(/^[●★☆■□◆◇・\s]+/, "").trim();
+        const hasSalesData = !!c.name && (DATA.staff_rows || []).some(s => _rkStrip(s.name) === _rkStrip(c.name));
+        const canEditProfile = currentRole === "master" && c.status === "入社" && c.name && hasProfile && !hasSalesData;
         // 2026-07-01: 採用データは Notion 同期に移行。 ダッシュボードは閲覧専用
         //   (氏名クリックでの編集モーダルは廃止)。 編集は Notion 採用管理表で行う。
         //   ただし「入社→プロフィール登録」 導線は残す (下の onboarding ボタン)。
@@ -2411,7 +2418,7 @@ function renderRecruitTab() {
         <td class="py-2 px-3 text-xs">${c.store_pref || "—"}</td>
         <td class="py-2 px-3 text-xs">${c.experience_years != null ? c.experience_years + "年" : "—"}</td>
         <td class="py-2 px-3 text-xs">${c.source || "—"}</td>
-        <td class="py-2 px-3">${statusBadge(c.status)}${onboarding ? `<button class="ml-2 text-[10px] bg-green-600 text-white rounded px-2 py-0.5" onclick="event.stopPropagation(); onboardFromRecruit('${(c.id || '').replace(/'/g,"\\'")}')">→ プロフィール登録</button>` : ""}</td>
+        <td class="py-2 px-3"><div class="flex flex-col items-start gap-1">${statusBadge(c.status)}${onboarding ? `<button class="inline-flex items-center gap-1 text-[10px] font-medium bg-green-600 text-white rounded-full px-2.5 py-1 hover:bg-green-700 whitespace-nowrap shadow-sm" onclick="event.stopPropagation(); onboardFromRecruit('${(c.id || '').replace(/'/g,"\\'")}')">＋ プロフィール登録</button>` : ""}${canEditProfile ? `<button class="inline-flex items-center gap-1 text-[10px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-full px-2.5 py-1 whitespace-nowrap transition-colors" title="プロフィールを編集" onclick="event.stopPropagation(); openStaffProfileModal('${(c.name || '').replace(/'/g,"\\'")}')">✎ プロフィール編集</button>` : ""}</div></td>
         <td class="py-2 px-3 text-xs text-gray-600 truncate" style="max-width:200px">${c.notes || ""}</td>
       </tr>`;}).join("")}</tbody>
     </table>`;
@@ -2452,7 +2459,7 @@ function renderRecruitTab() {
   if (addBtn) addBtn.classList.add("hidden");
   if (expBtn) expBtn.classList.add("hidden");
   if (note) note.innerHTML = currentRole === "master"
-    ? `採用データは Notion「採用管理表」 と自動同期しています。 追加・編集・ステータス変更は Notion 側で行ってください (「ダッシュボード表示」 列で段階を選択)。 「入社」 の方は氏名の行の「→ プロフィール登録」 からスタッフ登録できます。`
+    ? `採用データは Notion「採用管理表」 と自動同期しています。 追加・編集・ステータス変更は Notion 側で行ってください (「ダッシュボード表示」 列で段階を選択)。 「入社」 の方は 稼働前 (売上ゼロ) の間だけ、 未登録なら「→ プロフィール登録」・登録済なら「✎ プロフィール編集」 から このタブで編集できます。 売上が入り始めると このボタンは消え、 以降は「スタッフ実績」 タブで編集します。`
     : ``;
   drawList();
 }
