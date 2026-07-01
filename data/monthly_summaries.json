@@ -3,7 +3,8 @@
   "_format": {
     "summaries": "{YYYYMM: {section_id: 振り返り文章}}",
     "generated_at": "{YYYYMM: ISO8601 タイムスタンプ}",
-    "model": "{YYYYMM: 使用モデル}"
+    "model": "{YYYYMM: 使用モデル}",
+    "kakugen": "{YYYYMM: 今月の格言(A調・2行)}。 月終了サマリー通知(notify_lineworks)が読む"
   },
   "summaries": {
     "202605": {
@@ -43,5 +44,8 @@
     "202605": "sonnet",
     "202604": "sonnet",
     "202606": "sonnet"
+  },
+  "kakugen": {
+    "202606": "「新芽が伸びれば、古木もまた励むもの。」\n— 新横浜は開店直後から予算150%達成。"
   }
 }

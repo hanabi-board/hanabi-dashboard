@@ -159,6 +159,7 @@ def pace_icon(fc: float) -> str:
 
 # ===================== HANABI 集計 =====================
 HANABI_DATA = Path("/Users/yoheimizuno/hanabi-dashboard/docs/data.json")
+HANABI_SUMMARIES = Path("/Users/yoheimizuno/hanabi-dashboard/data/monthly_summaries.json")
 HANABI_URL = "https://dashboard.hanabi2020.co.jp/"
 
 
@@ -624,14 +625,25 @@ def build_nicenail_lastweek() -> str:
 
 
 # ===================== HANABI 月終了サマリー =====================
+def _prev_ym_str(ym: str) -> str:
+    """YYYYMM の前月 YYYYMM"""
+    yy, mm = int(ym[:4]), int(ym[4:6])
+    if mm == 1:
+        return f"{yy - 1}12"
+    return f"{yy}{mm - 1:02d}"
+
+
 def aggregate_hanabi_specific_month(target_ym: str) -> dict:
-    """HANABI: 指定月の実績を集計 (target_ym = 'YYYYMM')"""
+    """HANABI: 指定月の実績を集計 (target_ym = 'YYYYMM')。
+    充実版: 店舗別に 客単価・指名率・前月比、 全社の前月売上も返す。"""
     if not HANABI_DATA.exists():
         return {}
     try:
         d = json.loads(HANABI_DATA.read_text(encoding="utf-8"))
         mbs = d.get("monthly_by_store", {})
-        result = {"ym": target_ym, "stores": [], "total_sales": 0, "total_customers": 0}
+        prev_ym = _prev_ym_str(target_ym)
+        result = {"ym": target_ym, "stores": [], "total_sales": 0,
+                  "total_customers": 0, "total_prev_sales": 0}
         store_meta = [
             ("tsunashima",   "Hanabi綱島店",         False),
             ("miyakojima",   "ELLE by Hanabi宮古島店", True),
@@ -639,9 +651,19 @@ def aggregate_hanabi_specific_month(target_ym: str) -> dict:
         ]
         for sid, label, with_dept in store_meta:
             ms = (mbs.get(sid, {}) or {}).get(target_ym, {}) or {}
+            pms = (mbs.get(sid, {}) or {}).get(prev_ym, {}) or {}
             sales = ms.get("total_sales", 0)
             customers = ms.get("customers", 0)
-            store_data = {"label": label, "sid": sid, "sales": sales, "customers": customers, "dept": None}
+            prev_sales = pms.get("total_sales", 0)
+            tc = ms.get("tech_customers", 0)
+            tn = ms.get("tech_customers_nominated", 0)
+            avg = sales // customers if customers else 0
+            nom_rate = tn / tc * 100 if tc else 0
+            # 前月比: 前月売上が十分あるときのみ (新店の立ち上がりは無意味 → None)
+            mom = (sales / prev_sales - 1) * 100 if prev_sales >= 500000 else None
+            store_data = {"label": label, "sid": sid, "sales": sales,
+                          "customers": customers, "avg": avg, "nom_rate": nom_rate,
+                          "mom": mom, "prev_sales": prev_sales, "dept": None}
             if with_dept:
                 by_dept = ms.get("by_dept", {}) or {}
                 store_data["dept"] = {
@@ -652,10 +674,39 @@ def aggregate_hanabi_specific_month(target_ym: str) -> dict:
             result["stores"].append(store_data)
             result["total_sales"] += sales
             result["total_customers"] += customers
+            result["total_prev_sales"] += prev_sales
         return result
     except Exception as e:
         print(f"  warn: HANABI 月別集計失敗: {e}", file=sys.stderr)
         return {}
+
+
+def get_hanabi_kakugen(target_ym: str) -> str:
+    """月次振り返り生成時に作られた「今月の格言」(AI生成) を読む。 無ければ空文字。"""
+    try:
+        if not HANABI_SUMMARIES.exists():
+            return ""
+        d = json.loads(HANABI_SUMMARIES.read_text(encoding="utf-8"))
+        return ((d.get("kakugen", {}) or {}).get(target_ym, "") or "").strip()
+    except Exception:
+        return ""
+
+
+def rule_kakugen(target_ym: str, achieved: int, total_stores: int, total_pct: float) -> str:
+    """AI格言が無い時のフォールバック (A調: 格言・ことわざ風)。 毎月確実に何か出す。"""
+    m = int(target_ym[4:6])
+    n = f"{m}月"
+    if total_stores and achieved == total_stores:
+        return ("「好調は、守りに入った時に崩れる。攻めの手を緩めるな。」\n"
+                f"— {n}、全店予算達成。次の天井へ。")
+    if total_pct >= 100:
+        return ("「席数は売上の天井なり。天井を上げるは、人なり。」\n"
+                f"— {n}、全社{total_pct:.0f}%達成。伸びしろは採用にあり。")
+    if total_pct >= 90:
+        return ("「あと一歩は、日々の一手の積み重ねが埋める。」\n"
+                f"— {n}、全社{total_pct:.0f}%。目標は届く距離にあり。")
+    return ("「逆風こそ、実力を鍛える追い風なり。」\n"
+            f"— {n}、全社{total_pct:.0f}%。ここからが正念場。")
 
 
 def build_hanabi_monthend(target_ym: str = None) -> str:
@@ -671,37 +722,73 @@ def build_hanabi_monthend(target_ym: str = None) -> str:
         return ""
     budgets = get_hanabi_budgets(target_ym)
     y, m = target_ym[:4], int(target_ym[4:6])
-    lines = [
-        f"🏁 HANABI {y}/{m}月 確定",
-        fmt_date_label(now),
-        "",
-        SEP,
-        f"📊 {y}/{m}月 最終結果",
-        SEP,
-        "",
-        "🏪 店舗別",
-    ]
+
+    # --- 全社集計 ---
     achieved = 0
     total_stores_with_budget = 0
     total_budget = 0
     for s in data["stores"]:
         budget = budgets.get(s["sid"], 0)
-        sales = s["sales"]
         if budget > 0:
             total_stores_with_budget += 1
             total_budget += budget
-            pct = sales / budget * 100
-            if pct >= 100:
+            if s["sales"] / budget * 100 >= 100:
                 achieved += 1
+    total_pct = data["total_sales"] / total_budget * 100 if total_budget else 0
+    total_avg = data["total_sales"] // data["total_customers"] if data["total_customers"] else 0
+    total_mom = ((data["total_sales"] / data["total_prev_sales"] - 1) * 100
+                 if data.get("total_prev_sales", 0) >= 500000 else None)
+
+    # --- 全社合計 (先頭) ---
+    sales_line = f"売上     {fmt_money_short(data['total_sales'])}"
+    if total_mom is not None:
+        sales_line += f"  (前月比 {total_mom:+.1f}%)"
+    lines = [
+        f"🏁 HANABI {y}年{m}月 確定",
+        fmt_date_label(now),
+        "",
+        SEP,
+        "✨ 全社合計",
+        SEP,
+        "",
+        sales_line,
+    ]
+    if total_budget > 0:
+        lines.append(f"予算     {fmt_money_short(total_budget)}  ({total_pct:.1f}%)")
+        lines.append(f"予算達成 {achieved}/{total_stores_with_budget} 店舗")
+    lines += [
+        f"客数     {data['total_customers']:,}名",
+        f"客単価   {fmt_money(total_avg)}",
+        "",
+        SEP,
+        "🏪 店舗別",
+        SEP,
+        "",
+    ]
+
+    # --- 店舗別 (充実版: 前月比・客数・客単価・指名率) ---
+    for s in data["stores"]:
+        budget = budgets.get(s["sid"], 0)
+        sales = s["sales"]
+        if budget > 0:
+            pct = sales / budget * 100
             icon = "🏆" if pct >= 100 else "🏪" if pct >= 85 else "⚠️"
         else:
             pct = 0
             icon = "🏪"
         lines.append(f"{icon} {s['label']}")
         if budget > 0:
-            lines.append(f"   売上 {fmt_money(sales)}  /  予算 {fmt_money(budget)}  ({pct:.1f}%)")
+            lines.append(f"   売上   {fmt_money(sales)}  (予算比 {pct:.1f}%)")
         else:
-            lines.append(f"   売上 {fmt_money(sales)}  /  {s['customers']}名")
+            lines.append(f"   売上   {fmt_money(sales)}")
+        if s["mom"] is not None:
+            # 通常店: 前月比・客数 → 客単価・指名率
+            lines.append(f"   前月比 {s['mom']:+.1f}% ・ 客数 {s['customers']}名")
+            lines.append(f"   客単価 {fmt_money(s['avg'])} ・ 指名率 {s['nom_rate']:.0f}%")
+        else:
+            # 新店 (前月比が無意味): 客数・客単価 + 注記
+            lines.append(f"   客数 {s['customers']}名 ・ 客単価 {fmt_money(s['avg'])}")
+            lines.append("   （オープン初期）")
         if s.get("dept"):
             dept_budgets = budgets.get("miyakojima_dept", {})
             for dept_label, dept_data in s["dept"].items():
@@ -710,22 +797,16 @@ def build_hanabi_monthend(target_ym: str = None) -> str:
                 d_pct = d_sales / d_budget * 100 if d_budget else 0
                 d_icon_pct = "🏆" if d_pct >= 100 else "  " if d_pct >= 85 else "⚠️"
                 d_icon = {"ヘア": "💇", "アイ": "👁", "ネイル": "💅"}.get(dept_label, "・")
-                lines.append(f"     {d_icon} {dept_label}: {fmt_money(d_sales)} / {fmt_money(d_budget)} ({d_pct:.1f}%) {d_icon_pct}")
+                lines.append(f"     {d_icon} {dept_label} {fmt_money(d_sales)} ({d_pct:.1f}%) {d_icon_pct}")
         lines.append("")
-    total_pct = data["total_sales"] / total_budget * 100 if total_budget else 0
+
+    # --- 今月の格言 (AI生成優先、 無ければルール式フォールバック) ---
+    kakugen = get_hanabi_kakugen(target_ym) or rule_kakugen(
+        target_ym, achieved, total_stores_with_budget, total_pct)
+    if kakugen:
+        lines += [SEP, "💬 今月の格言", SEP, "", kakugen, ""]
+
     lines += [
-        SEP,
-        "✨ 全社合計",
-        SEP,
-        "",
-        f"売上     {fmt_money_short(data['total_sales'])}",
-    ]
-    if total_budget > 0:
-        lines.append(f"予算     {fmt_money_short(total_budget)} ({total_pct:.1f}%)")
-        lines.append(f"予算達成 {achieved}/{total_stores_with_budget} 店舗")
-    lines += [
-        f"客数     {data['total_customers']:,}名",
-        "",
         SEP,
         "",
         "🔗 ダッシュボード",

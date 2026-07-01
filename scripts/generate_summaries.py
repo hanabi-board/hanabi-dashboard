@@ -83,11 +83,11 @@ def load_data() -> dict:
 
 def load_summaries() -> dict:
     if not SUMMARIES_FILE.exists():
-        return {"summaries": {}, "generated_at": {}, "model": {}}
+        return {"summaries": {}, "generated_at": {}, "model": {}, "kakugen": {}}
     try:
         return json.loads(SUMMARIES_FILE.read_text(encoding="utf-8"))
     except Exception:
-        return {"summaries": {}, "generated_at": {}, "model": {}}
+        return {"summaries": {}, "generated_at": {}, "model": {}, "kakugen": {}}
 
 
 def save_summaries(data: dict) -> None:
@@ -96,6 +96,7 @@ def save_summaries(data: dict) -> None:
         "summaries": "{YYYYMM: {section_id: 振り返り文章}}",
         "generated_at": "{YYYYMM: ISO8601 タイムスタンプ}",
         "model": "{YYYYMM: 使用モデル}",
+        "kakugen": "{YYYYMM: 今月の格言(A調・2行)}。 月終了サマリー通知(notify_lineworks)が読む",
     }
     SUMMARIES_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -360,6 +361,41 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
     return prompt
 
 
+def build_kakugen_prompt(month: str, data: dict) -> str:
+    """「今月の格言」(A調: 格言・ことわざ風) 生成プロンプト。 全社の状況をふまえた1本。"""
+    y, m = month[:4], int(month[4:6])
+    stats = build_company_stats(data, month)
+    staff_news = detect_staff_changes(data, month)
+    return f"""あなたは美容サロン経営を鼓舞する、機知に富んだコピーライター。 経営者(水野陽平氏)向けの月次まとめの末尾に添える「今月の格言」を1本つくってください。
+
+【対象月】 {y}年{m}月
+【会社の状況 (全社)】
+{stats}
+
+【店舗の顔ぶれ】
+- Hanabi綱島店 (ヘア専門)
+- ELLE by Hanabi宮古島店 (ヘア/アイ/ネイル)
+- ナイスネイル新横浜店 (ネイル、 2026年5月末オープンの新店)
+
+【スタッフ動向】
+{staff_news if staff_news else "(特記なし)"}
+
+【出力ルール (厳守)】
+- スタイルは「格言・ことわざ風」。 経営の本質を突きつつ、 クスッと笑える知的な温度感。 説教くさくしない
+- その月の実際の状況 (達成/未達、 好調店、 課題、 採用や人員) を反映させる
+- 出力は必ず 2行 だけ:
+  1行目: 格言本体を 「」 で囲む (18〜36字。 体言止め・対句・七五調など 味のある文体で)
+  2行目: 「— 」 から始まる補足1文 (その月の数字を1つ引用して格言を裏付ける。 30字以内)
+- 前向きに。 特定個人を茶化さない
+- 太字(**)・箇条書き(-)・見出し(#)・前置き・結語は 一切禁止。 2行のみ出力
+
+出力例 (形式の参考。 内容は真似しない):
+「席数は売上の天井なり。天井を上げるは、人なり。」
+— 6月、全社102%達成。伸びしろは採用にあり。
+
+今月の格言:"""
+
+
 def call_claude(prompt: str, claude_path: str, timeout: int = 120) -> str:
     """claude CLI を non-interactive で呼ぶ"""
     try:
@@ -415,6 +451,7 @@ def main():
     summaries.setdefault("summaries", {}).setdefault(month, {})
     summaries.setdefault("generated_at", {})
     summaries.setdefault("model", {})
+    summaries.setdefault("kakugen", {})
 
     target_secs = [args.section] if args.section else SECTION_ORDER
     generated_count = 0
@@ -443,6 +480,23 @@ def main():
             print(f"     ✓ {len(text)}字 生成")
         else:
             print(f"     ✗ 生成失敗 — 既存サマリ維持")
+
+    # --- 今月の格言 (A調) ---  section 未指定 or company 指定時のみ生成
+    if args.section in (None, "company"):
+        if not args.force and summaries["kakugen"].get(month):
+            print(f"  · 格言: 既に生成済, skip (--force で再生成)")
+        else:
+            print(f"  → 格言: Claude 呼出 ...", flush=True)
+            k_prompt = build_kakugen_prompt(month, data)
+            k_text = call_claude(k_prompt, claude_path)
+            # 2行だけに整形 (余計な前置き/空行を除去)
+            k_lines = [ln.rstrip() for ln in k_text.splitlines() if ln.strip()]
+            if k_lines and k_lines[0].startswith("「"):
+                summaries["kakugen"][month] = "\n".join(k_lines[:2])
+                generated_count += 1
+                print(f"     ✓ 格言 生成: {k_lines[0]}")
+            else:
+                print(f"     ✗ 格言 生成失敗 — 通知側のルール格言で代替")
 
     save_summaries(summaries)
     print(f"==== 完了: 生成 {generated_count}件 / スキップ {skipped_count}件 ====")
