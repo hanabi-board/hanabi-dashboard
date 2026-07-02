@@ -3115,6 +3115,33 @@ function renderAlerts() {
   // expected は target ベースで計算されるので 0 にならない、 sales/customers の実績で判定
   if (!t.sales && !t.customers) { root.innerHTML = ""; return; }
 
+  // 🛡 月初ガード (2026-07-02): 経過7日未満はペース/前年比の判定をしない。
+  //   期待値 = 予算×経過日/月日数 は「毎日が平均日」仮定なので、 平日<週末 の売上構造では
+  //   月初の数日は構造的に全店「未達ペース」に見える (= 毎月の誤報 → アラート慣れの原因)。
+  //   前年比も1〜2日分では曜日ノイズで上下どちらにも信用できない。
+  //   → 判定の代わりに実績サマリー1行を表示し、 経過7日から通常アラートに切替。
+  const MIN_JUDGE_DAYS = 7;
+  if (SCOPE.globalElapsedDays < MIN_JUDGE_DAYS) {
+    const mNum = parseInt(currentMonth.slice(4, 6));
+    const prevYm = (parseInt(currentMonth.slice(0, 4)) - 1) + currentMonth.slice(4);
+    let prevTotal = 0;
+    for (const sid of Object.keys(DATA.monthly_by_store || {})) {
+      prevTotal += ((DATA.monthly_by_store[sid] || {})[prevYm] || {}).total_sales || 0;
+    }
+    const prevNote = prevTotal > 0
+      ? ` · 参考: 前年${mNum}月の全社日平均 ${fmt(Math.round(prevTotal / SCOPE.daysInMonth))}`
+      : "";
+    root.innerHTML = `
+      <div class="card p-4 flex items-start gap-3 text-sm" style="background:#EFF6FF; border-left:4px solid #2563EB">
+        <span class="text-base flex-shrink-0" style="color:#2563EB">ℹ️</span>
+        <div class="min-w-0">
+          <div class="font-bold" style="color:#1E3A8A">${mNum}月 ${SCOPE.globalElapsedDays}日目 — 全社実績 ${fmt(t.sales)} / ${t.customers.toLocaleString()}名${prevNote}</div>
+          <div class="text-xs mt-0.5" style="color:#1E3A8A; opacity:0.8">ペース・前年比の判定は経過${MIN_JUDGE_DAYS}日分のデータが揃ってから表示します (月初は曜日の偏りで誤判定になるため)</div>
+        </div>
+      </div>`;
+    return;
+  }
+
   // 1. 全社ペース達成率
   const pacePct = t.expected ? (t.sales / t.expected * 100) : 0;
   if (pacePct < 75 && t.expected) {
@@ -3125,18 +3152,23 @@ function renderAlerts() {
       detail: `期待値 ${fmt(t.expected)} を ${fmt(t.sales - t.expected)} 上回る。月末着地予測 ${fmt(Math.round(t.sales / Math.max(1, SCOPE.globalElapsedDays) * SCOPE.daysInMonth))}。` });
   }
 
-  // 2. 同店舗 前年同月比
+  // 2. 同店舗 前年同月比 (同店舗 = 前年同月時点で開店12ヶ月以上の店)
+  //   ⚠️ 対象が1店だけの間は「全社が急落」に見えないよう店名をタイトルに出す (2026-07-02)
   const ssPrev = t.prevMonthSalesSameStore;
   const ssSales = t.salesSameStore;
   if (ssPrev) {
+    const _ssEligible = SCOPE.storeRows.filter(r => !r.isBeforeOpen && isSameStoreEligible(r.sid, currentMonth));
+    const _ssExcluded = SCOPE.storeRows.filter(r => !isSameStoreEligible(r.sid, currentMonth)).map(r => r.store.name);
+    const _ssLabel = _ssEligible.length === 1 ? _ssEligible[0].store.name : "同店舗";
+    const _ssNote = _ssExcluded.length ? ` ※${_ssExcluded.join("・")}は前年未開店/開店12ヶ月未満のため対象外。` : "";
     const yoyExp = ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
     const yoyPct = (ssSales / yoyExp * 100);
     if (yoyPct < 80) {
-      alerts.push({ severity: 'critical', icon: '↓', title: `前年同月比 ${yoyPct.toFixed(0)}% (同店舗) — 急落`,
-        detail: `前年同期 ${fmt(yoyExp)} に対し ${fmt(ssSales)}、▼ ${fmt(yoyExp - ssSales)}。集客施策の見直し検討。` });
+      alerts.push({ severity: 'critical', icon: '↓', title: `${_ssLabel} 前年同月比 ${yoyPct.toFixed(0)}% — 前年割れペース`,
+        detail: `前年同期 ${fmt(yoyExp)} に対し ${fmt(ssSales)}、▼ ${fmt(yoyExp - ssSales)}。集客施策の見直し検討。${_ssNote}` });
     } else if (yoyPct >= 120) {
-      alerts.push({ severity: 'good', icon: '↑', title: `前年同月比 ${yoyPct.toFixed(0)}% (同店舗) — 大幅成長`,
-        detail: `前年同期 ${fmt(yoyExp)} を ${fmt(ssSales - yoyExp)} 超過。要因分析→継続施策。` });
+      alerts.push({ severity: 'good', icon: '↑', title: `${_ssLabel} 前年同月比 ${yoyPct.toFixed(0)}% — 大幅成長`,
+        detail: `前年同期 ${fmt(yoyExp)} を ${fmt(ssSales - yoyExp)} 超過。要因分析→継続施策。${_ssNote}` });
     }
   }
 
