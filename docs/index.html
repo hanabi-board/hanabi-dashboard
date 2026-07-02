@@ -36,7 +36,9 @@
     --hanabi-green: #43A047; --hanabi-cyan: #29B6F6; --hanabi-blue: #1E88E5;
     --hanabi-purple: #8E24AA; --hanabi-pink: #E91E63;
     --elle-purple: #6E5BA8; --elle-pink: #D63384;
-    --dept-hair: #E91E63; --dept-eye: #1E88E5; --dept-nail: #F59E0B;
+    /* 2026-07-02: ヘア部門色を #E91E63→#C9549C (彩度を落としたマゼンタ) に。
+       危険色 (--accent-red) と暖色が渋滞して「ヘア=警告」に見える問題の解消。 ブランドの虹 (--hanabi-pink) は不変 */
+    --dept-hair: #C9549C; --dept-eye: #1E88E5; --dept-nail: #F59E0B;
   }
   body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   h1, h2, h3 { letter-spacing: -0.01em; }
@@ -94,6 +96,16 @@
   /* Section title */
   .section-title { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text); }
   .section-sub { font-size: 0.75rem; color: var(--text-mute); margin-left: 0.5rem; font-weight: 400; }
+  /* === 2026-07-02 デザイン磨き === */
+  /* テーブル見出しの1文字ずつ縦折れ防止 (採用リスト「経験年数」等) */
+  th { white-space: nowrap; }
+  /* 最小フォント底上げ (9-10px はスマホで読めない。 Tailwind CDN より後勝ちにするため !important) */
+  [class*="text-[10px]"] { font-size: 11px !important; }
+  [class*="text-[9px]"] { font-size: 10px !important; }
+  /* ページ見出しに Hanabi 虹アクセント (ヘッダーのブランドストリップと対になる細いバー) */
+  h2.text-2xl.font-bold { position: relative; display: inline-block; padding-bottom: 7px; }
+  h2.text-2xl.font-bold::after { content: ""; position: absolute; left: 1px; bottom: 0; width: 46px; height: 3px; border-radius: 2px;
+    background: linear-gradient(90deg, #E53935, #FF6B35, #FFC107, #43A047, #29B6F6, #8E24AA); }
 
   .rank-num { font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; font-weight: 600; }
   .rank-1 { color: #C9A227; }
@@ -225,10 +237,12 @@
     <!-- Alert panel (auto-detected anomalies) -->
     <div id="alertsPanel" class="mb-5"></div>
 
-    <!-- Top KPI row (6 cards) -->
+    <!-- Top KPI row: ヒーローカード(売上+着地) + サブカード。 今月/通期でセクション分離 (2026-07-02) -->
+    <div class="flex items-center gap-3 mb-2"><span class="text-[11px] font-bold text-gray-400" style="letter-spacing:0.15em">今月</span><div class="flex-1 border-t border-gray-200"></div></div>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5" id="topKpi"></div>
 
     <!-- FY26 progress (vs budget + vs FY25) -->
+    <div class="flex items-center gap-3 mb-2"><span class="text-[11px] font-bold text-gray-400" style="letter-spacing:0.15em">通期 (FY)</span><div class="flex-1 border-t border-gray-200"></div></div>
     <div class="grid md:grid-cols-3 gap-3 mb-5" id="fyProgressCards"></div>
 
     <!-- 💰 原価率 KPI (全社 + 店舗/部門別 5レベル) -->
@@ -1259,9 +1273,31 @@ function paceFraction(sid, ym, elapsed, daysInMonth) {
   }
   return tw > 0 ? ew / tw : uniform;
 }
+// === インラインSVGアイコン (2026-07-02) ===
+// 絵文字はデバイス毎に描画が変わりサイズも揃わないため、 判定UI (アラート等) はSVGに統一。
+const SVG_ICONS = {
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  dot: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+};
+function svgIcon(name, size = 18) {
+  return `<span style="display:inline-flex;width:${size}px;height:${size}px;flex-shrink:0;vertical-align:-3px" aria-hidden="true">${SVG_ICONS[name] || SVG_ICONS.dot}</span>`;
+}
 Chart.defaults.color = "#6B7280";
-Chart.defaults.borderColor = "#E5E7EB";
+Chart.defaults.borderColor = "#EEF1F4";
 Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", system-ui';
+// 2026-07-02 デザイン磨き: グラフをカードのトーンに揃える (薄いグリッド・角丸ツールチップ・点スタイル凡例)
+Chart.defaults.font.size = 11;
+Chart.defaults.plugins.tooltip.backgroundColor = "rgba(17, 24, 39, 0.92)";
+Chart.defaults.plugins.tooltip.cornerRadius = 8;
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 6;
+Chart.defaults.plugins.legend.labels.boxHeight = 6;
 
 // 退職スタッフのhidden flagを動的に適用 (profile.retired_date >= staff_row.month なら hidden)
 function applyRetiredStaffFlag() {
@@ -1309,6 +1345,12 @@ async function loadData() {
   render(d.latest_month);
   const savedTab = localStorage.getItem("hanabi_tab") || "summary";
   activateTab(savedTab);
+
+  // 🛡 2026-07-02: menu_data の旧月分は data_archive.json に分離 (初期表示の軽量化)。
+  //   初期描画後にバックグラウンドで先読みしてマージ。 メニュータブ表示中なら再描画。
+  setTimeout(() => ensureMenuArchive().then(ok => {
+    if (ok) { try { if (document.querySelector('[data-panel="menu"].active')) renderMenuTab(); } catch (e) {} }
+  }), 3000);
 
   // Background: fetch latest recruitment.json and staff_profiles.json from GitHub raw
   // (data.json is regenerated daily; this picks up same-day edits)
@@ -1502,29 +1544,30 @@ function renderTopKpi() {
   }
   const monPctOf = t.fyAnnual ? (t.sales / t.fyAnnual * 100) : 0;
 
+  // 🎨 2026-07-02 ヒーローカード: 「実績 → 目標までの進捗 → 着地見込み」 を1枚の1ストーリーに統合
+  //   (旧: 当月売上/月末着地予測 の2カード分断)。 事実 (実績/達成%) は中立色、 判定色は着地見込みのみ。
+  const heroEarly = SCOPE.globalElapsedDays < 7;  // 月初は着地を参考値表示 (曜日ノイズ)
+  const heroRemainT = Math.max(0, t.target - t.sales);
+  const heroRemainD = Math.max(0, SCOPE.daysInMonth - SCOPE.globalElapsedDays);
+  const heroProjPos = t.target ? Math.min(100, Math.max(0, projPct)) : 0;
+  const heroHtml = `
+    <div class="flex items-baseline justify-between flex-wrap gap-1">
+      <div class="text-xs text-gray-500">${parseInt(SCOPE.month.slice(4,6),10)}月の売上 <span class="text-[11px] text-gray-400">(${SCOPE.globalElapsedDays}日経過 / ${SCOPE.daysInMonth}日)</span></div>
+      <div class="text-[11px] text-gray-500">月目標 ${fmtM(t.target)}</div>
+    </div>
+    <div class="kpi-num font-bold" style="font-size:30px; letter-spacing:-0.5px; margin-top:2px">${fmt(t.sales)}</div>
+    <div class="relative mt-2.5" style="height:8px; background:var(--bg); border:1px solid var(--border); border-radius:4px">
+      <div style="width:${Math.min(100, monthPct)}%; height:100%; background:var(--accent-blue); border-radius:4px"></div>
+      ${t.target ? `<div title="着地見込みの位置" style="position:absolute; left:${heroProjPos}%; top:-3px; bottom:-3px; width:2px; background:#9CA3AF; border-radius:1px"></div>` : ""}
+    </div>
+    <div class="flex items-center justify-between flex-wrap gap-x-3 mt-2 text-xs">
+      <span class="text-gray-700 font-semibold">達成 ${monthPct.toFixed(1)}%</span>
+      <span class="${heroEarly ? 'text-gray-400' : (projDelta >= 0 ? 'pct-good' : 'pct-bad') + ' font-semibold'}">着地見込み ${fmtM(projection)} (${projPct.toFixed(1)}%)${heroEarly ? ' ※月初参考値' : ''}</span>
+      <span class="text-gray-500">残 ${fmtM(heroRemainT)} · ${heroRemainD}日</span>
+    </div>`;
+
   const cards = [
-    {
-      title: `当月売上 (${SCOPE.month.slice(4,6)}/1-${SCOPE.month.slice(4,6)}/${SCOPE.globalElapsedDays})`,
-      main: fmt(t.sales),
-      sub: `<span class="${pctClass(monthPct)} font-semibold">${monthPct.toFixed(1)}%</span> <span class="text-gray-500">/ 月目標 ${fmtM(t.target)}</span>`,
-      bar: { val: monthPct, color: pctColor(monthPct) }
-    },
-    (function() {
-      // 🛡 2026-07-02: 経過7日未満の着地予測は単純日割りで曜日ノイズが大きい → 判定色なしの「参考値」表示
-      if (SCOPE.globalElapsedDays < 7) {
-        return {
-          title: "月末着地予測",
-          main: fmt(projection),
-          mainCls: "text-gray-400",
-          sub: `<span class="text-gray-400">参考値 — 経過${SCOPE.globalElapsedDays}日の単純日割り。 判定表示は経過7日から</span>`,
-        };
-      }
-      return {
-        title: "月末着地予測",
-        main: fmt(projection),
-        sub: `<span class="${pctClass(projPct)} font-semibold">${projPct.toFixed(1)}%</span> <span class="${projDelta>=0?'pct-good':'pct-bad'} ml-1">${projDelta>=0?'▲':'▼'} ${fmt(Math.abs(projDelta))}</span>`,
-      };
-    })(),
+    { hero: true, html: heroHtml },
     {
       title: "当月来店",
       main: `<span class="kpi-num">${fmtN(t.customers)}</span><span class="text-base text-gray-400 ml-1">人</span>`,
@@ -1609,7 +1652,9 @@ function renderTopKpi() {
     })(),
   ];
 
-  document.getElementById("topKpi").innerHTML = cards.map(c => `
+  document.getElementById("topKpi").innerHTML = cards.map(c => c.hero ? `
+    <div class="card p-4 card-hover col-span-2" style="border-left:4px solid var(--accent-blue)">${c.html}</div>
+  ` : `
     <div class="card p-4 card-hover">
       <div class="text-xs text-gray-500 mb-1.5">${c.title}</div>
       ${c.rawMain ? c.main : `<div class="text-2xl font-bold kpi-num ${c.mainCls || ''}">${c.main}</div>`}
@@ -1894,7 +1939,7 @@ function drawGrowthDeptChart(fys, isFYInProgress) {
     data: {
       labels,
       datasets: [
-        { label: "ヘア", data: hair, backgroundColor: "#E91E63", stack: "d", borderRadius: 3 },
+        { label: "ヘア", data: hair, backgroundColor: "#C9549C", stack: "d", borderRadius: 3 },
         { label: "アイ", data: eye, backgroundColor: "#1E88E5", stack: "d", borderRadius: 3 },
         { label: "ネイル", data: nail, backgroundColor: "#F59E0B", stack: "d", borderRadius: 3 },
       ]
@@ -2485,7 +2530,7 @@ function renderRecruitTab() {
         const notion = c.notion_url ? `<a href="${c.notion_url}" target="_blank" class="text-[11px] text-blue-600 hover:underline whitespace-nowrap ml-1" onclick="event.stopPropagation()">📝 Notion ↗</a>` : "";
         return `<tr class="border-b border-gray-50 hover:bg-gray-50" data-rid="${c.id || ''}">
         <td class="py-2 px-3 text-xs text-gray-600 whitespace-nowrap">${c.applied_date || "—"}</td>
-        <td class="py-2 px-3 font-semibold whitespace-nowrap">${nameDisplay}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}${hasProfile ? ` <span class="text-[10px] text-green-600 ml-1" title="プロフィール登録済">●</span>` : ""}${canEditProfile ? ` <button class="ml-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-full px-2 py-0.5 align-middle transition-colors" title="プロフィールを編集" onclick="event.stopPropagation(); openStaffProfileModal('${(c.name || '').replace(/'/g,"\\'")}')">✎ 編集</button>` : ""}${notion}</td>
+        <td class="py-2 px-3 font-semibold whitespace-nowrap">${nameDisplay}${c.kana ? ` <span class="text-[11px] text-gray-400">${c.kana}</span>` : ""}${hasProfile ? ` <span class="text-[10px] text-green-600 ml-1" title="プロフィール登録済">●</span>` : ""}${canEditProfile ? ` <button class="ml-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-full px-2 py-0.5 align-middle transition-colors" title="プロフィールを編集" onclick="event.stopPropagation(); openStaffProfileModal('${(c.name || '').replace(/'/g,"\\'")}')">${svgIcon("pencil", 10)} 編集</button>` : ""}${notion}</td>
         <td class="py-2 px-3 text-xs">${c.role || "—"}</td>
         <td class="py-2 px-3 text-xs">${c.store_pref || "—"}</td>
         <td class="py-2 px-3 text-xs">${c.experience_years != null ? c.experience_years + "年" : "—"}</td>
@@ -2906,6 +2951,21 @@ function prevMonthOf(period) {
   return `${py}${String(pm).padStart(2,"0")}`;
 }
 
+// 旧月メニューのアーカイブ (data_archive.json) を1回だけ取得して DATA.menu_data にマージ
+function ensureMenuArchive() {
+  if (!DATA || !(DATA.menu_archive_months || []).length) return Promise.resolve(false);
+  if (window._menuArchivePromise) return window._menuArchivePromise;
+  window._menuArchivePromise = fetch("data_archive.json?v=" + encodeURIComponent(DATA.generated_at || ""))
+    .then(r => r.json())
+    .then(a => {
+      // 既存 (最新) 側を優先してマージ
+      DATA.menu_data = Object.assign({}, a.menu_data || {}, DATA.menu_data || {});
+      return true;
+    })
+    .catch(e => { console.warn("menu archive 読込失敗:", e); window._menuArchivePromise = null; return false; });
+  return window._menuArchivePromise;
+}
+
 function renderMenuTab() {
   const periodSel = document.getElementById("menuPeriodSel");
   const sortSel = document.getElementById("menuSortSel");
@@ -2936,10 +2996,11 @@ function renderMenuTab() {
   if (availableFY26.length || "202605MTD" in menuData) {
     optionList.push({ value: "FY26_total", label: "FY26 通年 (進行中)" });
   }
-  // 月別: data に存在する全ての YYYYMM key を 新しい順にリスト
-  const monthlyKeys = Object.keys(menuData)
-    .filter(k => /^\d{6}$/.test(k))
-    .sort((a, b) => b.localeCompare(a));  // newest first
+  // 月別: data に存在する全ての YYYYMM key + アーカイブ分 (未ロードでも選択肢に出す) を 新しい順にリスト
+  const monthlyKeys = [...new Set([
+    ...Object.keys(menuData).filter(k => /^\d{6}$/.test(k)),
+    ...(DATA.menu_archive_months || []),
+  ])].sort((a, b) => b.localeCompare(a));  // newest first
   // 進行中月: 確定 YYYYMM データがなく MTD のみの場合はそれを使用
   const mtdKeys = Object.keys(menuData)
     .filter(k => /^\d{6}MTD$/.test(k))
@@ -2965,7 +3026,18 @@ function renderMenuTab() {
     // Default: latest annual FY (most useful for richest year-over-year view)
     if (annualLabels.length) periodSel.value = annualLabels[0];
     else periodSel.value = optionList[0]?.value || "";
-    [periodSel, sortSel].forEach(s => s.addEventListener("change", drawMenu));
+    // 期間変更: アーカイブ月 (未ロード) が選ばれたら 取得してから描画
+    const _drawWithArchive = () => {
+      const v = periodSel.value;
+      if (/^\d{6}$/.test(v) && !(v in (DATA.menu_data || {})) && (DATA.menu_archive_months || []).includes(v)) {
+        const st = document.getElementById("menuStatus");
+        if (st) st.textContent = "過去データ読込中…";
+        ensureMenuArchive().then(() => drawMenu());
+        return;
+      }
+      drawMenu();
+    };
+    [periodSel, sortSel].forEach(s => s.addEventListener("change", _drawWithArchive));
     const sb = document.getElementById("menuSearchBox");
     if (sb && !sb._wired) {
       sb._wired = true;
@@ -3205,7 +3277,7 @@ function renderAlerts() {
       : "";
     root.innerHTML = `
       <div class="card p-4 flex items-start gap-3 text-sm" style="background:#EFF6FF; border-left:4px solid #2563EB">
-        <span class="text-base flex-shrink-0" style="color:#2563EB">ℹ️</span>
+        <span class="flex-shrink-0 mt-0.5" style="color:#2563EB">${svgIcon("info", 18)}</span>
         <div class="min-w-0">
           <div class="font-bold" style="color:#1E3A8A">${mNum}月 ${SCOPE.globalElapsedDays}日目 — 全社実績 ${fmt(t.sales)} / ${t.customers.toLocaleString()}名${prevNote}</div>
           <div class="text-xs mt-0.5" style="color:#1E3A8A; opacity:0.8">ペース・前年比の判定は経過${MIN_JUDGE_DAYS}日分のデータが揃ってから表示します (月初は曜日の偏りで誤判定になるため)</div>
@@ -3267,7 +3339,7 @@ function renderAlerts() {
       if (!monthly) continue;
       const expected = monthly * (_mjPf != null ? _mjPf : SCOPE.globalElapsedDays / SCOPE.daysInMonth);
       const pct = (sales / expected * 100);
-      const color = d === "ヘア" ? "#E91E63" : d === "アイ" ? "#1E88E5" : "#F59E0B";
+      const color = d === "ヘア" ? "#C9549C" : d === "アイ" ? "#1E88E5" : "#F59E0B";
       if (pct < 70) {
         alerts.push({ severity: 'warn', icon: '●', title: `ELLE by Hanabi 宮古島店 ${d}部門 ペース ${pct.toFixed(0)}% — 未達`,
           detail: `月予算 ${fmt(monthly)} の進捗値 ${fmt(expected)} に対し ${fmt(sales)}、▼ ${fmt(expected - sales)}。`, accentColor: color });
@@ -3316,8 +3388,9 @@ function renderAlerts() {
       ${alerts.map(a => {
         const s = styleFor(a.severity);
         const accent = a.accentColor || s.iconColor;
+        const _iconName = { "⚠": "warn", "↓": "down", "↑": "up", "✓": "check", "●": "dot", "⚲": "dot", "ℹ️": "info" }[a.icon] || "dot";
         return `<div class="flex items-start gap-3 p-3 rounded-lg" style="background:${s.bg}; border-left: 4px solid ${accent}">
-          <div class="text-xl font-bold flex-shrink-0 mt-0.5" style="color:${accent}; line-height:1; min-width:1.5rem; text-align:center">${a.icon}</div>
+          <div class="flex-shrink-0 mt-0.5" style="color:${accent}; min-width:1.5rem; text-align:center">${svgIcon(_iconName, 19)}</div>
           <div class="flex-1 min-w-0">
             <div class="text-sm font-bold" style="color:${s.text}">${a.title}</div>
             <div class="text-xs mt-0.5" style="color:${s.text}; opacity:0.85">${a.detail}</div>
@@ -5259,8 +5332,8 @@ function judgeCostRatio(actual, target) {
 }
 // セクションラベル + カラー
 const COST_SECTIONS = [
-  { sid: "tsunashima",       label: "🏪 Hanabi 綱島店",       sub: "ヘア",       color: "#E91E63" },
-  { sid: "miyakojima_hair",  label: "🏪 ELLE 宮古島 ヘア",     sub: "※エクステ除外", color: "#E91E63" },
+  { sid: "tsunashima",       label: "🏪 Hanabi 綱島店",       sub: "ヘア",       color: "#C9549C" },
+  { sid: "miyakojima_hair",  label: "🏪 ELLE 宮古島 ヘア",     sub: "※エクステ除外", color: "#C9549C" },
   { sid: "miyakojima_eye",   label: "🏪 ELLE 宮古島 アイ",     sub: "アイラッシュ", color: "#1E88E5" },
   { sid: "miyakojima_nail",  label: "🏪 ELLE 宮古島 ネイル",   sub: "ネイル",     color: "#F59E0B" },
 ];
@@ -5531,14 +5604,14 @@ function drawCostRatioTrend(canvasId, fy, cr) {
   };
 
   const datasets = [
-    lineFor("tsunashima", "#E91E63"),
+    lineFor("tsunashima", "#C9549C"),
     lineFor("miyakojima_hair", "#9C27B0"),
     lineFor("miyakojima_eye", "#1E88E5"),
     lineFor("miyakojima_nail", "#F59E0B"),
   ];
   // 規定ライン: ヘア (綱島+宮古島ヘア同じ規定値), アイ, ネイル
   ["tsunashima", "miyakojima_eye", "miyakojima_nail"].forEach(sid => {
-    const color = sid === "tsunashima" ? "#E91E6360" : sid === "miyakojima_eye" ? "#1E88E560" : "#F59E0B60";
+    const color = sid === "tsunashima" ? "#C9549C60" : sid === "miyakojima_eye" ? "#1E88E560" : "#F59E0B60";
     const tl = targetLine(sid, color);
     if (tl) datasets.push(tl);
   });

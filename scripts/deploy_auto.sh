@@ -156,7 +156,7 @@ PUSHED="no"
 if git diff --quiet -- data/ docs/data.json; then
   log "  no changes — skipping commit"
 else
-  git add data/ docs/data.json
+  git add data/ docs/data.json docs/data_archive.json
   COMMIT_MSG="auto: refresh data $(date '+%Y-%m-%d %H:%M')"
   git -c user.email=hanabi-board@local -c user.name="HANABI Auto" commit -q -m "$COMMIT_MSG"
   log "[5/5] git push"

@@ -621,8 +621,28 @@ def main():
         "cost_reviews": load_cost_reviews(),  # 原価レビューレポート所感 (xlsx → 手動転記、 月次振り返りとは別管理)
     }
 
+    # === menu_data 分割 (2026-07-02) ===
+    # menu_data が data.json の 8割 (5MB+) を占めるため、 旧月分を data_archive.json に分離。
+    # data.json には 直近 KEEP_MONTHS ヶ月 + FY**_annual 集計 を残す (年度レポート/検索/通常閲覧は archive 不要)。
+    # 旧月は UI が初期表示後にバックグラウンドで data_archive.json を取得してマージする。
+    KEEP_MONTHS = 14
+    _menu_month_keys = sorted(k for k in out["menu_data"] if re.match(r"^\d{6}$", k))
+    if len(_menu_month_keys) > KEEP_MONTHS:
+        _cutoff = _menu_month_keys[-KEEP_MONTHS]
+        _archive_menu = {k: v for k, v in out["menu_data"].items()
+                         if re.match(r"^\d{6}$", k) and k < _cutoff}
+        out["menu_data"] = {k: v for k, v in out["menu_data"].items() if k not in _archive_menu}
+        out["menu_archive_months"] = sorted(_archive_menu.keys())
+        archive_path = DOCS / "data_archive.json"
+        archive_path.write_text(json.dumps({"menu_data": _archive_menu}, ensure_ascii=False,
+                                           separators=(",", ":")), encoding="utf-8")
+        print(f"✓ wrote {archive_path} ({archive_path.stat().st_size:,} bytes, {len(_archive_menu)} months)")
+    else:
+        out["menu_archive_months"] = []
+
     out_path = DOCS / "data.json"
-    out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    # minify (インデント除去で約4割減量。 gzip転送・JSONパース両方が軽くなる)
+    out_path.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"✓ wrote {out_path} ({out_path.stat().st_size:,} bytes)")
     print(f"  stores={list(STORES.keys())} months={months}")
 

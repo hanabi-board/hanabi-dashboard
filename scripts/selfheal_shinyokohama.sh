@@ -97,7 +97,7 @@ fi
 
 log "  🔧 新横浜の実データに差分あり → 朝は古かった。 data.json 再生成して push"
 python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
-git add "${SRC_FILES[@]}" docs/data.json
+git add "${SRC_FILES[@]}" docs/data.json docs/data_archive.json
 git -c user.email=hanabi-board@local -c user.name="HANABI SelfHeal" \
     commit -q -m "auto(selfheal): 新横浜 最新 salon データで再集計 $(date '+%Y-%m-%d %H:%M')"
 if git push -q origin main; then
