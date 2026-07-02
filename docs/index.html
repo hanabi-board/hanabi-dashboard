@@ -4423,6 +4423,19 @@ function nicenailDisplayNameClean(rawName) {
   // クリーン表示用: プレフィックス + 末尾 * 両方除去
   return (rawName || "").replace(/^[■□●▲★◆☆]+/, "").replace(/\*+$/, "");
 }
+// personKey相当の名寄せ: 記号プレフィックスを除いた表示名で同一人物を突合 (末尾*は保持=同名区別)。
+// staff_profiles / staff_rows は生名キーのため、ランク記号の変更 (例 ★Mariko→☆Mariko) で
+// 別人化してしまう問題を解消する。 プロフィール/写真も記号違いのキーから解決する。
+function samePerson(a, b) {
+  return nicenailDisplayName(a) === nicenailDisplayName(b);
+}
+function findStaffProfile(name) {
+  const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
+  if (profiles[name]) return profiles[name];
+  const dn = nicenailDisplayName(name);
+  for (const k in profiles) { if (nicenailDisplayName(k) === dn) return profiles[k]; }
+  return null;
+}
 function detectNicenailRank(rawName) {
   if (rawName && rawName.startsWith("□")) return { key: "nailist", label: "ネイリスト", color: "#4ab8d8" };
   if (rawName && /^[■●▲★◆☆]/.test(rawName)) return { key: "junior", label: "ジュニア", color: "#888780" };
@@ -4451,7 +4464,7 @@ function staffDisplayName(rawName, storeId) {
 }
 
 function staffAvatar(s, size = 24) {
-  const profile = (DATA.staff_profiles && DATA.staff_profiles.profiles && DATA.staff_profiles.profiles[s.name]) || null;
+  const profile = findStaffProfile(s.name);
   const initial = staffInitial(staffDisplayName(s.name, s.store));
   // 枠色: ナイスネイル店ならランク色、 他は業態色
   const frameColor = isNicenailStore(s.store)
@@ -6711,12 +6724,12 @@ async function saveBudgetForm() {
 function openStaffDetail(storeId, staffName) {
   const modal = document.getElementById("staffDetailModal");
   if (!modal) return;
-  // Find all rows for this staff across months
-  const allRows = (DATA.staff_rows || []).filter(s => s.store === storeId && s.name === staffName && !s.hidden);
+  // Find all rows for this staff across months (記号違い=同一人物を personKey で名寄せ)
+  const allRows = (DATA.staff_rows || []).filter(s => s.store === storeId && samePerson(s.name, staffName) && !s.hidden);
   if (!allRows.length) return;
   const curRow = allRows.find(s => s.month === currentMonth) || allRows[allRows.length - 1];
   const store = DATA.stores[storeId];
-  const profile = (DATA.staff_profiles && DATA.staff_profiles.profiles && DATA.staff_profiles.profiles[staffName]) || {};
+  const profile = findStaffProfile(staffName) || {};
   document.getElementById("sdAvatar").innerHTML = staffAvatar(curRow, 48);
   document.getElementById("sdName").textContent = staffDisplayName(staffName, storeId);
   // ナイスネイル店ならランク色 + ランク表示、 他は業態色 + 部門表示
@@ -6745,7 +6758,7 @@ function openStaffDetail(storeId, staffName) {
   const ms = (DATA.monthly_by_store[storeId] || {})[currentMonth];
   const rankIn = (rowsForMonth, key) => {
     const sorted = [...rowsForMonth].sort((a, b) => (b[key] || 0) - (a[key] || 0));
-    return sorted.findIndex(s => s.name === staffName) + 1;
+    return sorted.findIndex(s => samePerson(s.name, staffName)) + 1;
   };
   const sameStoreRows = (DATA.staff_rows || []).filter(s => s.store === storeId && s.month === currentMonth && !s.hidden);
   const rankTotal = rankIn(sameStoreRows, "total_sales");
