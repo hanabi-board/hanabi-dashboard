@@ -1226,17 +1226,19 @@ Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Hiragino Sans"
 // 退職スタッフのhidden flagを動的に適用 (profile.retired_date >= staff_row.month なら hidden)
 function applyRetiredStaffFlag() {
   const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
-  const retiredMap = {};  // name → retired YYYYMM
+  // 🛡 2026-07-02: キーを記号除去名 (personKey相当) に。 プロフィールが「★Mariko」で
+  //   staff_rows が「☆Mariko」等、 記号変更があっても退職フラグがすり抜けないように。
+  const retiredMap = {};  // 記号除去名 → retired YYYYMM
   for (const [name, p] of Object.entries(profiles)) {
     if (p.retired) {
       // retired は YYYY-MM-DD 形式。 YYYYMM に変換
       const m = p.retired.match(/^(\d{4})-(\d{2})/);
-      if (m) retiredMap[name] = m[1] + m[2];
+      if (m) retiredMap[nicenailDisplayName(name)] = m[1] + m[2];
     }
   }
   if (!Object.keys(retiredMap).length) return;
   for (const s of (DATA.staff_rows || [])) {
-    const retYM = retiredMap[s.name];
+    const retYM = retiredMap[nicenailDisplayName(s.name)];
     if (retYM && s.month > retYM) {  // retired月の翌月以降は非表示
       s.hidden = true;
     }
@@ -4303,25 +4305,28 @@ function renderRetiredStaffList() {
   const todayYMD = new Date().toISOString().slice(0, 10);
   const retiredEntries = Object.entries(profiles).filter(([_, p]) => p.retired && p.retired <= todayYMD && !p.irregular);
   // 過去出現した全スタッフ + 現在月にいない人 (CSV ベース で退職判定)
-  const currentNames = new Set((DATA.staff_rows || []).filter(s => s.month === currentMonth).map(s => s.name));
+  // 🛡 2026-07-02: 記号除去名で判定。 記号変更 (★Mariko→☆Mariko) で現役スタッフが
+  //   「CSV退職」 扱いになるバグ修正 + 同一人物の記号違い重複カードも排除。
+  const currentKeys = new Set((DATA.staff_rows || []).filter(s => s.month === currentMonth).map(s => nicenailDisplayName(s.name)));
   const allHistoricalNames = new Set((DATA.staff_rows || []).map(s => s.name));
   // 業務委託・不定期 や hidden は退職とみなさない
-  const csvRetired = [...allHistoricalNames].filter(n => !currentNames.has(n)).filter(n => {
-    const p = profiles[n];
+  const csvRetired = [...allHistoricalNames].filter(n => !currentKeys.has(nicenailDisplayName(n))).filter(n => {
+    const p = profiles[n] || findStaffProfile(n);
     if (!p) return true;
     if (p.hidden) return false;
     if (p.irregular) return false;
     return true;
   });
 
-  // 統合: profiles に retired があるもの + CSV で消えてるもの (重複は排除)
+  // 統合: profiles に retired があるもの + CSV で消えてるもの (記号除去名で重複排除)
   const allRetired = new Map();
   for (const [name, p] of retiredEntries) {
-    allRetired.set(name, { name, profile: p, source: "profile" });
+    allRetired.set(nicenailDisplayName(name), { name, profile: p, source: "profile" });
   }
   for (const name of csvRetired) {
-    if (!allRetired.has(name)) {
-      allRetired.set(name, { name, profile: profiles[name] || {}, source: "csv" });
+    const k = nicenailDisplayName(name);
+    if (!allRetired.has(k)) {
+      allRetired.set(k, { name, profile: findStaffProfile(name) || {}, source: "csv" });
     }
   }
   // 退職日が新しい順にソート
@@ -4335,7 +4340,7 @@ function renderRetiredStaffList() {
   }
   // 過去出現の最終月 + 店舗 を取得
   const lastInfo = (name) => {
-    const rows = (DATA.staff_rows || []).filter(s => s.name === name).sort((a, b) => b.month.localeCompare(a.month));
+    const rows = (DATA.staff_rows || []).filter(s => samePerson(s.name, name)).sort((a, b) => b.month.localeCompare(a.month));
     return rows[0] || null;
   };
   listEl.innerHTML = `<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">${list.map(({ name, profile }) => {
@@ -4376,7 +4381,7 @@ function renderIrregularStaffList() {
   }
   // 過去出現の最終月 + 店舗 を取得
   const lastInfo = (name) => {
-    const rows = (DATA.staff_rows || []).filter(s => s.name === name).sort((a, b) => b.month.localeCompare(a.month));
+    const rows = (DATA.staff_rows || []).filter(s => samePerson(s.name, name)).sort((a, b) => b.month.localeCompare(a.month));
     return rows[0] || null;
   };
   // 最終出勤月の新しい順
@@ -6305,6 +6310,14 @@ function openStaffProfileModal(staffName, prefill) {
   const modal = document.getElementById("staffProfileModal");
   if (!modal) return;
   const profiles = (DATA.staff_profiles && DATA.staff_profiles.profiles) || {};
+  // 🛡 2026-07-02: 記号変更対応。 exact キーに無ければ 記号除去名で既存プロフィールを探し、
+  //   見つかったら「その既存キー」 を編集対象にする。 これが無いと ☆Mariko で開いた時に
+  //   空の「登録」 になり、 保存で ★Mariko と別の重複プロフィールが生まれてしまう。
+  if (!profiles[staffName] && staffName) {
+    const _dn = nicenailDisplayName(staffName);
+    const _hit = Object.keys(profiles).find(k => nicenailDisplayName(k) === _dn);
+    if (_hit) staffName = _hit;
+  }
   const existing = profiles[staffName] || {};
   const p = prefill || existing;
   document.getElementById("spModalTitle").textContent = profiles[staffName] ? "スタッフ プロフィール編集" : "スタッフ プロフィール登録";
@@ -6822,6 +6835,10 @@ function openStaffDetail(storeId, staffName) {
   }
   const rowsByMonth = {};
   for (const r of allRows) rowsByMonth[r.month] = r;
+  // 🛡 2026-07-02: 初出勤より前の先頭「データなし」月は表示しない
+  //   (新人だと過去12ヶ月の大半が「データなし」行の羅列になるため。 在籍中の空白月は残す)
+  const _firstDataIdx = months12.findIndex(m => rowsByMonth[m]);
+  if (_firstDataIdx > 0) months12.splice(0, _firstDataIdx);
 
   // Sales chart (指名 / フリー / 店販 の3スタック)
   const labels = months12.map(m => parseInt(m.slice(4,6), 10) + "月");
@@ -6841,7 +6858,7 @@ function openStaffDetail(storeId, staffName) {
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          y: { stacked: true, beginAtZero: true, ticks: { callback: v => "¥" + (v >= 10000 ? (v / 10000).toFixed(0) + "万" : v.toLocaleString()) } },
+          y: { stacked: true, beginAtZero: true, ticks: { callback: v => "¥" + (v >= 10000 ? (v / 10000).toFixed(v % 10000 ? 1 : 0) + "万" : v.toLocaleString()) } },
           x: { stacked: true }
         },
         plugins: {
