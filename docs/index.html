@@ -1219,6 +1219,46 @@ function isSameStoreEligible(sid, currentMonth) {
   // 前年同月の月初が「成熟日」 以降なら同店舗扱い
   return prevYearStart >= matureDate;
 }
+
+// === 曜日加重ペース (2026-07-02) ===
+// 「期待値 = 予算 × 経過日/月日数」 は毎日が平均日という仮定で、 平日<週末 の売上構造では
+// 月初や週構成の偏りで誤差が出る。 店舗ごとの曜日別平均売上 (直近の完成月2ヶ月から学習) で
+// 「経過日数分に入っているはずの売上割合」 を補正する。 学習データ不足の店舗 (新店等) は単純日割り。
+function _dowWeights(sid) {
+  window._dowWeightsCache = window._dowWeightsCache || {};
+  if (sid in window._dowWeightsCache) return window._dowWeightsCache[sid];
+  const byM = (DATA.daily_by_store || {})[sid] || {};
+  const WD = { "日": 0, "月": 1, "火": 2, "水": 3, "木": 4, "金": 5, "土": 6 };
+  // 学習対象: 営業日 (sales>0) が15日以上ある月 の直近2ヶ月 (書きかけの当月は自然に外れる)
+  const months = Object.keys(byM).filter(m => (byM[m] || []).filter(d => (d.sales || 0) > 0).length >= 15).sort().slice(-2);
+  let weights = null;
+  if (months.length) {
+    const sum = [0,0,0,0,0,0,0], cnt = [0,0,0,0,0,0,0];
+    for (const m of months) for (const d of byM[m]) {
+      const w = (d.weekday in WD) ? WD[d.weekday] : new Date(d.date + "T00:00:00").getDay();
+      sum[w] += (d.sales || 0); cnt[w]++;
+    }
+    const avg = sum.map((s, i) => cnt[i] ? s / cnt[i] : 0);
+    if (avg.reduce((a, b) => a + b, 0) > 0) weights = avg;
+  }
+  window._dowWeightsCache[sid] = weights;
+  return weights;
+}
+// 指定月で「経過 elapsed 日までに入っているはずの売上割合」 (0〜1)。 重みが無ければ単純日割り。
+// 完成月 (elapsed=月日数) は必ず 1 になるので過去月の表示には影響しない。
+function paceFraction(sid, ym, elapsed, daysInMonth) {
+  const uniform = Math.min(1, elapsed / daysInMonth);
+  const w = _dowWeights(sid);
+  if (!w) return uniform;
+  const y = parseInt(ym.slice(0, 4)), mo = parseInt(ym.slice(4, 6));
+  let ew = 0, tw = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const wd = new Date(y, mo - 1, d).getDay();
+    tw += w[wd];
+    if (d <= elapsed) ew += w[wd];
+  }
+  return tw > 0 ? ew / tw : uniform;
+}
 Chart.defaults.color = "#6B7280";
 Chart.defaults.borderColor = "#E5E7EB";
 Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", system-ui';
@@ -1347,7 +1387,9 @@ function computeScope(month) {
     const fyMonthlyTarget = ((DATA.target_by_store || {})[sid] || {})[month] || 0;
     const dailyTargetSum = ds.reduce((a,d) => a + d.sales_target, 0);
     const monthlyTarget = fyMonthlyTarget || dailyTargetSum;
-    const elapsedTarget = monthlyTarget * (globalElapsedDays / daysInMonth);
+    // 🛡 2026-07-02: 曜日加重ペース。 完成月は fraction=1 になるので過去月表示は不変
+    const pf = paceFraction(sid, month, globalElapsedDays, daysInMonth);
+    const elapsedTarget = monthlyTarget * pf;
     const sales = daySales || (ms ? ms.total_sales : 0);
     const customers = (vis && vis.customers) ? vis.customers : (ms ? ms.customers : 0);
     const fyAnnual = ((DATA.budgets || {}).annual?.by_store || {})[sid] || 0;
@@ -1358,10 +1400,10 @@ function computeScope(month) {
     const prevMonthSales = prevMs ? prevMs.total_sales : 0;
     // Last day's sales (most recent day with sales > 0)
     const lastDay = [...ds].reverse().find(d => d.sales > 0) || null;
-    storeRows.push({ sid, store: stores[sid], ms, ds, vis, daySales, monthlyTarget, elapsedTarget, sales, customers, fyAnnual, prevYearAnnual, prevMonthSales, prevYM, lastDay, isBeforeOpen });
+    storeRows.push({ sid, store: stores[sid], ms, ds, vis, daySales, monthlyTarget, elapsedTarget, paceFraction: pf, sales, customers, fyAnnual, prevYearAnnual, prevMonthSales, prevYM, lastDay, isBeforeOpen });
   }
 
-  let totals = { sales: 0, target: 0, expected: 0, customers: 0, staff: 0, fyAnnual: 0, prevYearAnnual: 0, prevMonthSales: 0, prevMonthSalesSameStore: 0, salesSameStore: 0, lastDaySales: 0 };
+  let totals = { sales: 0, target: 0, expected: 0, projection: 0, yoyExpected: 0, prevSSExpected: 0, customers: 0, staff: 0, fyAnnual: 0, prevYearAnnual: 0, prevMonthSales: 0, prevMonthSalesSameStore: 0, salesSameStore: 0, lastDaySales: 0 };
   let cVis = { new: 0, repeat: 0, referral: 0, customers: 0 };
   let cMs = { tech_customers_nominated: 0, tech_customers_free: 0, tech_sales_nominated: 0, tech_sales_free: 0, tech_customers_male: 0, tech_customers_female: 0, tech_sales_male: 0, tech_sales_female: 0, customers: 0, total_sales: 0, by_dept: {ヘア:{sales:0},アイ:{sales:0},ネイル:{sales:0}} };
   for (const r of storeRows) {
@@ -1370,6 +1412,12 @@ function computeScope(month) {
     totals.sales += r.sales;
     totals.target += r.monthlyTarget;
     totals.expected += r.elapsedTarget;
+    // 🛡 曜日加重の全社着地予測 (店舗別に補正して合算)。 fraction=0 (経過0扱い等) は単純日割りにフォールバック
+    totals.projection += r.paceFraction > 0
+      ? Math.round(r.sales / r.paceFraction)
+      : (globalElapsedDays ? Math.round(r.sales / globalElapsedDays * daysInMonth) : 0);
+    // 🛡 前年同月比の期待値も店舗別の曜日加重で (前年売上 × 当月ここまでの期待割合)
+    totals.yoyExpected += r.prevMonthSales * r.paceFraction;
     totals.customers += r.customers;
     totals.fyAnnual += r.fyAnnual;
     totals.prevYearAnnual += r.prevYearAnnual;
@@ -1379,6 +1427,7 @@ function computeScope(month) {
     if (isSameStoreEligible(r.sid, month)) {
       totals.prevMonthSalesSameStore += r.prevMonthSales;
       totals.salesSameStore += r.sales;
+      totals.prevSSExpected += r.prevMonthSales * r.paceFraction;
     }
     if (r.lastDay) totals.lastDaySales += r.lastDay.sales;
     if (r.ms) {
@@ -1437,12 +1486,13 @@ function render(month) {
 function renderTopKpi() {
   const t = SCOPE.totals;
   const monthPct = t.target ? (t.sales / t.target * 100) : 0;
-  const projection = SCOPE.globalElapsedDays ? Math.round(t.sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
+  // 🛡 2026-07-02: 着地予測は店舗別の曜日加重補正の合算 (SCOPE.totals.projection)
+  const projection = t.projection || (SCOPE.globalElapsedDays ? Math.round(t.sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0);
   const projDelta = projection - t.target;
   const projPct = t.target ? (projection / t.target * 100) : 0;
-  // YoY: real previous-year same month (preferred), pace-adjusted
+  // YoY: real previous-year same month (preferred), pace-adjusted (曜日加重)
   const prevMonthSales = t.prevMonthSales;
-  const yoyExpected = prevMonthSales ? prevMonthSales * (SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 0;
+  const yoyExpected = prevMonthSales ? (t.yoyExpected || prevMonthSales * (SCOPE.globalElapsedDays / SCOPE.daysInMonth)) : 0;
   const yoyPct = yoyExpected ? (t.sales / yoyExpected * 100) : 0;
   const lastDaySales = t.lastDaySales;
   // Find "last day" date string
@@ -1507,7 +1557,7 @@ function renderTopKpi() {
       // 同店舗 YoY (開店から12ヶ月未満の店舗を除外)
       const ssPrev = t.prevMonthSalesSameStore;
       const ssSales = t.salesSameStore;
-      const expectedSS = ssPrev ? ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 0;
+      const expectedSS = ssPrev ? (t.prevSSExpected || ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth)) : 0;
       const ssPct = expectedSS ? (ssSales / expectedSS * 100) : 0;
       const excludedStores = SCOPE.storeRows.filter(r => !isSameStoreEligible(r.sid, SCOPE.month));
       const excludedCount = excludedStores.length;
@@ -1951,7 +2001,7 @@ function renderAnnualReport() {
       if (monthSumAllYR(m) > 0) monthsElapsed++;
       else break;
     }
-    const dailyFraction = SCOPE.globalElapsedDays / SCOPE.daysInMonth;
+    const dailyFraction = SCOPE.totals.target ? (SCOPE.totals.expected / SCOPE.totals.target) : (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
     monthsEffective = Math.max(0, monthsElapsed - 1) + dailyFraction;
     projection = monthsEffective > 0 ? Math.round(tgtTotal / monthsEffective * 12) : 0;
     for (const sid of allStoresYR) {
@@ -3183,7 +3233,7 @@ function renderAlerts() {
     const _ssExcluded = SCOPE.storeRows.filter(r => !isSameStoreEligible(r.sid, currentMonth)).map(r => r.store.name);
     const _ssLabel = _ssEligible.length === 1 ? _ssEligible[0].store.name : "同店舗";
     const _ssNote = _ssExcluded.length ? ` ※${_ssExcluded.join("・")}は前年未開店/開店12ヶ月未満のため対象外。` : "";
-    const yoyExp = ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+    const yoyExp = t.prevSSExpected || ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
     const yoyPct = (ssSales / yoyExp * 100);
     if (yoyPct < 80) {
       alerts.push({ severity: 'critical', icon: '↓', title: `${_ssLabel} 前年同月比 ${yoyPct.toFixed(0)}% — 前年割れペース`,
@@ -3209,11 +3259,13 @@ function renderAlerts() {
   const eleMs = (DATA.monthly_by_store.miyakojima || {})[currentMonth];
   if (eleMs) {
     const monthDeptBudget = ((DATA.budgets || {}).monthly_dept_miyakojima || {})[currentMonth] || {};
+    // 部門別の期待値は宮古島店の曜日加重 fraction を流用 (部門別daily は無いため店舗全体の曜日構成で近似)
+    const _mjPf = (SCOPE.storeRows.find(r => r.sid === "miyakojima") || {}).paceFraction;
     for (const d of ["ヘア", "アイ", "ネイル"]) {
       const sales = eleMs.by_dept[d].sales;
       const monthly = monthDeptBudget[d] || 0;
       if (!monthly) continue;
-      const expected = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+      const expected = monthly * (_mjPf != null ? _mjPf : SCOPE.globalElapsedDays / SCOPE.daysInMonth);
       const pct = (sales / expected * 100);
       const color = d === "ヘア" ? "#E91E63" : d === "アイ" ? "#1E88E5" : "#F59E0B";
       if (pct < 70) {
@@ -3390,7 +3442,7 @@ function renderFyProgress() {
   }
   // For currently-in-progress month, we have partial data — use ratio (only if viewing in-progress month)
   const isInProgress = currentMonth === fyMonths[Math.max(0, monthsElapsed - 1)];
-  const dailyElapsedFraction = isInProgress ? (SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 1;
+  const dailyElapsedFraction = isInProgress ? (SCOPE.totals.target ? SCOPE.totals.expected / SCOPE.totals.target : SCOPE.globalElapsedDays / SCOPE.daysInMonth) : 1;
   const monthsEffective = monthsElapsed - 1 + dailyElapsedFraction;
   const annualProjection = monthsEffective > 0 ? Math.round(fyTotal / monthsEffective * 12) : 0;
   const annualBudgetPct = fyBudget ? (fyTotal / fyBudget * 100) : 0;
@@ -3475,7 +3527,7 @@ function renderStatusPanel() {
   // Same-store YoY (excludes new stores)
   const ssPrev = t.prevMonthSalesSameStore;
   const ssSales = t.salesSameStore;
-  const yoyExpected = ssPrev ? Math.round(ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth)) : 0;
+  const yoyExpected = ssPrev ? Math.round(t.prevSSExpected || ssPrev * (SCOPE.globalElapsedDays / SCOPE.daysInMonth)) : 0;
   const yoyPct = yoyExpected ? (ssSales / yoyExpected * 100) : 0;
   const yoyDelta = ssSales - yoyExpected;
   const newStoreCount = SCOPE.storeRows.filter(r => r.prevMonthSales === 0 && r.sales > 0).length;
@@ -3626,7 +3678,7 @@ function renderStoreCompare() {
             const compW = (sales/total*100).toFixed(1);
             const color = d==="ヘア" ? "var(--dept-hair)" : d==="アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
             const monthly = monthDeptBudget[d] || 0;
-            const expected = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+            const expected = monthly * (r.paceFraction != null ? r.paceFraction : SCOPE.globalElapsedDays / SCOPE.daysInMonth);
             const dPacePct = expected ? (sales/expected*100) : 0;
             const dProjection = SCOPE.globalElapsedDays ? Math.round(sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
             const dProjDelta = dProjection - monthly;
@@ -3722,7 +3774,7 @@ function renderDeptBreakdownSummary() {
       const color = d==="ヘア" ? "var(--dept-hair)" : d==="アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
       const monthly = monthDeptBudget[d] || (annualBudget[d] ? annualBudget[d]/12 : 0);
       const fyAnnual = annualBudget[d] || 0;
-      const expectedToDate = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+      const expectedToDate = monthly * (((SCOPE.storeRows.find(_r => _r.sid === "miyakojima") || {}).paceFraction) ?? (SCOPE.globalElapsedDays / SCOPE.daysInMonth));
       const monthPct = monthly ? (sales/monthly*100) : 0;
       const pacePct = expectedToDate ? (sales/expectedToDate*100) : 0;
       const projection = SCOPE.globalElapsedDays ? Math.round(sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
@@ -3926,11 +3978,13 @@ function renderDeptBudgetTable() {
   // 旧コード (tsuRow/eleRow ハードコード) は廃止。 下の rows ループで SCOPE.storeRows を反復するので不要
 
   const buildRow = (opts) => {
-    const { label, indent, sales, target, share, color, isStoreRow } = opts;
-    const expected = target * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+    const { label, indent, sales, target, share, color, isStoreRow, pf } = opts;
+    // 🛡 2026-07-02: 曜日加重 fraction (pf) が渡されればそれで期待値/着地を計算
+    const _f = (pf != null && pf > 0) ? pf : (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+    const expected = target * _f;
     const monthPct = target ? (sales / target * 100) : 0;
     const pacePctV = expected ? (sales / expected * 100) : 0;
-    const projection = SCOPE.globalElapsedDays ? Math.round(sales / SCOPE.globalElapsedDays * SCOPE.daysInMonth) : 0;
+    const projection = _f > 0 ? Math.round(sales / _f) : 0;
     const projDelta = projection - target;
     const w = target ? Math.min(100, sales/target*100) : 0;
     const labelCell = isStoreRow
@@ -3968,6 +4022,7 @@ function renderDeptBudgetTable() {
       sales: r.sales, target: sTarget,
       share: companyTotal ? (r.sales/companyTotal*100).toFixed(1)+"%" : "—",
       isStoreRow: true,
+      pf: r.paceFraction,
     });
     // 複数部門の店舗のみ部門別 sub-rows (ELLE宮古島等)
     const isMultiDept = (r.store.departments || []).length > 1 && !r.store.independent_dept;
@@ -3982,6 +4037,7 @@ function renderDeptBudgetTable() {
           label: d, indent: true, color,
           sales, target,
           share: storeTotal ? (sales/storeTotal*100).toFixed(1)+"% (店舗内)" : "—",
+          pf: r.paceFraction,
         });
       });
     }
@@ -5649,7 +5705,7 @@ function computeMgmtInsights() {
     if (r.isBeforeOpen) continue;
     if (!isSameStoreEligible(r.sid, SCOPE.month)) continue;
     if (!r.prevMonthSales) continue;
-    const expected = r.prevMonthSales * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+    const expected = r.prevMonthSales * (r.paceFraction != null ? r.paceFraction : SCOPE.globalElapsedDays / SCOPE.daysInMonth);
     if (!expected) continue;
     const yoy = r.sales / expected * 100;
     if (yoy < 85) {
@@ -5671,7 +5727,7 @@ function computeMgmtInsights() {
       const sales = eleR.ms.by_dept[d].sales;
       const monthly = monthDeptBudget[d] || 0;
       if (!monthly) continue;
-      const expected = monthly * (SCOPE.globalElapsedDays / SCOPE.daysInMonth);
+      const expected = monthly * (eleR.paceFraction != null ? eleR.paceFraction : SCOPE.globalElapsedDays / SCOPE.daysInMonth);
       const pct = sales / expected * 100;
       const sec = deptSecMap[d];
       if (pct < 70) {
@@ -5805,7 +5861,7 @@ function renderMgmtReview() {
       const r = sec.row;
       const ds = (r.ms.by_dept[sec.dept] || {}).sales || 0;
       const budget = (((DATA.budgets || {}).monthly_dept_miyakojima || {})[SCOPE.month] || {})[sec.dept] || 0;
-      const pace = budget && SCOPE.globalElapsedDays ? (ds / (budget * SCOPE.globalElapsedDays / SCOPE.daysInMonth) * 100) : 0;
+      const pace = budget && SCOPE.globalElapsedDays ? (ds / (budget * (r.paceFraction != null && r.paceFraction > 0 ? r.paceFraction : SCOPE.globalElapsedDays / SCOPE.daysInMonth)) * 100) : 0;
       return `<div class="text-xs text-gray-600 mb-2">売上 <span class="kpi-num font-semibold text-gray-900">${fmt(ds)}</span> / 月予算 ${fmtM(budget)} (ペース ${pace.toFixed(0)}%)</div>`;
     }
     return "";
