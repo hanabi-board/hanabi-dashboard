@@ -1459,11 +1459,22 @@ function renderTopKpi() {
       sub: `<span class="${pctClass(monthPct)} font-semibold">${monthPct.toFixed(1)}%</span> <span class="text-gray-500">/ 月目標 ${fmtM(t.target)}</span>`,
       bar: { val: monthPct, color: pctColor(monthPct) }
     },
-    {
-      title: "月末着地予測",
-      main: fmt(projection),
-      sub: `<span class="${pctClass(projPct)} font-semibold">${projPct.toFixed(1)}%</span> <span class="${projDelta>=0?'pct-good':'pct-bad'} ml-1">${projDelta>=0?'▲':'▼'} ${fmt(Math.abs(projDelta))}</span>`,
-    },
+    (function() {
+      // 🛡 2026-07-02: 経過7日未満の着地予測は単純日割りで曜日ノイズが大きい → 判定色なしの「参考値」表示
+      if (SCOPE.globalElapsedDays < 7) {
+        return {
+          title: "月末着地予測",
+          main: fmt(projection),
+          mainCls: "text-gray-400",
+          sub: `<span class="text-gray-400">参考値 — 経過${SCOPE.globalElapsedDays}日の単純日割り。 判定表示は経過7日から</span>`,
+        };
+      }
+      return {
+        title: "月末着地予測",
+        main: fmt(projection),
+        sub: `<span class="${pctClass(projPct)} font-semibold">${projPct.toFixed(1)}%</span> <span class="${projDelta>=0?'pct-good':'pct-bad'} ml-1">${projDelta>=0?'▲':'▼'} ${fmt(Math.abs(projDelta))}</span>`,
+      };
+    })(),
     {
       title: "当月来店",
       main: `<span class="kpi-num">${fmtN(t.customers)}</span><span class="text-base text-gray-400 ml-1">人</span>`,
@@ -1501,6 +1512,15 @@ function renderTopKpi() {
       const excludedStores = SCOPE.storeRows.filter(r => !isSameStoreEligible(r.sid, SCOPE.month));
       const excludedCount = excludedStores.length;
       const excludedNames = excludedStores.map(r => r.store.short || r.store.name).join("/");
+      // 🛡 2026-07-02: 経過7日未満は曜日ノイズで上下どちらにも信用できない → 判定色なしの「参考値」表示
+      if (SCOPE.globalElapsedDays < 7) {
+        return {
+          title: excludedCount ? "前年同月比 (同店舗)" : "前年同月比",
+          main: ssPrev ? `${ssPct.toFixed(1)}%` : "—",
+          mainCls: "text-gray-400",
+          sub: ssPrev ? `<span class="text-gray-400">参考値 (判定は経過7日から) · 前年同月 ${fmt(ssPrev)}${excludedCount ? ` · 新店除外: ${excludedNames}` : ""}</span>` : "前年データなし",
+        };
+      }
       return {
         title: excludedCount ? "前年同月比 (同店舗)" : "前年同月比",
         main: ssPrev ? `${ssPct.toFixed(1)}%` : "—",
