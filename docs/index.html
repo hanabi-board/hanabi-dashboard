@@ -1587,10 +1587,25 @@ function renderTopKpi() {
         title: "客単価 (店舗別)",
         main: `<div class="space-y-1.5 mt-1">${perStore.map(s => {
           const color = storeChartColor(s.sid);
-          return `<div class="flex items-baseline justify-between">
+          let row = `<div class="flex items-baseline justify-between">
             <span class="text-xs text-gray-500">${s.name}</span>
             <span class="kpi-num text-lg font-bold" style="color:${color}">${fmt(s.avg)}</span>
           </div>`;
+          // 🎨 2026-07-02 水野要望: ELLE宮古島は業態3部門が混ざった客単価では実態が見えない → 部門内訳を併記
+          if (s.sid === "miyakojima") {
+            const bd = ((SCOPE.storeRows.find(r => r.sid === "miyakojima") || {}).ms || {}).by_dept || {};
+            row += ["ヘア", "アイ", "ネイル"].map(d => {
+              const dd = bd[d] || {};
+              const avg = dd.customers ? Math.round(dd.sales / dd.customers) : 0;
+              if (!avg) return "";
+              const dc = d === "ヘア" ? "var(--dept-hair)" : d === "アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
+              return `<div class="flex items-baseline justify-between" style="padding-left:12px">
+                <span class="text-[11px]" style="color:${dc}">${d}</span>
+                <span class="kpi-num text-xs font-semibold text-gray-600">${fmt(avg)}</span>
+              </div>`;
+            }).join("");
+          }
+          return row;
         }).join("")}</div>`,
         sub: "",
         rawMain: true,
