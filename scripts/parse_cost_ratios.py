@@ -39,12 +39,22 @@ OUTPUT = DATA_DIR / "cost_ratios.json"
 JST = ZoneInfo("Asia/Tokyo")
 
 # Box ファイル候補 (複数 FY を全部パースして統合)
-BOX_PATHS = [
-    Path.home() / "Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/HANABI_原価計算表_ver0.9.xlsx",
-    Path.home() / "Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/HABABI_FY26予実管理表.xlsx",
-    # 将来のため
-    Path.home() / "Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/HABABI_FY27予実管理表.xlsx",
-]
+# 🛡 2026-07-03: ファイルが 010_運営本部/ 直下 → 000_本部/ 配下に移動 + ver サフィックス付きに
+#   リネームされて月初取込が silent skip していた。 glob で「名前の揺れ (ver0.5等)・置き場所」 に
+#   耐える方式に変更。 同名パターン複数ヒット時は名前降順 (=最新ver) を採用。
+_BOX_BASE = Path.home() / "Library/CloudStorage/Box-Box/050_HANABI/010_運営本部"
+def _find_box_files():
+    patterns = ["HANABI_原価計算表*.xlsx", "HABABI_FY*予実管理表*.xlsx", "HANABI_FY*予実管理表*.xlsx"]
+    found = []
+    for sub in [_BOX_BASE, _BOX_BASE / "000_本部"]:
+        for pat in patterns:
+            for p in sorted(sub.glob(pat), reverse=True):
+                # old/ フォルダは対象外、 同種 (パターン×FY部分) は最新verのみ
+                key = (pat, p.name.split("_ver")[0])
+                if key not in [(k, n) for k, n, _ in found]:
+                    found.append((pat, p.name.split("_ver")[0], p))
+    return [p for _, _, p in found]
+BOX_PATHS = _find_box_files()
 
 
 def safe_num(v):

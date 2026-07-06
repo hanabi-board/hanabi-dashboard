@@ -263,27 +263,54 @@
       "tsunashima": {
         "sales": 3688622,
         "cost": 359630,
-        "ratio": 0.0975
+        "ratio": 0.097497
       },
       "miyakojima_total": {
-        "sales": 4922037,
-        "cost": 342602,
-        "ratio": 0.0696
+        "sales": 4749786,
+        "cost": 279002,
+        "ratio": 0.05874
       },
       "miyakojima_hair": {
-        "sales": 1407536,
+        "sales": 1407992,
         "cost": 131273,
-        "ratio": 0.0933
+        "ratio": 0.093234
       },
       "miyakojima_eye": {
         "sales": 2050856,
         "cost": 78901,
-        "ratio": 0.0385
+        "ratio": 0.038472
       },
       "miyakojima_nail": {
         "sales": 1290938,
         "cost": 68828,
-        "ratio": 0.0533
+        "ratio": 0.053316
+      }
+    },
+    "202606": {
+      "tsunashima": {
+        "sales": 3783829,
+        "cost": 288486,
+        "ratio": 0.076242
+      },
+      "miyakojima_total": {
+        "sales": 4983820,
+        "cost": 287198,
+        "ratio": 0.057626
+      },
+      "miyakojima_hair": {
+        "sales": 1383147,
+        "cost": 134665,
+        "ratio": 0.097361
+      },
+      "miyakojima_eye": {
+        "sales": 2185913,
+        "cost": 38509,
+        "ratio": 0.017617
+      },
+      "miyakojima_nail": {
+        "sales": 1414760,
+        "cost": 114024,
+        "ratio": 0.080596
       }
     }
   },
@@ -302,16 +329,15 @@
   },
   "sources": [
     {
-      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/HANABI_原価計算表_ver0.9.xlsx",
+      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/000_本部/HANABI_原価計算表_ver0.9.xlsx",
       "fy": "FY25",
       "months": 12
     },
     {
-      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/HABABI_FY26予実管理表.xlsx",
+      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/000_本部/HABABI_FY26予実管理表_ver0.5.xlsx",
       "fy": "FY26",
-      "months": 0
-    },
-    "2026年5月度_原価レビューレポート_ver0_1.xlsx (ナラティブから手動反映)"
+      "months": 2
+    }
   ],
-  "parsed_at": "2026-06-05"
+  "parsed_at": "2026-07-06T20:00:02.638155+09:00"
 }
