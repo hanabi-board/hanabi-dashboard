@@ -166,6 +166,11 @@
       "photo": "Yui.jpg",
       "kana": "ユイ",
       "role": "店長"
+    },
+    "Rikoto": {
+      "photo": "Rikoto.jpg",
+      "kana": "リコト",
+      "role": "プロジェクトリーダー"
     }
   }
 }
