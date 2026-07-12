@@ -161,6 +161,11 @@
       "joined": "2026-07-18",
       "role": "ヘア（スタイリスト）",
       "employment_type": "正社員"
+    },
+    "Rikoto": {
+      "photo": "Rikoto.jpg",
+      "kana": "リコト",
+      "role": "プロジェクトリーダー"
     }
   }
 }
