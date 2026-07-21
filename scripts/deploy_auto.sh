@@ -14,6 +14,14 @@ LOG_DIR="$ROOT/logs"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/deploy_$(date +%Y%m%d_%H%M%S).log"
 
+# 🛡 指定日スキップ (2026-07-21): ~/.dashboard_skip_dates に今日 (YYYYMMDD) が
+#   書かれていたら静かに終了。 旅行等で「特定の朝だけ止めたい」 用。
+#   日付一致でのみ発動するため、 戻し忘れても翌日から自動で通常運転に復帰する。
+if [ -f "$HOME/.dashboard_skip_dates" ] && grep -q "^$(date +%Y%m%d)$" "$HOME/.dashboard_skip_dates"; then
+  echo "[skip] $(date +%Y%m%d) は指定スキップ日のため終了 (~/.dashboard_skip_dates)" >> "$LOG_FILE"
+  exit 0
+fi
+
 log() { echo "[$(date '+%H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
 
 # macOS Notification Center で通知 (補助、 メインはメール通知)
