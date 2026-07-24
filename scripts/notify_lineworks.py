@@ -1033,14 +1033,10 @@ def main():
             msg = build_nicenail_monthend(target_ym)
     elif mode == "selfheal":
         # 新横浜 自己修復 通知 (= 朝 salon 未完了で古かった数字を後から最新化した時)
+        # 2026-07-24 改修 (水野要望): 修復対象の新横浜だけでなく 全店舗+全社合計を表示。
+        #   「新横浜しか載ってない=他店はどうなってるの?」 という混乱を防ぐ。
         now = _now()
         data = aggregate_hanabi()
-        sk = None
-        if data:
-            for s in data.get("stores", []):
-                if s.get("label") == "ナイスネイル新横浜店":
-                    sk = s
-                    break
         lines = [
             "🔧 新横浜 自動修復 完了",
             fmt_date_label(now),
@@ -1050,10 +1046,23 @@ def main():
             "最新データで自動的に再集計しました。",
             "",
         ]
-        if sk:
-            lines.append(f"🏪 {sk['label']}")
-            lines.append(f"  {fmt_money(sk['sales'])}  /  {sk['customers']}名")
-            lines.append("")
+        if data:
+            ym = data["ym"]
+            lines += [SEP, f"📊 当月実績 〜{ym[:4]}/{int(ym[4:6])} (修復後)", SEP, ""]
+            for s in data["stores"]:
+                if s["sales"] > 0 or s["customers"] > 0:
+                    icon = "🔧" if s.get("label") == "ナイスネイル新横浜店" else "🏪"
+                    suffix = " (今回修復)" if icon == "🔧" else ""
+                    lines.append(f"{icon} {s['label']}{suffix}")
+                    lines.append(f"  {fmt_money(s['sales'])}  /  {s['customers']}名")
+                    lines.append("")
+            lines += [
+                SEP, "✨ 全社合計",
+                f"  {fmt_money(data['total_sales'])}  /  {data['total_customers']}名",
+                SEP, "",
+                "※ 修復対象は新横浜のみ。 他店は直近の自動更新時点の数字です",
+                "",
+            ]
         lines += ["🔗 ダッシュボード", HANABI_URL]
         msg = "\n".join(lines)
     else:
