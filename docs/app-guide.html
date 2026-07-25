@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ホーム画面にアプリとして追加 | HANABI Dashboard</title>
+<link rel="icon" href="favicon.png">
+<style>
+  :root {
+    --bg: #FAFAFA; --card: #FFFFFF; --border: #E5E7EB;
+    --text: #1A1A1A; --mute: #6B7280; --faint: #9CA3AF;
+    --accent: #2563EB; --pink: #C9549C;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .rainbow { height: 4px; background: linear-gradient(90deg, #E53935 0%, #FF6B35 14%, #FFC107 28%, #43A047 42%, #29B6F6 56%, #1E88E5 70%, #8E24AA 84%, #E91E63 100%); }
+  header { background: #0A0A0A; color: #fff; text-align: center; padding: 14px 16px 12px; }
+  header .brand { font-size: 12px; letter-spacing: 0.25em; color: #D1D5DB; font-weight: 600; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 18px 40px; }
+  h1 { font-size: 26px; font-weight: 800; text-align: center; letter-spacing: 0.02em; }
+  h1::after { content: ""; display: block; width: 56px; height: 3px; border-radius: 2px; margin: 10px auto 0;
+    background: linear-gradient(90deg, #E53935, #FF6B35, #FFC107, #43A047, #29B6F6, #8E24AA); }
+  .lead { text-align: center; color: var(--mute); font-size: 14px; margin-top: 14px; }
+  .badge { display: block; width: fit-content; margin: 16px auto 0; border: 1px solid #D4C08A; color: #8A6D1D; background: #FDFBF3;
+    border-radius: 999px; padding: 5px 16px; font-size: 12.5px; font-weight: 600; }
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 18px; margin-top: 18px; }
+  .step-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .num { width: 30px; height: 30px; border-radius: 50%; background: #1A1A1A; color: #fff; font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step h2 { font-size: 16.5px; font-weight: 700; }
+  .tag { margin-left: auto; font-size: 10.5px; font-weight: 700; color: var(--pink); border: 1px solid var(--pink);
+    border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  .step p { font-size: 13.5px; color: #374151; margin-top: 10px; }
+  .step p b { color: var(--text); }
+  .mock { background: #F3F4F6; border-radius: 14px; padding: 12px; margin-top: 14px; }
+  .mock .row { background: #fff; border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--accent);
+    text-align: center; margin-bottom: 8px; font-weight: 500; }
+  .mock .row:last-child { margin-bottom: 0; }
+  .mock .row.hl { border: 2px solid var(--pink); font-weight: 700; }
+  .mock .row.plain { color: var(--text); text-align: left; }
+  .mock .row .ic { margin-right: 8px; color: var(--mute); }
+  .mock.dark { background: #1F2937; }
+  .mock.dark .drow { display: flex; align-items: center; gap: 10px; color: #E5E7EB; font-size: 14px; padding: 10px 6px; }
+  .mock.dark .addbtn { margin-left: auto; background: #3B82F6; color: #fff; font-weight: 700; border-radius: 999px; padding: 5px 16px; font-size: 13.5px; border: 2px solid #93C5FD; }
+  .mock.dark .appicon { width: 34px; height: 34px; border-radius: 8px; background: #0A0A0A; color: #fff; font-size: 7.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.15; flex-shrink: 0; }
+  .done { border: 1.5px solid #D4C08A; background: #FDFBF3; border-radius: 16px; text-align: center; padding: 20px 16px; margin-top: 26px; }
+  .done .t { font-size: 17px; font-weight: 800; }
+  .done p { font-size: 13.5px; color: #6B5B23; margin-top: 8px; }
+  .note { border-left: 4px solid var(--pink); background: #FDF2F8; border-radius: 0 12px 12px 0; padding: 14px 16px; margin-top: 18px; font-size: 13px; color: #831843; }
+  .note b { color: #9D174D; }
+  .note.tip { border-left-color: #D4C08A; background: #FDFBF3; color: #6B5B23; }
+  .note.tip b { color: #8A6D1D; }
+  footer { text-align: center; color: var(--faint); font-size: 11px; letter-spacing: 0.15em; padding: 22px 0 30px; }
+</style>
+</head>
+<body>
+<header><div class="brand">HANABI — DASHBOARD</div></header>
+<div class="rainbow"></div>
+<div class="wrap">
+  <h1>ホーム画面にアプリとして追加</h1>
+  <p class="lead">ダッシュボードをスマホのホーム画面から<br>アプリのように全画面で開けるようになりました</p>
+  <span class="badge">所要時間 約30秒 / iPhone (Safari)</span>
+
+  <div class="step">
+    <div class="step-head"><span class="num">1</span><h2>Safariで開き直す</h2><span class="tag">LINE WORKSから開いた人だけ</span></div>
+    <p>LINE WORKSのリンクから開いた場合は、まず画面のメニューから<b>「ブラウザで開く」</b>をタップしてSafariで開き直します。<br>(最初からSafariで開いている人はSTEP 2へ)</p>
+    <div class="mock">
+      <div class="row hl">ブラウザで開く</div>
+      <div class="row">コピー</div>
+      <div class="row">転送</div>
+      <div class="row">キャンセル</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><span class="num">2</span><h2>「共有」を開く</h2></div>
+    <p>Safariの<b>共有ボタン (□に↑のマーク)</b> をタップします。メニューの中に「共有」がある場合はそれをタップ。</p>
+    <div class="mock">
+      <div class="row plain hl"><span class="ic">⬆️</span><b>共有</b></div>
+      <div class="row plain"><span class="ic">🔖</span>ブックマークに追加</div>
+      <div class="row plain"><span class="ic">＋</span>新規タブ</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><span class="num">3</span><h2>「ホーム画面に追加」を選ぶ</h2></div>
+    <p>出てきたメニューを少し下にスクロールして、<b>「ホーム画面に追加」</b>をタップします。</p>
+    <div class="mock">
+      <div class="row plain"><span class="ic">☆</span>お気に入りに追加</div>
+      <div class="row plain"><span class="ic">🔍</span>ページを検索</div>
+      <div class="row plain hl"><span class="ic">⊕</span><b>ホーム画面に追加</b></div>
+      <div class="row plain"><span class="ic">✐</span>マークアップ</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head"><span class="num">4</span><h2>「追加」で完了</h2></div>
+    <p>名前はそのまま (<b>HANABI</b>) で、右上の<b>「追加」</b>をタップ。<br>「Webアプリとして開く」は<b>ONのまま</b>にしてください。</p>
+    <div class="mock dark">
+      <div class="drow">✕<span style="margin:0 auto; font-weight:600">ホーム画面に追加</span><span class="addbtn">追加</span></div>
+      <div class="drow"><span class="appicon">HANABI</span><span>HANABI</span></div>
+    </div>
+  </div>
+
+  <div class="done">
+    <div class="t">🎆 これで完了！</div>
+    <p>ホーム画面の「HANABI」アイコンをタップすると、<br>URLバーのない<b>全画面アプリ</b>として開きます。</p>
+  </div>
+
+  <div class="note">
+    <b>⚠️ 以前からホーム画面に追加していた人へ</b><br>
+    古いアイコンのままだと全画面になりません。一度アイコンを<b>削除してから、この手順で追加し直して</b>ください。
+  </div>
+
+  <div class="note tip">
+    <b>💡 Androidの人</b><br>
+    Chromeでダッシュボードを開く → 右上の「⋮」→<b>「ホーム画面に追加」</b>でOKです。
+  </div>
+</div>
+<footer>HANABI — DASHBOARD</footer>
+</body>
+</html>
