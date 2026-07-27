@@ -1,19 +1,15 @@
 {
-  "snapshot_time": "2026/07/27 08:30:16",
+  "snapshot_time": "2026/07/28 08:30:10",
   "today_sales": "0人(0人)",
   "today_customers": "0人(0人)",
   "today_avg": "0人/0人",
   "today_active_staff": "0人/0人",
-  "today_reservation_rate": "0件/5件",
+  "today_reservation_rate": "0件/13件",
   "current_store_code": "001",
   "weekly_reservations": [
     {
-      "date": "7/27(月)",
-      "count": "5件"
-    },
-    {
       "date": "7/28(火)",
-      "count": "11件"
+      "count": "13件"
     },
     {
       "date": "7/29(水)",
@@ -34,6 +30,10 @@
     {
       "date": "8/2(日)",
       "count": "12件"
+    },
+    {
+      "date": "8/3(月)",
+      "count": "5件"
     }
   ]
 }
