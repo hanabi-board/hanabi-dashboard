@@ -1,0 +1,68 @@
+{
+  "source": "hotpepper",
+  "scraped_at": "2026-08-01T08:32:09",
+  "stores": {
+    "tsunashima": {
+      "rating": 4.78,
+      "review_count": 385,
+      "salon_name": "ハナビ(Hanabi)",
+      "recent_reviews": [
+        {
+          "text": "385件の口コミがあります",
+          "date": "",
+          "rating": null
+        }
+      ],
+      "url": "https://beauty.hotpepper.jp/slnH000578577/",
+      "category": "ヘア"
+    },
+    "miyakojima": {
+      "rating": 4.45,
+      "review_count": 93,
+      "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
+      "recent_reviews": [
+        {
+          "text": "93件の口コミがあります",
+          "date": "",
+          "rating": null
+        }
+      ],
+      "url": "https://beauty.hotpepper.jp/slnH000546153/",
+      "category": "ヘア",
+      "listings": [
+        {
+          "rating": 4.45,
+          "review_count": 93,
+          "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
+          "recent_reviews": [
+            {
+              "text": "93件の口コミがあります",
+              "date": "",
+              "rating": null
+            }
+          ],
+          "url": "https://beauty.hotpepper.jp/slnH000546153/",
+          "category": "ヘア"
+        },
+        {
+          "rating": 4.67,
+          "review_count": 77,
+          "salon_name": "エル バイ ハナビ(ELLE by HANABI)",
+          "recent_reviews": [],
+          "url": "https://beauty.hotpepper.jp/kr/slnH000551943/",
+          "category": "アイラッシュ・ネイル"
+        }
+      ],
+      "total_review_count": 170,
+      "avg_rating": 4.5600000000000005
+    },
+    "shinyokohama": {
+      "rating": 4.9,
+      "review_count": 21,
+      "salon_name": "ナイスネイル 新横浜店(NICE NAIL)",
+      "recent_reviews": [],
+      "url": "https://beauty.hotpepper.jp/kr/slnH000814039/",
+      "category": "ネイル"
+    }
+  }
+}
