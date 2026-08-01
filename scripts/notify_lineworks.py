@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import time
@@ -207,11 +208,46 @@ def aggregate_hanabi() -> dict:
         return {}
 
 
+def _salon_dist_fresh_today() -> bool:
+    """salon dist が「今日」更新済か = 新横浜データが確定しているかの判定。
+    (テスト用: SALON_DIST_PATH 環境変数でパス差し替え可)"""
+    p = os.environ.get("SALON_DIST_PATH", "/Users/yoheimizuno/salon-dashboard/dist/index.html")
+    try:
+        mdate = datetime.fromtimestamp(os.path.getmtime(p), JST).date()
+        return mdate == _now().date()
+    except OSError:
+        return False
+
+
+MONTHEND_PENDING_MARKER = Path("/Users/yoheimizuno/hanabi-dashboard/logs/.monthend_pending")
+
+
 def build_hanabi_success(highlights: list[str]) -> str:
     now = _now()
     # 月初 1日: 前月確定 (monthend) に切替
     if now.day == 1:
-        return build_hanabi_monthend(_prev_ym(now))
+        # 🛡 2026-08-01 再発防止: 「確定」サマリーは新横浜 (salon由来) が確定してから送る。
+        #   salon が朝時点で未完了だと 前日までの新横浜で確定報を出してしまう
+        #   (8/1 に発生: ¥105,837 過少の7月確定を送信 → 訂正再送)。
+        #   未完了なら保留通知に切替え、 マーカーを置く → selfheal (10:30) が
+        #   salon 確定を反映した後に monthend を送信する。
+        if _salon_dist_fresh_today():
+            return build_hanabi_monthend(_prev_ym(now))
+        pm = _prev_ym(now)
+        try:
+            MONTHEND_PENDING_MARKER.write_text(pm)
+        except OSError:
+            pass
+        return "\n".join([
+            "✅ HANABI 自動更新 完了 (綱島・宮古島)",
+            fmt_date_label(now),
+            "",
+            f"⏳ {int(pm[4:6])}月の確定サマリーは、 ナイスネイル新横浜の",
+            "集計確定を待ってから自動で送信します (通常 10:30 頃)。",
+            "",
+            "🔗 ダッシュボード",
+            HANABI_URL,
+        ])
     data = aggregate_hanabi()
     lines = ["✅ HANABI 自動更新 完了", fmt_date_label(now), ""]
     if highlights:

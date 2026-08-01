@@ -90,7 +90,17 @@ SRC_FILES=(
   "data/menu_${YM}_shinyokohama.json"
   "data/nicenail_extras_${YM}_shinyokohama.json"
 )
+# 月初: 朝の確定サマリーが「salon未完了」で保留されていたら (マーカーあり)、
+# salon確定済のこのタイミングで送る (2026-08-01 再発防止)
+MARKER="$LOG_DIR/.monthend_pending"
+
 if git diff --quiet -- "${SRC_FILES[@]}"; then
+  if [ "$DAY" = "01" ] && [ -f "$MARKER" ]; then
+    log "  差分なし だが 月初の確定サマリーが保留中 → 送信して解除"
+    python3 scripts/notify_lineworks.py hanabi monthend "$YM" 2>&1 | tee -a "$LOG_FILE" || log "  monthend 送信失敗"
+    rm -f "$MARKER"
+    exit 0
+  fi
   log "  差分なし → 朝の時点で既に最新だった (正常)、 何もしない"
   exit 0
 fi
@@ -102,8 +112,15 @@ git -c user.email=hanabi-board@local -c user.name="HANABI SelfHeal" \
     commit -q -m "auto(selfheal): 新横浜 最新 salon データで再集計 $(date '+%Y-%m-%d %H:%M')"
 if git push -q origin main; then
   log "  ✓ push 完了 — 新横浜の数字を最新化しました"
-  # 修復した時だけ LINE WORKS に通知 (= 見える化)
-  python3 scripts/notify_lineworks.py hanabi selfheal 2>&1 | tee -a "$LOG_FILE" || log "  通知スキップ"
+  if [ "$DAY" = "01" ] && [ -f "$MARKER" ]; then
+    # 月初: 保留していた前月確定サマリーを、 修復済みの数字で送信 (selfheal通知の代わり)
+    log "  🏁 月初: 保留していた ${YM} 確定サマリーを送信 (新横浜 確定反映済)"
+    python3 scripts/notify_lineworks.py hanabi monthend "$YM" 2>&1 | tee -a "$LOG_FILE" || log "  monthend 送信失敗"
+    rm -f "$MARKER"
+  else
+    # 通常日 or 月初でも朝に確定サマリー送信済みの場合: 修復通知 (全店入り)
+    python3 scripts/notify_lineworks.py hanabi selfheal 2>&1 | tee -a "$LOG_FILE" || log "  通知スキップ"
+  fi
 else
   log "  ❌ push 失敗"
   exit 1
