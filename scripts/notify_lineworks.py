@@ -269,6 +269,10 @@ def build_hanabi_success(highlights: list[str]) -> str:
                         if d_sales > 0 or d_customers > 0:
                             d_icon = {"ヘア": "💇", "アイ": "👁", "ネイル": "💅"}.get(dept_label, "・")
                             lines.append(f"   {d_icon} {dept_label}  {fmt_money(d_sales)} / {d_customers}名")
+                # 🛡 2026-08-03: サロン側が朝時点で未完了だと新横浜だけ前日分になる
+                #   → その朝の通知に明記 (10:30の selfheal が自動更新+通知する)
+                if s["label"] == "ナイスネイル新横浜店" and not _salon_dist_fresh_today():
+                    lines.append("  ※ 前日分までの数字です (サロン側の集計完了後、 10:30頃に自動更新されます)")
                 lines.append("")
         lines += [
             SEP, "✨ 全社合計",
