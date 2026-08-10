@@ -53,9 +53,21 @@
       "store_pref": "アイラッシュ新店舗",
       "experience_years": 0,
       "source": "その他",
-      "status": "面接調整中",
+      "status": "面接日確定",
       "notes": "求人.comからの紹介",
       "notion_url": "https://www.notion.so/p/3b2ab31f37ef8068b169edd77dc3e6d3"
+    },
+    {
+      "id": "nk_東谷月姫",
+      "applied_date": "2026-08-07",
+      "name": "東谷 月姫",
+      "role": "ネイリスト",
+      "store_pref": "アイラッシュ新店舗",
+      "experience_years": 2,
+      "source": "その他",
+      "status": "面接日確定",
+      "notes": "求人.comからの紹介",
+      "notion_url": "https://www.notion.so/p/3b8ab31f37ef80b38c2bc7af867375fa"
     },
     {
       "id": "nk_池間羽衣美",
