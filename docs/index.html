@@ -1041,22 +1041,50 @@ function showToast(msg, kind = "info") {
   setTimeout(() => t.remove(), kind === "error" ? 5000 : 2500);
 }
 
-async function pushJsonToGitHub(path, jsonObject, commitMessage) {
+// 🛡 2026-08-11 lost update 根治:
+//   mergeFn を渡すと「push直前に GitHub API (権威ソース・CDNラグなし) から最新JSONを取得
+//   → mergeFn(最新) で自分の編集だけ差し込んだ結果を PUT」 になる。
+//   SHAリトライのたびに再取得+再マージするので、 連続保存・並行編集でも他人の変更を消さない。
+//   (旧方式 = raw.githubusercontent ベースの事前マージは、 push直後の伝播ラグで古いベースを
+//    掴んで上書き消去する事故が 7/13・8/11 に発生した)
+async function pushJsonToGitHub(path, jsonObject, commitMessage, mergeFn = null) {
   const token = getGhToken();
   if (!token) throw new Error("GitHub トークン未設定");
   const apiUrl = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(jsonObject, null, 2))));
+  const encode = (obj) => btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2))));
+  let content = mergeFn ? null : encode(jsonObject);
   // SHA conflict (409/422) は 自動リトライ — 連続編集や auto-deploy 衝突を吸収
   let lastError = null;
   for (let attempt = 0; attempt < 4; attempt++) {
-    // 1. fetch current SHA (毎回 fresh に取得)
+    // 1. fetch current SHA + (mergeFn時は) 最新content (毎回 fresh に取得)
     let sha = "";
+    let remoteJson = null;
+    let fetched = false;
     try {
       const r = await fetch(apiUrl + "?t=" + Date.now(), {
         headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json" }
       });
-      if (r.ok) { const d = await r.json(); sha = d.sha; }
+      if (r.ok) {
+        const d = await r.json();
+        sha = d.sha;
+        fetched = true;
+        if (mergeFn && d.content) {
+          try { remoteJson = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g, ""))))); }
+          catch (e) { remoteJson = null; fetched = false; }
+        }
+      } else if (r.status === 404) {
+        fetched = true;  // ファイル未作成 = 正常 (remoteJson null で新規作成)
+      }
     } catch (e) {}
+    if (mergeFn) {
+      // 🛡 最新版が取得できない時は絶対に push しない (古いベースでの全文上書き = 消去事故 を封じる)
+      if (!fetched) {
+        lastError = new Error("GitHub から最新版を取得できませんでした (ローカル保存は維持、 再送信で再試行できます)");
+        await new Promise(res => setTimeout(res, 500 + attempt * 500));
+        continue;
+      }
+      content = encode(mergeFn(remoteJson));
+    }
     // 2. PUT
     const body = { message: commitMessage, content };
     if (sha) body.sha = sha;
@@ -6580,13 +6608,17 @@ async function saveStaffProfileForm(e) {
 
   showToast("保存中 → GitHub反映...", "info");
   try {
-    // 🛡 最新版を fetch して 自分の編集だけマージ (連続編集時の上書き事故防止)
-    const remoteSp = await fetchRemoteStaffProfiles();
-    const baseData = remoteSp || DATA.staff_profiles;
-    const merged = { ...baseData, profiles: { ...(baseData.profiles || {}) } };
-    if (originalName && originalName !== newName) delete merged.profiles[originalName];
-    merged.profiles[newName] = profile;
-    await pushJsonToGitHub("data/staff_profiles.json", merged, `Update staff profile (${newName})`);
+    // 🛡 push直前にAPIから最新版を取得し 自分の編集1人分だけ差し込む (リトライ毎に再マージ)
+    //   = 連続保存・並行編集でも他人のエントリを消さない (2026-08-11 根治)
+    let merged = null;
+    const applyMyEdit = (remote) => {
+      const base = remote || DATA.staff_profiles || { _comment: "", _format: {}, profiles: {} };
+      merged = { ...base, profiles: { ...(base.profiles || {}) } };
+      if (originalName && originalName !== newName) delete merged.profiles[originalName];
+      merged.profiles[newName] = profile;
+      return merged;
+    };
+    await pushJsonToGitHub("data/staff_profiles.json", null, `Update staff profile (${newName})`, applyMyEdit);
     const o2 = _loadStaffProfileOverrides();
     delete o2[newName];
     if (originalName && originalName !== newName) delete o2[originalName];
@@ -6616,12 +6648,15 @@ async function deleteStaffProfile() {
     return;
   }
   try {
-    // 🛡 最新版を fetch して 該当プロフィールだけ削除
-    const remoteSp = await fetchRemoteStaffProfiles();
-    const baseData = remoteSp || DATA.staff_profiles;
-    const merged = { ...baseData, profiles: { ...(baseData.profiles || {}) } };
-    delete merged.profiles[name];
-    await pushJsonToGitHub("data/staff_profiles.json", merged, `Delete staff profile (${name})`);
+    // 🛡 push直前にAPIから最新版を取得し 該当プロフィールだけ削除 (リトライ毎に再マージ)
+    let merged = null;
+    const applyDelete = (remote) => {
+      const base = remote || DATA.staff_profiles || { _comment: "", _format: {}, profiles: {} };
+      merged = { ...base, profiles: { ...(base.profiles || {}) } };
+      delete merged.profiles[name];
+      return merged;
+    };
+    await pushJsonToGitHub("data/staff_profiles.json", null, `Delete staff profile (${name})`, applyDelete);
     DATA.staff_profiles = merged;
     mergeLocalStaffProfileOverrides();
     const o2 = _loadStaffProfileOverrides();
@@ -6649,15 +6684,18 @@ async function retryUnsyncedStaffProfile() {
   }
   showToast(`${count}件のプロフィール変更を GitHub に再送信中...`, "info");
   try {
-    // 🛡 最新版から始めて override をマージ (他人の変更を消さない)
-    const remoteSp = await fetchRemoteStaffProfiles();
-    const baseData = remoteSp || DATA.staff_profiles;
-    const merged = { ...baseData, profiles: { ...(baseData.profiles || {}) } };
-    for (const [n, v] of Object.entries(overrides)) {
-      if (v === "__deleted__") delete merged.profiles[n];
-      else merged.profiles[n] = v;
-    }
-    await pushJsonToGitHub("data/staff_profiles.json", merged, `Resync staff profiles (${count} unsynced changes)`);
+    // 🛡 push直前にAPIから最新版を取得し override 分だけ差し込む (リトライ毎に再マージ)
+    let merged = null;
+    const applyOverrides = (remote) => {
+      const base = remote || DATA.staff_profiles || { _comment: "", _format: {}, profiles: {} };
+      merged = { ...base, profiles: { ...(base.profiles || {}) } };
+      for (const [n, v] of Object.entries(overrides)) {
+        if (v === "__deleted__") delete merged.profiles[n];
+        else merged.profiles[n] = v;
+      }
+      return merged;
+    };
+    await pushJsonToGitHub("data/staff_profiles.json", null, `Resync staff profiles (${count} unsynced changes)`, applyOverrides);
     localStorage.removeItem(_staffProfileOverrideKey());
     DATA.staff_profiles = merged;
     showToast(`✓ ${count}件 GitHub反映成功`, "good");
