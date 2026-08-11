@@ -151,7 +151,6 @@
       "photo": "Aoi.jpg"
     },
     "伊集 月菜": {
-      "photo": "伊集_月菜.jpg",
       "kana": "イジュ　ルナ",
       "joined": "2026-08-03",
       "role": "ネイリスト",
@@ -176,6 +175,10 @@
     },
     "●Miia": {
       "photo": "Miia.jpg",
+      "irregular": true
+    },
+    "角田 千奈": {
+      "employment_type": "アルバイト",
       "irregular": true
     }
   }
