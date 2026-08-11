@@ -173,8 +173,9 @@
       "kana": "リコト",
       "role": "プロジェクトリーダー"
     },
-    "●Seina": {
-      "photo": "Seina.jpg"
+    "●Miia": {
+      "photo": "Miia.jpg",
+      "irregular": true
     }
   }
 }
