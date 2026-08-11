@@ -151,6 +151,7 @@
       "photo": "Aoi.jpg"
     },
     "伊集 月菜": {
+      "photo": "伊集_月菜.jpg",
       "kana": "イジュ　ルナ",
       "joined": "2026-08-03",
       "role": "ネイリスト",
@@ -178,6 +179,17 @@
       "irregular": true
     },
     "日本 茉凜": {
+      "irregular": true
+    },
+    "●Seina": {
+      "photo": "Seina.jpg"
+    },
+    "角田 千奈": {
+      "employment_type": "アルバイト",
+      "irregular": true
+    },
+    "佐渡山 依睦": {
+      "employment_type": "アルバイト",
       "irregular": true
     }
   }
