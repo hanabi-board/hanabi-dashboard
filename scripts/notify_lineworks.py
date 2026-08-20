@@ -368,11 +368,15 @@ def aggregate_nicenail() -> dict:
         #   - 通常スタッフ:           MTD × daysInMonth / elapsed
         admin_cfg_path = Path("/Users/yoheimizuno/salon-dashboard/data/admin_config.json")
         transfer_history = {}
+        retiree_dates = {}
         if admin_cfg_path.exists():
             try:
-                transfer_history = json.loads(admin_cfg_path.read_text(encoding="utf-8")).get("transfer_history", {})
+                _cfg_all = json.loads(admin_cfg_path.read_text(encoding="utf-8"))
+                transfer_history = _cfg_all.get("transfer_history", {})
+                retiree_dates = _cfg_all.get("retiree_dates", {})
             except Exception:
                 transfer_history = {}
+                retiree_dates = {}
         _y, _m = ym_key.split("-")
         m_start = f"{_y}{_m}01"
         m_end = f"{_y}{_m}{days_in_month:02d}"
@@ -386,6 +390,20 @@ def aggregate_nicenail() -> dict:
                 return 0
             total_fc = 0
             for staff, sales in sales_by_store_staff.get(store_full, {}).items():
+                # 退職考慮 (2026-08-20 template.html と同時修正): 退職日以降は投影しない
+                _r_info = (retiree_dates.get(_base_name(staff))
+                           or retiree_dates.get(staff) or {})
+                _r_ymd = (_r_info.get("retired") or "").replace("-", "")
+                if _r_ymd and _r_ymd <= m_end:
+                    if _r_ymd < m_start:
+                        total_fc += sales  # 前月以前退職なのに当月売上 (異常データ) → 実績のみ
+                        continue
+                    r_day = int(_r_ymd[-2:])
+                    if r_day <= elapsed:
+                        total_fc += sales  # 退職済み: 実績のみ
+                    else:
+                        total_fc += round(sales * r_day / elapsed)  # 退職予定: 退職日まで日割り
+                    continue
                 entries = (
                     transfer_history.get(_base_name(staff))
                     or transfer_history.get(_display_name(staff))
