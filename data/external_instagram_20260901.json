@@ -1,0 +1,20 @@
+{
+  "source": "instagram",
+  "scraped_at": "2026-09-01T08:32:25",
+  "stores": {
+    "tsunashima": {
+      "username": "hanabi_202203",
+      "followers": 158,
+      "following": 237,
+      "posts": 241,
+      "url": "https://www.instagram.com/hanabi_202203/"
+    },
+    "miyakojima": {
+      "username": "elle_miyakojima",
+      "followers": 1410,
+      "following": 944,
+      "posts": 672,
+      "url": "https://www.instagram.com/elle_miyakojima/"
+    }
+  }
+}
