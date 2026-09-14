@@ -456,6 +456,7 @@ def main():
     target_secs = [args.section] if args.section else SECTION_ORDER
     generated_count = 0
     skipped_count = 0
+    failed_count = 0
     for sid in target_secs:
         if sid not in SECTION_LABELS:
             print(f"  ⚠ 未知のセクション: {sid}, skip")
@@ -479,6 +480,7 @@ def main():
             generated_count += 1
             print(f"     ✓ {len(text)}字 生成")
         else:
+            failed_count += 1
             print(f"     ✗ 生成失敗 — 既存サマリ維持")
 
     # --- 今月の格言 (A調) ---  section 未指定 or company 指定時のみ生成
@@ -496,10 +498,29 @@ def main():
                 generated_count += 1
                 print(f"     ✓ 格言 生成: {k_lines[0]}")
             else:
+                failed_count += 1
                 print(f"     ✗ 格言 生成失敗 — 通知側のルール格言で代替")
 
     save_summaries(summaries)
-    print(f"==== 完了: 生成 {generated_count}件 / スキップ {skipped_count}件 ====")
+    print(f"==== 完了: 生成 {generated_count}件 / スキップ {skipped_count}件 / 失敗 {failed_count}件 ====")
+
+    # 🛡 2026-09-14: 「生成0件なのに exit 0」 で失敗が誰にも伝わらなかった (9/1 認証切れ→2週間放置)。
+    #   全滅時は マーカーを置いて exit 2 (deploy_auto.sh は非致命扱いで続行、 朝の Bot が注記を出す)。
+    #   1件でも生成できたらマーカーを消す (手動再生成の成功でも自動的に解除される)。
+    failed_marker = Path(__file__).resolve().parent.parent / "logs" / ".summaries_failed"
+    if generated_count == 0 and failed_count > 0:
+        try:
+            failed_marker.parent.mkdir(parents=True, exist_ok=True)
+            failed_marker.write_text(f"{month} {datetime.now(JST).isoformat()}\n")
+        except OSError:
+            pass
+        print("  ⚠️ 全セクション生成失敗 — claude CLI の認証切れの可能性 (claude -p で確認 → /login)", file=sys.stderr)
+        sys.exit(2)
+    if generated_count > 0:
+        try:
+            failed_marker.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

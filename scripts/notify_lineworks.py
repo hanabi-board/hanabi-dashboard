@@ -220,6 +220,21 @@ def _salon_dist_fresh_today() -> bool:
 
 
 MONTHEND_PENDING_MARKER = Path("/Users/yoheimizuno/hanabi-dashboard/logs/.monthend_pending")
+# 🛡 2026-09-14: 月初の月次振り返り自動生成が全滅しても誰にも知らされない問題 (9/1 認証切れ→2週間放置)
+#   generate_summaries.py が 生成0件+失敗あり でこのマーカーを置く (成功時は消す)。
+#   朝の success / monthend Bot に注記を出して、 水野さんの claude 再ログイン → 手動再生成 につなげる。
+SUMMARIES_FAILED_MARKER = Path("/Users/yoheimizuno/hanabi-dashboard/logs/.summaries_failed")
+
+
+def _summaries_failed_lines() -> list[str]:
+    """月次振り返りの自動生成失敗マーカーがあれば Bot 用の注記行を返す (無ければ空)"""
+    if not SUMMARIES_FAILED_MARKER.exists():
+        return []
+    return [
+        "⚠️ 月次振り返り (前月分) の自動生成に失敗しています",
+        "   claude の再ログイン後に再生成します。 ダッシュボードの振り返りはそれまで前々月のままです",
+        "",
+    ]
 
 
 def build_hanabi_success(highlights: list[str]) -> str:
@@ -285,6 +300,7 @@ def build_hanabi_success(highlights: list[str]) -> str:
         lastweek_section = build_hanabi_lastweek_section(now, remaining_days)
         if lastweek_section:
             lines += [lastweek_section, ""]
+    lines += _summaries_failed_lines()
     lines += ["🔗 ダッシュボード", HANABI_URL]
     return "\n".join(lines)
 
@@ -866,6 +882,7 @@ def build_hanabi_monthend(target_ym: str = None) -> str:
         klines[0] = f"🎓 {klines[0]}"  # 格言本体の頭に 🎓
         lines += [SEP, "💬 今月の格言", SEP, "", "\n".join(klines), ""]
 
+    lines += _summaries_failed_lines()
     lines += [
         SEP,
         "",

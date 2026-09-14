@@ -154,7 +154,9 @@ if [ "$DAY" = "01" ]; then
     log "  ✓ 月次振り返り 生成成功 — generate.py 再実行で data.json に取り込み"
     python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
   else
-    log "  ⚠️ 月次振り返り 生成失敗 — 既存サマリ維持で続行"
+    # generate_summaries.py は 生成0件+失敗あり で exit 2 + logs/.summaries_failed を置く
+    # → 朝の success/monthend Bot が注記を出す (claude 再ログイン→手動再生成 の合図)
+    log "  ⚠️ 月次振り返り 生成失敗 — 既存サマリ維持で続行 (Botに注記・claude 再ログイン後に手動再生成)"
   fi
 fi
 
