@@ -61,11 +61,13 @@ DEPARTMENTS = ("ヘア", "アイ", "ネイル")
 # Includes:
 #   - Owner/management who bought retail under their name (水野 陽平)
 #   - Placeholder names for unassigned transactions (未設定, 指名なし, ネイル スタッフ)
+#   - ナイスネイル POS の「ヘルプ」名義 (salon 側 isHelp() と同じ扱い: 店舗売上には含め、 人物としては出さない)
 HIDDEN_STAFF_NAMES = {
     "水野 陽平",
     "未設定",
     "指名なし",
     "ネイル スタッフ",
+    "ヘルプ",
 }
 
 
