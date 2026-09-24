@@ -46,14 +46,26 @@
   },
   "candidates": [
     {
-      "id": "nk_BUITHANHLONG",
+      "id": "nk_山本璃沙",
       "applied_date": "2026-09-22",
-      "name": "BUI THANH LONG",
+      "name": "山本 璃沙",
       "role": "アイリスト",
       "store_pref": "ELLE by Hanabi 宮古島店",
       "experience_years": 0,
       "source": "indeed",
       "status": "書類選考",
+      "notes": "indeedから、外国人男性、おそらく美容師免許なし",
+      "notion_url": "https://www.notion.so/p/3e5ab31f37ef807f8a69da5141073665"
+    },
+    {
+      "id": "nk_BUITHANHLONG",
+      "applied_date": "2026-09-22",
+      "name": "BUI THANH LONG",
+      "role": "アイリスト",
+      "store_pref": "アイラッシュ新店舗",
+      "experience_years": 0,
+      "source": "リジョブ",
+      "status": "面接調整中",
       "notes": "indeedから、外国人男性、おそらく美容師免許なし",
       "notion_url": "https://www.notion.so/p/BUI-THANH-LONG-3e4ab31f37ef80eb9d56c436a40b9c45"
     },
