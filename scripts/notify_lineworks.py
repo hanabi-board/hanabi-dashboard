@@ -544,7 +544,8 @@ def build_nicenail_success(highlights: list[str]) -> str:
                 f"{icon} {r['store']:<5} 予算{r['budget_fc']:>3.0f}% / 目標{r['target_fc']:>3.0f}%  {fmt_money(r['sales'])}"
             )
         for ms in data.get("missing_stores", []):
-            lines.append(f"⚠ {ms}  データ未取得（レジ締め未完了の可能性）※全社合計に含まれていません")
+            # 0件の理由は「店休」と「レジ締め前」の両方があり得る (水野指摘 2026-10-02) → 決めつけない文言にする
+            lines.append(f"ℹ️ {ms}  今月のデータなし（店休 または レジ締め前）※全社合計に含まれていません")
         lines += [
             "", SEP, "✨ 全社サマリー", SEP, "",
             f"売上    {fmt_money_short(data['total']['sales'])}",
