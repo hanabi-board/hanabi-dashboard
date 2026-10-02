@@ -363,7 +363,9 @@ def aggregate_nicenail() -> dict:
         days_in_month = last_d_of_this_m
 
         # ターゲット
-        targets = json.loads(NICENAIL_TARGETS.read_text(encoding="utf-8")).get("stores", {})
+        _targets_all = json.loads(NICENAIL_TARGETS.read_text(encoding="utf-8"))
+        targets = _targets_all.get("stores", {})
+        _staff_goals = _targets_all.get("staff", {}) or {}
 
         # 店舗別集計 (visits/options/tenhan は通常集計、 sales は異動考慮で forecast 計算する)
         by_store = defaultdict(lambda: {"sales": 0, "visits": 0, "options": 0, "tenhan": 0})
@@ -450,6 +452,21 @@ def aggregate_nicenail() -> dict:
                     total_fc += round(sales * days_in_month / elapsed)
             return total_fc
 
+        # 店舗目標 = 個人目標(byStore)の合計を優先 (ダッシュボードの getStoreTargetFromStaff と同じ)。
+        #   2026-10-02: 店舗欄の target が空の店舗 (月切替直後の大森・新横浜・三軒茶屋) が Bot で「目標 0%」と出ていた。
+        #   退職者(退職日 < 当月初)は除外。末尾*は別人なので pk → 名前は * を復元して完全一致で引く
+        def _pk_display(pk: str) -> str:
+            mm = re.match(r"^(.*?)__(\d+)$", pk or "")
+            return (mm.group(1) + "*" * int(mm.group(2))) if mm else (pk or "")
+        def _store_target(store_full: str, t: dict) -> int:
+            tot = 0
+            for pk, sg in _staff_goals.items():
+                rd = ((retiree_dates.get(_pk_display(pk)) or {}).get("retired") or "")
+                if rd and rd < f"{_y}-{_m}-01":
+                    continue
+                tot += ((((sg or {}).get("byStore") or {}).get(store_full) or {}).get("target") or 0)
+            return tot or (t.get("target") or 0)
+
         stores_result = []
         total = {"sales": 0, "visits": 0, "options": 0, "tenhan": 0, "budget": 0, "target": 0}
         for store_full, agg in by_store.items():
@@ -457,7 +474,7 @@ def aggregate_nicenail() -> dict:
                 continue
             t = targets[store_full]
             budget = t.get("budget", 0)
-            target = t.get("target", 0)
+            target = _store_target(store_full, t)
             forecast = _forecast_store(store_full)
             stores_result.append({
                 "store": store_full.replace("店", ""),
@@ -480,11 +497,15 @@ def aggregate_nicenail() -> dict:
         # 全社合計は店舗別 forecast (異動考慮済) の合計でダッシュボードと一致させる
         forecast_total = sum(s["forecast"] for s in stores_result)
 
+        # 当月データが1件も無い店舗 (月初にレジ締めが遅れた等)。黙って消さず通知に明記する (2026-10-02 三軒茶屋の事故)
+        missing_stores = [st.replace("店", "") for st, tv in targets.items()
+                          if st not in by_store and ((tv or {}).get("budget") or (tv or {}).get("target"))]
         return {
             "ym": ym_key.replace("-", ""),
             "elapsed": elapsed,
             "days_in_month": days_in_month,
             "stores": stores_result,
+            "missing_stores": missing_stores,
             "total": total,
             "forecast_total": forecast_total,
             "budget_fc_total": forecast_total / total["budget"] * 100 if total["budget"] else 0,
@@ -522,6 +543,8 @@ def build_nicenail_success(highlights: list[str]) -> str:
             lines.append(
                 f"{icon} {r['store']:<5} 予算{r['budget_fc']:>3.0f}% / 目標{r['target_fc']:>3.0f}%  {fmt_money(r['sales'])}"
             )
+        for ms in data.get("missing_stores", []):
+            lines.append(f"⚠ {ms}  データ未取得（レジ締め未完了の可能性）※全社合計に含まれていません")
         lines += [
             "", SEP, "✨ 全社サマリー", SEP, "",
             f"売上    {fmt_money_short(data['total']['sales'])}",
