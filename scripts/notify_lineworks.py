@@ -322,8 +322,178 @@ def extract_monthly_records(html: str) -> dict:
         return {}
 
 
+NICENAIL_ADMIN_CONFIG = Path("/Users/yoheimizuno/salon-dashboard/data/admin_config.json")
+
+
+def _nn_load_admin_config() -> dict:
+    try:
+        return json.loads(NICENAIL_ADMIN_CONFIG.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _nn_person_key(name: str) -> str:
+    """同一人物キー: 先頭のランク記号を除き、末尾 * の数で同名別人を区別する (template.html の personKey と同じ)。
+    Rinka と Rinka* は別人。* を剥がして照合しないこと"""
+    stripped = re.sub(r"^[■□●▲★◆☆]+", "", name or "")
+    m = re.search(r"\*+$", stripped)
+    return re.sub(r"\*+$", "", stripped) + "__" + str(len(m.group(0)) if m else 0)
+
+
+def _nn_norm_adj_date(s) -> str:
+    """会計補正の日付を YYYY-MM-DD にそろえる (template.html の _normAdjDate と同じ)。直せなければ空文字"""
+    m = re.match(r"^\s*(\d{4})[/\-.年](\d{1,2})[/\-.月](\d{1,2})\s*日?\s*$", str(s or ""))
+    if not m:
+        return ""
+    y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if y < 2015 or y > 2035:
+        return ""
+    try:
+        datetime(y, mo, d)
+    except ValueError:
+        return ""
+    return f"{y}-{mo:02d}-{d:02d}"
+
+
+def apply_nicenail_adjustments(mr: dict, admin_cfg: dict) -> dict:
+    """会計補正 (売上付替・返金・出勤キャンセル) を反映した月別レコードを返す (入力は変更しない)。
+
+    ダッシュボードは画面を開いた時に admin_config.adjustments をレコードへ足している (template.html の
+    _injectAdjustments)。dist のレコードには入っていないので、Bot でも同じ規則で足す。
+    2026-10-03 水野: 補正は麗花さんが15日と月末に入れる → 入った時点から Bot の数字にも反映する
+    (それまで Bot は補正前の数字で、画面と 9月で 13,343円 ずれていた)。
+      - 売上付替: 付替元に −金額、付替先に ＋金額 (店舗・日付をまたぐ指定にも対応)。
+                 お会計ミスの付替 (help_correction) は来店数も −1 / ＋1
+      - 返金: 売上から −金額。店販の返金は店販額からも引く。来店数は変えない
+      - 出勤キャンセル: その人のその日のレコードを「キャンセル料のみ」と同じ扱いにする (売上だけ数える)
+    """
+    out = {ym: [dict(r) for r in (recs or [])] for ym, recs in (mr or {}).items()}
+    adj = (admin_cfg or {}).get("adjustments") or {}
+    if not adj:
+        return out
+    months = sorted(out.keys())
+    # その月の表記 (ランク記号つきの名前) を引く表。補正に書かれた名前を、その月のレコードと同じ表記にそろえる
+    pk_raw = {}
+    for ym in months:
+        d = {}
+        for v in out[ym]:
+            st = v.get("staff")
+            if not st or v.get("is_cancel_only"):
+                continue
+            d[_nn_person_key(st)] = st
+        pk_raw[ym] = d
+
+    def resolve(name, ym):
+        if not name or name == "ヘルプ":
+            return name
+        pk = _nn_person_key(name)
+        if pk in pk_raw.get(ym, {}):
+            return pk_raw[ym][pk]
+        for m in reversed([x for x in months if x < ym]):
+            if pk in pk_raw[m]:
+                return pk_raw[m][pk]
+        for m in [x for x in months if x >= ym]:
+            if pk in pk_raw[m]:
+                return pk_raw[m][pk]
+        return name
+
+    date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+    def amount_of(x) -> int:
+        try:
+            return abs(int(round(float(x))))
+        except (TypeError, ValueError):
+            return 0
+
+    def valid_date(x) -> str:
+        x = str(x or "")
+        return x if date_re.match(x) else _nn_norm_adj_date(x)
+
+    def rec(staff, store, ymd, amount, **kw):
+        base = {"staff": staff, "store": store, "date": ymd, "amount": amount, "tenhan": 0, "options": 0,
+                "is_cancel_only": False, "is_adjustment": True, "visit_diff": 0}
+        base.update(kw)
+        return base
+
+    seen = set()
+    for t in adj.get("transfers") or []:
+        if not isinstance(t, dict):
+            continue
+        a = amount_of(t.get("amount"))
+        date = valid_date(t.get("date"))
+        if not date or not a or not t.get("store"):
+            continue
+        key = (date, t.get("store"), t.get("from_staff") or "", t.get("to_staff") or "", str(t.get("amount")), t.get("type") or "transfer")
+        if key in seen:
+            continue
+        seen.add(key)
+        ymd = date.replace("-", "")
+        is_help = t.get("type") == "help_correction"
+        from_date = str(t["from_date"]) if t.get("from_date") else date
+        to_date = str(t["to_date"]) if t.get("to_date") else date
+        if t.get("from_staff"):
+            ym = from_date[:7]
+            out.setdefault(ym, []).append(rec(resolve(t["from_staff"], ym), t.get("from_store") or t["store"],
+                                              from_date.replace("-", ""), -a, visit_diff=-1 if is_help else 0))
+        if t.get("to_staff"):
+            ym = to_date[:7]
+            out.setdefault(ym, []).append(rec(resolve(t["to_staff"], ym), t.get("to_store") or t["store"],
+                                              to_date.replace("-", ""), a, visit_diff=1 if is_help else 0))
+    seen_ids = set()
+    for r in adj.get("refunds") or []:
+        if not isinstance(r, dict):
+            continue
+        a = amount_of(r.get("amount"))
+        date = valid_date(r.get("date"))
+        if not date or not a or not r.get("store") or not r.get("staff"):
+            continue
+        if r.get("id"):
+            if r["id"] in seen_ids:
+                continue
+            seen_ids.add(r["id"])
+        ym = date[:7]
+        out.setdefault(ym, []).append(rec(resolve(r["staff"], ym), r["store"], date.replace("-", ""), -a,
+                                          tenhan=-a if r.get("category") == "product" else 0, is_refund=True))
+    # 出勤キャンセル (補正で足したレコードも対象。画面と同じ)
+    cancel = defaultdict(set)
+    for c in adj.get("workday_cancels") or []:
+        if isinstance(c, dict) and c.get("staff") and c.get("date"):
+            cancel[_nn_person_key(c["staff"])].add(str(c["date"]).replace("-", ""))
+    if cancel:
+        for recs in out.values():
+            for v in recs:
+                st, d = v.get("staff"), v.get("date")
+                if st and d and d in cancel.get(_nn_person_key(st), ()):
+                    v["is_cancel_only"] = True
+    return out
+
+
+def _nn_sum_stores(records: list) -> tuple:
+    """店舗別の 売上/来店/OP/店販 と、店舗×スタッフ別の売上を集計する (template.html の buildMonthlyStoreStats と同じ数え方)。
+      - キャンセル料のみの会計 (出勤キャンセルを含む): 売上だけ。来店・OP・店販には数えない (2026-10-03 統一・水野承認)
+      - 会計補正のレコード: 売上は加減算。来店は visit_diff (お会計ミスの付替で ±1)、店販は返金ぶんを減算。OP は変えない
+    """
+    by_store = defaultdict(lambda: {"sales": 0, "visits": 0, "options": 0, "tenhan": 0})
+    by_store_staff = defaultdict(lambda: defaultdict(int))
+    for r in records:
+        s = r.get("store", "")
+        a = r.get("amount", 0) or 0
+        by_store[s]["sales"] += a
+        by_store_staff[s][r.get("staff", "")] += a
+        if r.get("is_cancel_only"):
+            continue
+        if r.get("is_adjustment"):
+            by_store[s]["visits"] += r.get("visit_diff", 0) or 0
+            by_store[s]["tenhan"] += r.get("tenhan", 0) or 0
+            continue
+        by_store[s]["visits"] += 1
+        by_store[s]["options"] += r.get("options", 0) or 0
+        by_store[s]["tenhan"] += r.get("tenhan", 0) or 0
+    return by_store, by_store_staff
+
+
 def aggregate_nicenail() -> dict:
-    """ナイスネイル: salon-dashboard/dist/index.html から店舗別実績集計"""
+    """ナイスネイル: salon-dashboard/dist/index.html から店舗別実績集計 (会計補正を反映)"""
     if not NICENAIL_HTML.exists() or not NICENAIL_TARGETS.exists():
         return {}
     try:
@@ -343,6 +513,11 @@ def aggregate_nicenail() -> dict:
             records = mr.get(ym_key, [])
         if not records:
             return {}
+        # データがある店舗 (補正前のレコードで判定。補正だけ入っている店舗は「未取得」のまま扱う)
+        raw_stores = {r.get("store", "") for r in records}
+        # 会計補正 (売上付替・返金・出勤キャンセル) を反映する。どの月を出すかは上の補正前レコードで決めてある
+        _cfg_all = _nn_load_admin_config()
+        records = apply_nicenail_adjustments(mr, _cfg_all).get(ym_key, records)
         # キャンセル料のみの会計 (is_cancel_only): 売上には入れる・来店/OP/店販には数えない
         #   (ダッシュボードの aggregate()/月別集計・SC売上分析と同じ定義。2026-10-03 統一・水野承認)
         # 経過日数 (通常レコード内の最大日。キャンセル料のみ・補正は従来どおり見ない)
@@ -369,36 +544,17 @@ def aggregate_nicenail() -> dict:
         targets = _targets_all.get("stores", {})
         _staff_goals = _targets_all.get("staff", {}) or {}
 
-        # 店舗別集計 (visits/options/tenhan は通常集計、 sales は異動考慮で forecast 計算する)
-        by_store = defaultdict(lambda: {"sales": 0, "visits": 0, "options": 0, "tenhan": 0})
+        # 店舗別集計 (visits/options/tenhan は通常集計、 sales は異動考慮で forecast 計算する) と
         # 店舗×スタッフ別 売上集計 (異動考慮 forecast 用)
-        sales_by_store_staff = defaultdict(lambda: defaultdict(int))
-        for r in records:
-            s = r.get("store", "")
-            by_store[s]["sales"] += r.get("amount", 0)
-            sales_by_store_staff[s][r.get("staff", "")] += r.get("amount", 0)
-            if r.get("is_cancel_only"):
-                continue  # 売上だけ計上
-            by_store[s]["visits"] += 1
-            by_store[s]["options"] += r.get("options", 0)
-            by_store[s]["tenhan"] += r.get("tenhan", 0)
+        by_store, sales_by_store_staff = _nn_sum_stores(records)
 
         # 異動履歴ロード (template.html の forecastStoreSalesForMonthEnd と同じ判定)
         # ロジック: 当月内 since の異動について
         #   - 異動出 (from===store): since前日まで日割り投影、 異動済(since<=elapsed)はMTDのみ
         #   - 異動入 (to===store):   since以降の経過日で実績→月残日へ按分
         #   - 通常スタッフ:           MTD × daysInMonth / elapsed
-        admin_cfg_path = Path("/Users/yoheimizuno/salon-dashboard/data/admin_config.json")
-        transfer_history = {}
-        retiree_dates = {}
-        if admin_cfg_path.exists():
-            try:
-                _cfg_all = json.loads(admin_cfg_path.read_text(encoding="utf-8"))
-                transfer_history = _cfg_all.get("transfer_history", {})
-                retiree_dates = _cfg_all.get("retiree_dates", {})
-            except Exception:
-                transfer_history = {}
-                retiree_dates = {}
+        transfer_history = _cfg_all.get("transfer_history", {}) or {}
+        retiree_dates = _cfg_all.get("retiree_dates", {}) or {}
         _y, _m = ym_key.split("-")
         m_start = f"{_y}{_m}01"
         m_end = f"{_y}{_m}{days_in_month:02d}"
@@ -474,7 +630,7 @@ def aggregate_nicenail() -> dict:
         stores_result = []
         total = {"sales": 0, "visits": 0, "options": 0, "tenhan": 0, "budget": 0, "target": 0}
         for store_full, agg in by_store.items():
-            if store_full not in targets:
+            if store_full not in targets or store_full not in raw_stores:
                 continue
             t = targets[store_full]
             budget = t.get("budget", 0)
@@ -503,7 +659,7 @@ def aggregate_nicenail() -> dict:
 
         # 当月データが1件も無い店舗 (月初にレジ締めが遅れた等)。黙って消さず通知に明記する (2026-10-02 三軒茶屋の事故)
         missing_stores = [st.replace("店", "") for st, tv in targets.items()
-                          if st not in by_store and ((tv or {}).get("budget") or (tv or {}).get("target"))]
+                          if st not in raw_stores and ((tv or {}).get("budget") or (tv or {}).get("target"))]
         return {
             "ym": ym_key.replace("-", ""),
             "elapsed": elapsed,
@@ -934,6 +1090,10 @@ def aggregate_nicenail_specific_month(target_ym: str) -> dict:
         records = mr.get(ym_key, [])
         if not records:
             return {}
+        raw_stores = {r.get("store", "") for r in records}
+        # 会計補正 (売上付替・返金・出勤キャンセル) を反映する (ダッシュボードの画面と同じ数字にする)
+        _cfg_m = _nn_load_admin_config()
+        records = apply_nicenail_adjustments(mr, _cfg_m).get(ym_key, records)
         # キャンセル料のみの会計: 売上には入れる・来店/OP/店販には数えない (2026-10-03 統一)
         targets_data = json.loads(NICENAIL_TARGETS.read_text(encoding="utf-8"))
         # 月別 targets: history のキーは "YYYY-MM" (target_ym は "YYYYMM")。
@@ -947,11 +1107,7 @@ def aggregate_nicenail_specific_month(target_ym: str) -> dict:
             targets = targets_data.get("stores", {})
             staff_goals = targets_data.get("staff", {}) or {}
         # 店舗目標は個人目標 (byStore) の合計を優先・退職者除外 (ダッシュボード getStoreTargetFromStaff と同じ)
-        try:
-            _cfg_m = json.loads(Path("/Users/yoheimizuno/salon-dashboard/data/admin_config.json").read_text(encoding="utf-8"))
-            retiree_dates_m = _cfg_m.get("retiree_dates", {}) or {}
-        except Exception:
-            retiree_dates_m = {}
+        retiree_dates_m = _cfg_m.get("retiree_dates", {}) or {}
         def _pk_disp_m(pk: str) -> str:
             mm = re.match(r"^(.*)__(\d+)$", pk or "")
             return (mm.group(1) + "*" * int(mm.group(2))) if mm else (pk or "")
@@ -964,22 +1120,14 @@ def aggregate_nicenail_specific_month(target_ym: str) -> dict:
                 tot += ((((sg or {}).get("byStore") or {}).get(store_full) or {}).get("target") or 0)
             return tot or (t.get("target") or 0)
 
-        by_store = defaultdict(lambda: {"sales": 0, "visits": 0, "options": 0, "tenhan": 0})
-        for r in records:
-            s = r.get("store", "")
-            by_store[s]["sales"] += r.get("amount", 0)
-            if r.get("is_cancel_only"):
-                continue  # 売上だけ計上
-            by_store[s]["visits"] += 1
-            by_store[s]["options"] += r.get("options", 0)
-            by_store[s]["tenhan"] += r.get("tenhan", 0)
+        by_store, _ = _nn_sum_stores(records)
 
         stores_result = []
         total = {"sales": 0, "visits": 0, "options": 0, "budget": 0, "target": 0}
         achieved_budget = 0
         achieved_target = 0
         for store_full, agg in by_store.items():
-            if store_full not in targets:
+            if store_full not in targets or store_full not in raw_stores:
                 continue
             t = targets[store_full]
             budget = t.get("budget", 0)
