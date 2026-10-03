@@ -343,11 +343,13 @@ def aggregate_nicenail() -> dict:
             records = mr.get(ym_key, [])
         if not records:
             return {}
-        # 補正レコード除外
-        records = [r for r in records if not r.get("is_cancel_only")]
-        # 経過日数 (records 内の最大日)
+        # キャンセル料のみの会計 (is_cancel_only): 売上には入れる・来店/OP/店販には数えない
+        #   (ダッシュボードの aggregate()/月別集計・SC売上分析と同じ定義。2026-10-03 統一・水野承認)
+        # 経過日数 (通常レコード内の最大日。キャンセル料のみ・補正は従来どおり見ない)
         max_day = 0
         for r in records:
+            if r.get("is_cancel_only") or r.get("is_adjustment"):
+                continue
             d = r.get("date", "")
             if len(d) >= 8:
                 day = int(d[6:8])
@@ -374,10 +376,12 @@ def aggregate_nicenail() -> dict:
         for r in records:
             s = r.get("store", "")
             by_store[s]["sales"] += r.get("amount", 0)
+            sales_by_store_staff[s][r.get("staff", "")] += r.get("amount", 0)
+            if r.get("is_cancel_only"):
+                continue  # 売上だけ計上
             by_store[s]["visits"] += 1
             by_store[s]["options"] += r.get("options", 0)
             by_store[s]["tenhan"] += r.get("tenhan", 0)
-            sales_by_store_staff[s][r.get("staff", "")] += r.get("amount", 0)
 
         # 異動履歴ロード (template.html の forecastStoreSalesForMonthEnd と同じ判定)
         # ロジック: 当月内 since の異動について
@@ -930,7 +934,7 @@ def aggregate_nicenail_specific_month(target_ym: str) -> dict:
         records = mr.get(ym_key, [])
         if not records:
             return {}
-        records = [r for r in records if not r.get("is_cancel_only")]
+        # キャンセル料のみの会計: 売上には入れる・来店/OP/店販には数えない (2026-10-03 統一)
         targets_data = json.loads(NICENAIL_TARGETS.read_text(encoding="utf-8"))
         # 月別 targets: history のキーは "YYYY-MM" (target_ym は "YYYYMM")。
         #   2026-10-03 修正: 旧コードは "202609" で history を引いて必ず外れ、当月(翌月)の予算・目標で
@@ -964,6 +968,8 @@ def aggregate_nicenail_specific_month(target_ym: str) -> dict:
         for r in records:
             s = r.get("store", "")
             by_store[s]["sales"] += r.get("amount", 0)
+            if r.get("is_cancel_only"):
+                continue  # 売上だけ計上
             by_store[s]["visits"] += 1
             by_store[s]["options"] += r.get("options", 0)
             by_store[s]["tenhan"] += r.get("tenhan", 0)
