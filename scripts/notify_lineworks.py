@@ -932,12 +932,33 @@ def aggregate_nicenail_specific_month(target_ym: str) -> dict:
             return {}
         records = [r for r in records if not r.get("is_cancel_only")]
         targets_data = json.loads(NICENAIL_TARGETS.read_text(encoding="utf-8"))
-        # 月別 targets: stores の history か stores 直
+        # 月別 targets: history のキーは "YYYY-MM" (target_ym は "YYYYMM")。
+        #   2026-10-03 修正: 旧コードは "202609" で history を引いて必ず外れ、当月(翌月)の予算・目標で
+        #   計算していた (10/1 の「9月確定」が10月予算ベースになり、目標0%の店舗が出た)
         history = targets_data.get("history", {})
-        if target_ym in history:
-            targets = history[target_ym].get("stores", {})
+        if ym_key in history:
+            targets = history[ym_key].get("stores", {})
+            staff_goals = history[ym_key].get("staff", {}) or {}
         else:
             targets = targets_data.get("stores", {})
+            staff_goals = targets_data.get("staff", {}) or {}
+        # 店舗目標は個人目標 (byStore) の合計を優先・退職者除外 (ダッシュボード getStoreTargetFromStaff と同じ)
+        try:
+            _cfg_m = json.loads(Path("/Users/yoheimizuno/salon-dashboard/data/admin_config.json").read_text(encoding="utf-8"))
+            retiree_dates_m = _cfg_m.get("retiree_dates", {}) or {}
+        except Exception:
+            retiree_dates_m = {}
+        def _pk_disp_m(pk: str) -> str:
+            mm = re.match(r"^(.*)__(\d+)$", pk or "")
+            return (mm.group(1) + "*" * int(mm.group(2))) if mm else (pk or "")
+        def _store_target_m(store_full: str, t: dict) -> int:
+            tot = 0
+            for pk, sg in staff_goals.items():
+                rd = ((retiree_dates_m.get(_pk_disp_m(pk)) or {}).get("retired") or "")
+                if rd and rd < f"{ym_key}-01":
+                    continue
+                tot += ((((sg or {}).get("byStore") or {}).get(store_full) or {}).get("target") or 0)
+            return tot or (t.get("target") or 0)
 
         by_store = defaultdict(lambda: {"sales": 0, "visits": 0, "options": 0, "tenhan": 0})
         for r in records:
@@ -956,7 +977,7 @@ def aggregate_nicenail_specific_month(target_ym: str) -> dict:
                 continue
             t = targets[store_full]
             budget = t.get("budget", 0)
-            target = t.get("target", 0)
+            target = _store_target_m(store_full, t)
             budget_pct = agg["sales"] / budget * 100 if budget else 0
             target_pct = agg["sales"] / target * 100 if target else 0
             if budget_pct >= 100: achieved_budget += 1
