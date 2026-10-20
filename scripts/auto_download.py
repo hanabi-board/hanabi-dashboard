@@ -34,11 +34,17 @@ STORES = [
     {"id": "miyakojima", "code": "002", "name": "ELLE by Hanabi 宮古島店"},
 ]
 
+# 🚨 2026-10-20 USEN リリースで帳票URLが変更 (旧URLは /error 「システムエラー」に飛ぶ)。
+#   新URLは 帳票照会メニュー (portal/report) のカード onclick=openURLInNewTab(...) から採取。
+#   フォーム部品ID (#search_year 等) は不変だったので URL 差し替えのみで復旧。
 REPORT_URLS = {
-    "uriage":     "https://owner-beauty.u-regi.com/sales_results/C_sales_results/sales_results_list",
-    "staff":      "https://owner-beauty.u-regi.com/staff_ranking/c_staff_ranking/staff_ranking_list",
-    "regi_close": "https://owner-beauty.u-regi.com/tenpo_bunseki/c_tenpo_bunseki/tenpo_bunseki_for_base_html",
+    "uriage":     "https://owner-beauty.u-regi.com/report/sales_results/list",
+    "staff":      "https://owner-beauty.u-regi.com/staff_ranking/sales_performance_by_staff",
+    "regi_close": "https://owner-beauty.u-regi.com/report/tenpo_bunseki/tenpo_bunseki_for_base_html",
 }
+# 旧URL (参考・2026-10-19 まで有効)
+#   uriage: /sales_results/C_sales_results/sales_results_list
+#   staff:  /staff_ranking/c_staff_ranking/staff_ranking_list
 
 
 def load_env() -> dict:
@@ -180,6 +186,13 @@ def configure_and_download(page: Page, report: str, year_month: str, store_code:
     # staff form uses #search_date_from + #search_date_to (YYYYMMDD)
     has_year_month = page.locator("#search_year").count() > 0
     has_date_range = page.locator("#search_date_from").count() > 0
+    # 🛡 2026-10-20: 帳票フォームが開けていない (URL変更で /error やメニューに飛ばされた) 時に
+    #   30秒タイムアウト×リトライで粘らず、 原因が分かるエラーで即終了する。
+    #   (旧実装は get_by_text("検索") がメニューの「汎用検索」に誤爆して時間だけ溶けていた)
+    if not (has_year_month or has_date_range):
+        page.screenshot(path=str(log_dir / f"noform_{report}_{store_code}.png"))
+        hint = "システムエラー画面" if page.get_by_text("システムエラー").count() else "フォーム要素なし"
+        raise RuntimeError(f"帳票フォームが開けません ({hint}, url={page.url}) — Uレジ側のURL変更の可能性。 REPORT_URLS を確認")
     if has_year_month:
         page.select_option("#search_year", yyyy)
         page.select_option("#search_month", mm)
