@@ -54,7 +54,7 @@
       "experience_years": 0,
       "source": "indeed",
       "status": "書類選考",
-      "notes": "indeedから、外国人男性、おそらく美容師免許なし",
+      "notes": "",
       "notion_url": "https://www.notion.so/p/3e5ab31f37ef807f8a69da5141073665"
     },
     {
@@ -67,7 +67,19 @@
       "source": "リジョブ",
       "status": "面接調整中",
       "notes": "indeedから、外国人男性、おそらく美容師免許なし",
-      "notion_url": "https://www.notion.so/p/BUI-THANH-LONG-3e4ab31f37ef80eb9d56c436a40b9c45"
+      "notion_url": "https://www.notion.so/p/BUI-THANH-LONG-1-3feab31f37ef80939c79fe7f5c8c7813"
+    },
+    {
+      "id": "nk_酒井音葉",
+      "applied_date": "2026-10-19",
+      "name": "酒井 音葉",
+      "role": "アイリスト",
+      "store_pref": "ELLE by Hanabi 宮古島店",
+      "experience_years": 0,
+      "source": "リジョブ",
+      "status": "面接調整中",
+      "notes": "短期間勤務希望",
+      "notion_url": "https://www.notion.so/p/3e4ab31f37ef80eb9d56c436a40b9c45"
     },
     {
       "id": "nk_吉村梨花",
