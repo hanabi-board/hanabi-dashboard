@@ -3,8 +3,8 @@
   "store_id": "miyakojima",
   "store_code": "002",
   "date_from": "20261001",
-  "date_to": "20261022",
-  "scraped_at": "2026-10-22T08:31:54",
+  "date_to": "20261023",
+  "scraped_at": "2026-10-23T08:31:52",
   "rows": [
     {
       "row_number": "1",
@@ -217,7 +217,7 @@
       "count": "2",
       "count_ratio": "0.4",
       "total_price": "22000",
-      "price_ratio": "0.6",
+      "price_ratio": "0.5",
       "unit_price": "11000",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
@@ -303,8 +303,8 @@
       "total_price": "7500",
       "price_ratio": "0.2",
       "unit_price": "7500",
-      "prev_total_price": "6000",
-      "year_on_year_price": "125.0%"
+      "prev_total_price": "12000",
+      "year_on_year_price": "62.5%"
     },
     {
       "row_number": "26",
@@ -315,8 +315,8 @@
       "total_price": "16500",
       "price_ratio": "0.4",
       "unit_price": "5500",
-      "prev_total_price": "4500",
-      "year_on_year_price": "366.7%"
+      "prev_total_price": "9000",
+      "year_on_year_price": "183.3%"
     },
     {
       "row_number": "27",
@@ -867,7 +867,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "0",
+      "prev_total_price": "15000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -922,13 +922,13 @@
       "row_number": "77",
       "category_status_name": "その他まつげ",
       "commodity_name": "アンドヘルシー",
-      "count": "11",
-      "count_ratio": "2.2",
-      "total_price": "49995",
+      "count": "12",
+      "count_ratio": "2.4",
+      "total_price": "54540",
       "price_ratio": "1.3",
       "unit_price": "4545",
-      "prev_total_price": "40905",
-      "year_on_year_price": "122.2%"
+      "prev_total_price": "45450",
+      "year_on_year_price": "120.0%"
     },
     {
       "row_number": "78",
@@ -951,8 +951,8 @@
       "total_price": "8818",
       "price_ratio": "0.2",
       "unit_price": "4409",
-      "prev_total_price": "20100",
-      "year_on_year_price": "43.9%"
+      "prev_total_price": "21600",
+      "year_on_year_price": "40.8%"
     },
     {
       "row_number": "80",
@@ -975,7 +975,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "1200",
+      "prev_total_price": "2000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -987,8 +987,8 @@
       "total_price": "12000",
       "price_ratio": "0.3",
       "unit_price": "3000",
-      "prev_total_price": "15000",
-      "year_on_year_price": "80.0%"
+      "prev_total_price": "18000",
+      "year_on_year_price": "66.7%"
     },
     {
       "row_number": "83",
@@ -1102,11 +1102,11 @@
       "row_number": "92",
       "category_status_name": "HPBクーポン",
       "commodity_name": "全員)カットカラー",
-      "count": "2",
-      "count_ratio": "0.4",
-      "total_price": "24000",
-      "price_ratio": "0.6",
-      "unit_price": "12000",
+      "count": "3",
+      "count_ratio": "0.6",
+      "total_price": "35127",
+      "price_ratio": "0.9",
+      "unit_price": "11709",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
     },
@@ -1114,23 +1114,23 @@
       "row_number": "93",
       "category_status_name": "カット",
       "commodity_name": "カット",
-      "count": "38",
+      "count": "39",
       "count_ratio": "7.7",
-      "total_price": "185361",
+      "total_price": "190361",
       "price_ratio": "4.7",
-      "unit_price": "4878",
-      "prev_total_price": "249300",
-      "year_on_year_price": "74.4%"
+      "unit_price": "4881",
+      "prev_total_price": "268500",
+      "year_on_year_price": "70.9%"
     },
     {
       "row_number": "94",
       "category_status_name": "カット",
       "commodity_name": "前髪カット",
-      "count": "4",
-      "count_ratio": "0.8",
+      "count": "5",
+      "count_ratio": "1.0",
       "total_price": "3000",
       "price_ratio": "0.1",
-      "unit_price": "750",
+      "unit_price": "600",
       "prev_total_price": "5000",
       "year_on_year_price": "60.0%"
     },
@@ -1155,8 +1155,8 @@
       "total_price": "5409",
       "price_ratio": "0.1",
       "unit_price": "2705",
-      "prev_total_price": "67500",
-      "year_on_year_price": "8.0%"
+      "prev_total_price": "72000",
+      "year_on_year_price": "7.5%"
     },
     {
       "row_number": "97",
@@ -1167,8 +1167,8 @@
       "total_price": "5000",
       "price_ratio": "0.1",
       "unit_price": "5000",
-      "prev_total_price": "90000",
-      "year_on_year_price": "5.6%"
+      "prev_total_price": "105000",
+      "year_on_year_price": "4.8%"
     },
     {
       "row_number": "98",
@@ -1179,8 +1179,8 @@
       "total_price": "5500",
       "price_ratio": "0.1",
       "unit_price": "5500",
-      "prev_total_price": "44000",
-      "year_on_year_price": "12.5%"
+      "prev_total_price": "55000",
+      "year_on_year_price": "10.0%"
     },
     {
       "row_number": "99",
@@ -1191,8 +1191,8 @@
       "total_price": "24000",
       "price_ratio": "0.6",
       "unit_price": "6000",
-      "prev_total_price": "60000",
-      "year_on_year_price": "40.0%"
+      "prev_total_price": "66000",
+      "year_on_year_price": "36.4%"
     },
     {
       "row_number": "100",
@@ -1215,8 +1215,8 @@
       "total_price": "1500",
       "price_ratio": "0.0",
       "unit_price": "1500",
-      "prev_total_price": "1500",
-      "year_on_year_price": "100.0%"
+      "prev_total_price": "3000",
+      "year_on_year_price": "50.0%"
     },
     {
       "row_number": "102",
@@ -1227,32 +1227,32 @@
       "total_price": "2500",
       "price_ratio": "0.1",
       "unit_price": "2500",
-      "prev_total_price": "10000",
-      "year_on_year_price": "25.0%"
+      "prev_total_price": "12500",
+      "year_on_year_price": "20.0%"
     },
     {
       "row_number": "103",
       "category_status_name": "まつげエクステ",
       "commodity_name": "ダブルフラット変更",
-      "count": "42",
+      "count": "43",
       "count_ratio": "8.5",
-      "total_price": "83767",
+      "total_price": "85706",
       "price_ratio": "2.1",
-      "unit_price": "1994",
-      "prev_total_price": "88000",
-      "year_on_year_price": "95.2%"
+      "unit_price": "1993",
+      "prev_total_price": "92000",
+      "year_on_year_price": "93.2%"
     },
     {
       "row_number": "104",
       "category_status_name": "まつげエクステ",
       "commodity_name": "フラットラッシュ変更",
-      "count": "7",
-      "count_ratio": "1.4",
-      "total_price": "7000",
+      "count": "8",
+      "count_ratio": "1.6",
+      "total_price": "8000",
       "price_ratio": "0.2",
       "unit_price": "1000",
-      "prev_total_price": "49000",
-      "year_on_year_price": "14.3%"
+      "prev_total_price": "52000",
+      "year_on_year_price": "15.4%"
     },
     {
       "row_number": "105",
@@ -1261,7 +1261,7 @@
       "count": "4",
       "count_ratio": "0.8",
       "total_price": "6000",
-      "price_ratio": "0.2",
+      "price_ratio": "0.1",
       "unit_price": "1500",
       "prev_total_price": "6000",
       "year_on_year_price": "100.0%"
@@ -1342,11 +1342,11 @@
       "row_number": "112",
       "category_status_name": "まつげエクステ",
       "commodity_name": "フラット120本",
-      "count": "12",
-      "count_ratio": "2.4",
-      "total_price": "71570",
-      "price_ratio": "1.8",
-      "unit_price": "5964",
+      "count": "13",
+      "count_ratio": "2.6",
+      "total_price": "77570",
+      "price_ratio": "1.9",
+      "unit_price": "5967",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
     },
@@ -1450,9 +1450,9 @@
       "row_number": "121",
       "category_status_name": "まつげエクステ",
       "commodity_name": "LED初回",
-      "count": "11",
-      "count_ratio": "2.2",
-      "total_price": "5465",
+      "count": "12",
+      "count_ratio": "2.4",
+      "total_price": "5965",
       "price_ratio": "0.1",
       "unit_price": "497",
       "prev_total_price": "0",
@@ -1717,7 +1717,7 @@
       "count": "12",
       "count_ratio": "2.4",
       "total_price": "6000",
-      "price_ratio": "0.2",
+      "price_ratio": "0.1",
       "unit_price": "500",
       "prev_total_price": "3000",
       "year_on_year_price": "200.0%"
@@ -1738,9 +1738,9 @@
       "row_number": "145",
       "category_status_name": "変更料",
       "commodity_name": "HPB再来＋550",
-      "count": "68",
-      "count_ratio": "13.8",
-      "total_price": "34000",
+      "count": "72",
+      "count_ratio": "14.2",
+      "total_price": "36000",
       "price_ratio": "0.9",
       "unit_price": "500",
       "prev_total_price": "0",
@@ -1762,9 +1762,9 @@
       "row_number": "147",
       "category_status_name": "変更料",
       "commodity_name": "HPB再来＋1100",
-      "count": "1",
-      "count_ratio": "0.2",
-      "total_price": "1000",
+      "count": "2",
+      "count_ratio": "0.4",
+      "total_price": "2000",
       "price_ratio": "0.0",
       "unit_price": "1000",
       "prev_total_price": "0",
@@ -1887,8 +1887,8 @@
       "total_price": "10500",
       "price_ratio": "0.3",
       "unit_price": "10500",
-      "prev_total_price": "0",
-      "year_on_year_price": "0.0%"
+      "prev_total_price": "15000",
+      "year_on_year_price": "70.0%"
     },
     {
       "row_number": "158",
@@ -1923,8 +1923,8 @@
       "total_price": "60049",
       "price_ratio": "1.5",
       "unit_price": "5004",
-      "prev_total_price": "79600",
-      "year_on_year_price": "75.4%"
+      "prev_total_price": "83600",
+      "year_on_year_price": "71.8%"
     },
     {
       "row_number": "161",
@@ -1935,8 +1935,8 @@
       "total_price": "7000",
       "price_ratio": "0.2",
       "unit_price": "1000",
-      "prev_total_price": "21000",
-      "year_on_year_price": "33.3%"
+      "prev_total_price": "26000",
+      "year_on_year_price": "26.9%"
     },
     {
       "row_number": "162",
@@ -1947,8 +1947,8 @@
       "total_price": "5000",
       "price_ratio": "0.1",
       "unit_price": "1000",
-      "prev_total_price": "28900",
-      "year_on_year_price": "17.3%"
+      "prev_total_price": "31900",
+      "year_on_year_price": "15.7%"
     },
     {
       "row_number": "163",
@@ -1993,7 +1993,7 @@
       "count": "2",
       "count_ratio": "0.4",
       "total_price": "6000",
-      "price_ratio": "0.2",
+      "price_ratio": "0.1",
       "unit_price": "3000",
       "prev_total_price": "2500",
       "year_on_year_price": "240.0%"
@@ -2005,7 +2005,7 @@
       "count": "4",
       "count_ratio": "0.8",
       "total_price": "2000",
-      "price_ratio": "0.1",
+      "price_ratio": "0.0",
       "unit_price": "500",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
@@ -2031,7 +2031,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "1000",
+      "prev_total_price": "2000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -2122,25 +2122,25 @@
       "row_number": "177",
       "category_status_name": "N新規・BMクーポン",
       "commodity_name": "*H)ワンカラー",
-      "count": "28",
+      "count": "29",
       "count_ratio": "5.7",
-      "total_price": "143318",
+      "total_price": "148818",
       "price_ratio": "3.7",
-      "unit_price": "5119",
+      "unit_price": "5132",
       "prev_total_price": "80000",
-      "year_on_year_price": "179.1%"
+      "year_on_year_price": "186.0%"
     },
     {
       "row_number": "178",
       "category_status_name": "N新規・BMクーポン",
       "commodity_name": "*H)グラデーション",
       "count": "20",
-      "count_ratio": "4.1",
+      "count_ratio": "3.9",
       "total_price": "96772",
-      "price_ratio": "2.5",
+      "price_ratio": "2.4",
       "unit_price": "4839",
-      "prev_total_price": "40000",
-      "year_on_year_price": "241.9%"
+      "prev_total_price": "55000",
+      "year_on_year_price": "175.9%"
     },
     {
       "row_number": "179",
@@ -2158,13 +2158,13 @@
       "row_number": "180",
       "category_status_name": "N新規・BMクーポン",
       "commodity_name": "*H)マグネットorミラー",
-      "count": "16",
+      "count": "17",
       "count_ratio": "3.3",
-      "total_price": "98045",
-      "price_ratio": "2.5",
-      "unit_price": "6128",
+      "total_price": "104545",
+      "price_ratio": "2.6",
+      "unit_price": "6150",
       "prev_total_price": "48000",
-      "year_on_year_price": "204.3%"
+      "year_on_year_price": "217.8%"
     },
     {
       "row_number": "181",
@@ -2173,7 +2173,7 @@
       "count": "4",
       "count_ratio": "0.8",
       "total_price": "26452",
-      "price_ratio": "0.7",
+      "price_ratio": "0.6",
       "unit_price": "6613",
       "prev_total_price": "12726",
       "year_on_year_price": "207.9%"
@@ -2197,22 +2197,22 @@
       "count": "7",
       "count_ratio": "1.4",
       "total_price": "57500",
-      "price_ratio": "1.5",
+      "price_ratio": "1.4",
       "unit_price": "8214",
-      "prev_total_price": "64000",
-      "year_on_year_price": "89.8%"
+      "prev_total_price": "80000",
+      "year_on_year_price": "71.9%"
     },
     {
       "row_number": "184",
       "category_status_name": "N新規・BMクーポン",
       "commodity_name": "*F)ワンカラー",
-      "count": "13",
-      "count_ratio": "2.6",
-      "total_price": "68500",
-      "price_ratio": "1.7",
-      "unit_price": "5269",
+      "count": "14",
+      "count_ratio": "2.8",
+      "total_price": "74000",
+      "price_ratio": "1.8",
+      "unit_price": "5286",
       "prev_total_price": "20000",
-      "year_on_year_price": "342.5%"
+      "year_on_year_price": "370.0%"
     },
     {
       "row_number": "185",
@@ -2401,7 +2401,7 @@
       "count": "3",
       "count_ratio": "0.6",
       "total_price": "18000",
-      "price_ratio": "0.5",
+      "price_ratio": "0.4",
       "unit_price": "6000",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
@@ -2425,7 +2425,7 @@
       "count": "1",
       "count_ratio": "0.2",
       "total_price": "10000",
-      "price_ratio": "0.3",
+      "price_ratio": "0.2",
       "unit_price": "10000",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
@@ -2449,7 +2449,7 @@
       "count": "3",
       "count_ratio": "0.6",
       "total_price": "50000",
-      "price_ratio": "1.3",
+      "price_ratio": "1.2",
       "unit_price": "16667",
       "prev_total_price": "20000",
       "year_on_year_price": "250.0%"
@@ -2470,13 +2470,13 @@
       "row_number": "206",
       "category_status_name": "I指名料",
       "commodity_name": "まつエク)指名料",
-      "count": "80",
-      "count_ratio": "16.3",
-      "total_price": "39717",
+      "count": "82",
+      "count_ratio": "16.1",
+      "total_price": "40717",
       "price_ratio": "1.0",
-      "unit_price": "496",
-      "prev_total_price": "40000",
-      "year_on_year_price": "99.3%"
+      "unit_price": "497",
+      "prev_total_price": "45000",
+      "year_on_year_price": "90.5%"
     },
     {
       "row_number": "207",
@@ -2495,7 +2495,7 @@
       "category_status_name": "I指名料",
       "commodity_name": "I指名料+220円",
       "count": "36",
-      "count_ratio": "7.3",
+      "count_ratio": "7.1",
       "total_price": "7190",
       "price_ratio": "0.2",
       "unit_price": "200",
@@ -2506,11 +2506,11 @@
       "row_number": "209",
       "category_status_name": "縮毛矯正",
       "commodity_name": "酸性ストレート",
-      "count": "0",
-      "count_ratio": "0.0",
-      "total_price": "0",
-      "price_ratio": "0.0",
-      "unit_price": "0",
+      "count": "1",
+      "count_ratio": "0.2",
+      "total_price": "22363",
+      "price_ratio": "0.5",
+      "unit_price": "22363",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
     },
@@ -2578,61 +2578,61 @@
       "row_number": "215",
       "category_status_name": "IHPBクーポン",
       "commodity_name": "*Wフラットラッシュ100本",
-      "count": "47",
-      "count_ratio": "9.6",
-      "total_price": "302317",
-      "price_ratio": "7.7",
-      "unit_price": "6432",
-      "prev_total_price": "207999",
-      "year_on_year_price": "145.3%"
+      "count": "48",
+      "count_ratio": "9.4",
+      "total_price": "308817",
+      "price_ratio": "7.6",
+      "unit_price": "6434",
+      "prev_total_price": "227499",
+      "year_on_year_price": "135.7%"
     },
     {
       "row_number": "216",
       "category_status_name": "IHPBクーポン",
       "commodity_name": "*Wフラットラッシュ120本",
-      "count": "33",
-      "count_ratio": "6.7",
-      "total_price": "229837",
-      "price_ratio": "5.9",
-      "unit_price": "6965",
+      "count": "35",
+      "count_ratio": "6.9",
+      "total_price": "243837",
+      "price_ratio": "6.0",
+      "unit_price": "6967",
       "prev_total_price": "216999",
-      "year_on_year_price": "105.9%"
+      "year_on_year_price": "112.4%"
     },
     {
       "row_number": "217",
       "category_status_name": "IHPBクーポン",
       "commodity_name": "*Wフラットラッシュ140本",
-      "count": "17",
-      "count_ratio": "3.5",
-      "total_price": "127212",
-      "price_ratio": "3.2",
-      "unit_price": "7483",
-      "prev_total_price": "112500",
-      "year_on_year_price": "113.1%"
+      "count": "19",
+      "count_ratio": "3.7",
+      "total_price": "142212",
+      "price_ratio": "3.5",
+      "unit_price": "7485",
+      "prev_total_price": "142500",
+      "year_on_year_price": "99.8%"
     },
     {
       "row_number": "218",
       "category_status_name": "IHPBクーポン",
       "commodity_name": "*上まつ毛パーマ",
       "count": "34",
-      "count_ratio": "6.9",
+      "count_ratio": "6.7",
       "total_price": "170000",
-      "price_ratio": "4.3",
+      "price_ratio": "4.2",
       "unit_price": "5000",
-      "prev_total_price": "305000",
-      "year_on_year_price": "55.7%"
+      "prev_total_price": "330000",
+      "year_on_year_price": "51.5%"
     },
     {
       "row_number": "219",
       "category_status_name": "IHPBクーポン",
       "commodity_name": "*上下まつ毛パーマ",
-      "count": "2",
-      "count_ratio": "0.4",
-      "total_price": "13818",
-      "price_ratio": "0.4",
-      "unit_price": "6909",
-      "prev_total_price": "112000",
-      "year_on_year_price": "12.3%"
+      "count": "3",
+      "count_ratio": "0.6",
+      "total_price": "20818",
+      "price_ratio": "0.5",
+      "unit_price": "6939",
+      "prev_total_price": "119000",
+      "year_on_year_price": "17.5%"
     },
     {
       "row_number": "220",
@@ -2641,7 +2641,7 @@
       "count": "2",
       "count_ratio": "0.4",
       "total_price": "21818",
-      "price_ratio": "0.6",
+      "price_ratio": "0.5",
       "unit_price": "10909",
       "prev_total_price": "21818",
       "year_on_year_price": "100.0%"
@@ -2677,7 +2677,7 @@
       "count": "4",
       "count_ratio": "0.8",
       "total_price": "26000",
-      "price_ratio": "0.7",
+      "price_ratio": "0.6",
       "unit_price": "6500",
       "prev_total_price": "13000",
       "year_on_year_price": "200.0%"
@@ -2691,20 +2691,20 @@
       "total_price": "43274",
       "price_ratio": "1.1",
       "unit_price": "3091",
-      "prev_total_price": "40183",
-      "year_on_year_price": "107.7%"
+      "prev_total_price": "43274",
+      "year_on_year_price": "100.0%"
     },
     {
       "row_number": "225",
       "category_status_name": "IHPBクーポン",
       "commodity_name": "*80本リペア",
-      "count": "21",
-      "count_ratio": "4.3",
-      "total_price": "83651",
-      "price_ratio": "2.1",
-      "unit_price": "3983",
-      "prev_total_price": "115998",
-      "year_on_year_price": "72.1%"
+      "count": "23",
+      "count_ratio": "4.5",
+      "total_price": "91530",
+      "price_ratio": "2.2",
+      "unit_price": "3980",
+      "prev_total_price": "119998",
+      "year_on_year_price": "76.3%"
     },
     {
       "row_number": "226",
@@ -2763,7 +2763,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "16000",
+      "prev_total_price": "24000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -2855,12 +2855,12 @@
       "category_status_name": "IHPBクーポン",
       "commodity_name": "60本リペア",
       "count": "17",
-      "count_ratio": "3.5",
+      "count_ratio": "3.3",
       "total_price": "60159",
       "price_ratio": "1.5",
       "unit_price": "3539",
-      "prev_total_price": "67355",
-      "year_on_year_price": "89.3%"
+      "prev_total_price": "70900",
+      "year_on_year_price": "84.9%"
     },
     {
       "row_number": "239",
@@ -3082,11 +3082,11 @@
       "row_number": "257",
       "category_status_name": "指名料",
       "commodity_name": "指名料",
-      "count": "46",
-      "count_ratio": "9.3",
-      "total_price": "22937",
+      "count": "49",
+      "count_ratio": "9.6",
+      "total_price": "24401",
       "price_ratio": "0.6",
-      "unit_price": "499",
+      "unit_price": "498",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
     },
@@ -3094,13 +3094,13 @@
       "row_number": "258",
       "category_status_name": "セット",
       "commodity_name": "カット カラー トリートメント",
-      "count": "25",
-      "count_ratio": "5.1",
-      "total_price": "322000",
-      "price_ratio": "8.2",
-      "unit_price": "12880",
-      "prev_total_price": "177600",
-      "year_on_year_price": "181.3%"
+      "count": "27",
+      "count_ratio": "5.3",
+      "total_price": "347000",
+      "price_ratio": "8.5",
+      "unit_price": "12852",
+      "prev_total_price": "200400",
+      "year_on_year_price": "173.2%"
     },
     {
       "row_number": "259",
@@ -3109,7 +3109,7 @@
       "count": "7",
       "count_ratio": "1.4",
       "total_price": "92500",
-      "price_ratio": "2.4",
+      "price_ratio": "2.3",
       "unit_price": "13214",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
@@ -3157,7 +3157,7 @@
       "count": "4",
       "count_ratio": "0.8",
       "total_price": "98909",
-      "price_ratio": "2.5",
+      "price_ratio": "2.4",
       "unit_price": "24727",
       "prev_total_price": "0",
       "year_on_year_price": "0.0%"
@@ -3202,13 +3202,13 @@
       "row_number": "267",
       "category_status_name": "エクステンション",
       "commodity_name": "エクステ１０本",
-      "count": "1",
-      "count_ratio": "0.2",
-      "total_price": "3500",
-      "price_ratio": "0.1",
+      "count": "3",
+      "count_ratio": "0.6",
+      "total_price": "10500",
+      "price_ratio": "0.3",
       "unit_price": "3500",
       "prev_total_price": "9000",
-      "year_on_year_price": "38.9%"
+      "year_on_year_price": "116.7%"
     },
     {
       "row_number": "268",
