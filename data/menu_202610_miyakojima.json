@@ -3,8 +3,8 @@
   "store_id": "miyakojima",
   "store_code": "002",
   "date_from": "20261001",
-  "date_to": "20261023",
-  "scraped_at": "2026-10-23T08:31:52",
+  "date_to": "20261024",
+  "scraped_at": "2026-10-24T08:31:51",
   "rows": [
     {
       "row_number": "1",
@@ -195,7 +195,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "5000",
+      "prev_total_price": "15000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -303,8 +303,8 @@
       "total_price": "7500",
       "price_ratio": "0.2",
       "unit_price": "7500",
-      "prev_total_price": "12000",
-      "year_on_year_price": "62.5%"
+      "prev_total_price": "18000",
+      "year_on_year_price": "41.7%"
     },
     {
       "row_number": "26",
@@ -363,7 +363,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "0",
+      "prev_total_price": "12000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -951,8 +951,8 @@
       "total_price": "8818",
       "price_ratio": "0.2",
       "unit_price": "4409",
-      "prev_total_price": "21600",
-      "year_on_year_price": "40.8%"
+      "prev_total_price": "21900",
+      "year_on_year_price": "40.3%"
     },
     {
       "row_number": "80",
@@ -1119,8 +1119,8 @@
       "total_price": "190361",
       "price_ratio": "4.7",
       "unit_price": "4881",
-      "prev_total_price": "268500",
-      "year_on_year_price": "70.9%"
+      "prev_total_price": "276500",
+      "year_on_year_price": "68.8%"
     },
     {
       "row_number": "94",
@@ -1155,8 +1155,8 @@
       "total_price": "5409",
       "price_ratio": "0.1",
       "unit_price": "2705",
-      "prev_total_price": "72000",
-      "year_on_year_price": "7.5%"
+      "prev_total_price": "76500",
+      "year_on_year_price": "7.1%"
     },
     {
       "row_number": "97",
@@ -1167,8 +1167,8 @@
       "total_price": "5000",
       "price_ratio": "0.1",
       "unit_price": "5000",
-      "prev_total_price": "105000",
-      "year_on_year_price": "4.8%"
+      "prev_total_price": "115000",
+      "year_on_year_price": "4.3%"
     },
     {
       "row_number": "98",
@@ -1179,8 +1179,8 @@
       "total_price": "5500",
       "price_ratio": "0.1",
       "unit_price": "5500",
-      "prev_total_price": "55000",
-      "year_on_year_price": "10.0%"
+      "prev_total_price": "60500",
+      "year_on_year_price": "9.1%"
     },
     {
       "row_number": "99",
@@ -1239,8 +1239,8 @@
       "total_price": "85706",
       "price_ratio": "2.1",
       "unit_price": "1993",
-      "prev_total_price": "92000",
-      "year_on_year_price": "93.2%"
+      "prev_total_price": "100000",
+      "year_on_year_price": "85.7%"
     },
     {
       "row_number": "104",
@@ -1251,8 +1251,8 @@
       "total_price": "8000",
       "price_ratio": "0.2",
       "unit_price": "1000",
-      "prev_total_price": "52000",
-      "year_on_year_price": "15.4%"
+      "prev_total_price": "56000",
+      "year_on_year_price": "14.3%"
     },
     {
       "row_number": "105",
@@ -1263,8 +1263,8 @@
       "total_price": "6000",
       "price_ratio": "0.1",
       "unit_price": "1500",
-      "prev_total_price": "6000",
-      "year_on_year_price": "100.0%"
+      "prev_total_price": "9000",
+      "year_on_year_price": "66.7%"
     },
     {
       "row_number": "106",
@@ -1275,8 +1275,8 @@
       "total_price": "18863",
       "price_ratio": "0.5",
       "unit_price": "3144",
-      "prev_total_price": "3182",
-      "year_on_year_price": "592.8%"
+      "prev_total_price": "6364",
+      "year_on_year_price": "296.4%"
     },
     {
       "row_number": "107",
@@ -1719,8 +1719,8 @@
       "total_price": "6000",
       "price_ratio": "0.1",
       "unit_price": "500",
-      "prev_total_price": "3000",
-      "year_on_year_price": "200.0%"
+      "prev_total_price": "3500",
+      "year_on_year_price": "171.4%"
     },
     {
       "row_number": "144",
@@ -1887,8 +1887,8 @@
       "total_price": "10500",
       "price_ratio": "0.3",
       "unit_price": "10500",
-      "prev_total_price": "15000",
-      "year_on_year_price": "70.0%"
+      "prev_total_price": "30000",
+      "year_on_year_price": "35.0%"
     },
     {
       "row_number": "158",
@@ -1923,8 +1923,8 @@
       "total_price": "60049",
       "price_ratio": "1.5",
       "unit_price": "5004",
-      "prev_total_price": "83600",
-      "year_on_year_price": "71.8%"
+      "prev_total_price": "87600",
+      "year_on_year_price": "68.5%"
     },
     {
       "row_number": "161",
@@ -1935,8 +1935,8 @@
       "total_price": "7000",
       "price_ratio": "0.2",
       "unit_price": "1000",
-      "prev_total_price": "26000",
-      "year_on_year_price": "26.9%"
+      "prev_total_price": "31000",
+      "year_on_year_price": "22.6%"
     },
     {
       "row_number": "162",
@@ -1947,8 +1947,8 @@
       "total_price": "5000",
       "price_ratio": "0.1",
       "unit_price": "1000",
-      "prev_total_price": "31900",
-      "year_on_year_price": "15.7%"
+      "prev_total_price": "33900",
+      "year_on_year_price": "14.7%"
     },
     {
       "row_number": "163",
@@ -2103,7 +2103,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "154453",
+      "prev_total_price": "169453",
       "year_on_year_price": "0.0%"
     },
     {
@@ -2139,8 +2139,8 @@
       "total_price": "96772",
       "price_ratio": "2.4",
       "unit_price": "4839",
-      "prev_total_price": "55000",
-      "year_on_year_price": "175.9%"
+      "prev_total_price": "60000",
+      "year_on_year_price": "161.3%"
     },
     {
       "row_number": "179",
@@ -2151,7 +2151,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "24000",
+      "prev_total_price": "30000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -2475,8 +2475,8 @@
       "total_price": "40717",
       "price_ratio": "1.0",
       "unit_price": "497",
-      "prev_total_price": "45000",
-      "year_on_year_price": "90.5%"
+      "prev_total_price": "51000",
+      "year_on_year_price": "79.8%"
     },
     {
       "row_number": "207",
@@ -2583,8 +2583,8 @@
       "total_price": "308817",
       "price_ratio": "7.6",
       "unit_price": "6434",
-      "prev_total_price": "227499",
-      "year_on_year_price": "135.7%"
+      "prev_total_price": "240499",
+      "year_on_year_price": "128.4%"
     },
     {
       "row_number": "216",
@@ -2595,8 +2595,8 @@
       "total_price": "243837",
       "price_ratio": "6.0",
       "unit_price": "6967",
-      "prev_total_price": "216999",
-      "year_on_year_price": "112.4%"
+      "prev_total_price": "237999",
+      "year_on_year_price": "102.5%"
     },
     {
       "row_number": "217",
@@ -2607,8 +2607,8 @@
       "total_price": "142212",
       "price_ratio": "3.5",
       "unit_price": "7485",
-      "prev_total_price": "142500",
-      "year_on_year_price": "99.8%"
+      "prev_total_price": "157500",
+      "year_on_year_price": "90.3%"
     },
     {
       "row_number": "218",
@@ -2619,8 +2619,8 @@
       "total_price": "170000",
       "price_ratio": "4.2",
       "unit_price": "5000",
-      "prev_total_price": "330000",
-      "year_on_year_price": "51.5%"
+      "prev_total_price": "355000",
+      "year_on_year_price": "47.9%"
     },
     {
       "row_number": "219",
@@ -2631,8 +2631,8 @@
       "total_price": "20818",
       "price_ratio": "0.5",
       "unit_price": "6939",
-      "prev_total_price": "119000",
-      "year_on_year_price": "17.5%"
+      "prev_total_price": "126000",
+      "year_on_year_price": "16.5%"
     },
     {
       "row_number": "220",
@@ -2667,8 +2667,8 @@
       "total_price": "47573",
       "price_ratio": "1.2",
       "unit_price": "3964",
-      "prev_total_price": "72000",
-      "year_on_year_price": "66.1%"
+      "prev_total_price": "88000",
+      "year_on_year_price": "54.1%"
     },
     {
       "row_number": "223",
@@ -2691,8 +2691,8 @@
       "total_price": "43274",
       "price_ratio": "1.1",
       "unit_price": "3091",
-      "prev_total_price": "43274",
-      "year_on_year_price": "100.0%"
+      "prev_total_price": "49456",
+      "year_on_year_price": "87.5%"
     },
     {
       "row_number": "225",
@@ -2703,8 +2703,8 @@
       "total_price": "91530",
       "price_ratio": "2.2",
       "unit_price": "3980",
-      "prev_total_price": "119998",
-      "year_on_year_price": "76.3%"
+      "prev_total_price": "123997",
+      "year_on_year_price": "73.8%"
     },
     {
       "row_number": "226",
@@ -2715,7 +2715,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "13500",
+      "prev_total_price": "18000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -2727,7 +2727,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "20000",
+      "prev_total_price": "25000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -2751,7 +2751,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "0",
+      "prev_total_price": "6000",
       "year_on_year_price": "0.0%"
     },
     {
@@ -2787,8 +2787,8 @@
       "total_price": "28634",
       "price_ratio": "0.7",
       "unit_price": "3182",
-      "prev_total_price": "12727",
-      "year_on_year_price": "225.0%"
+      "prev_total_price": "15908",
+      "year_on_year_price": "180.0%"
     },
     {
       "row_number": "233",
@@ -2835,8 +2835,8 @@
       "total_price": "500",
       "price_ratio": "0.0",
       "unit_price": "500",
-      "prev_total_price": "2000",
-      "year_on_year_price": "25.0%"
+      "prev_total_price": "3000",
+      "year_on_year_price": "16.7%"
     },
     {
       "row_number": "237",
@@ -2859,8 +2859,8 @@
       "total_price": "60159",
       "price_ratio": "1.5",
       "unit_price": "3539",
-      "prev_total_price": "70900",
-      "year_on_year_price": "84.9%"
+      "prev_total_price": "74445",
+      "year_on_year_price": "80.8%"
     },
     {
       "row_number": "239",
@@ -3099,8 +3099,8 @@
       "total_price": "347000",
       "price_ratio": "8.5",
       "unit_price": "12852",
-      "prev_total_price": "200400",
-      "year_on_year_price": "173.2%"
+      "prev_total_price": "212400",
+      "year_on_year_price": "163.4%"
     },
     {
       "row_number": "259",
@@ -3267,7 +3267,7 @@
       "total_price": "0",
       "price_ratio": "0.0",
       "unit_price": "0",
-      "prev_total_price": "4000",
+      "prev_total_price": "8000",
       "year_on_year_price": "0.0%"
     }
   ]
