@@ -545,7 +545,7 @@
         <h3 class="section-title">外部メディア指標 <span class="section-sub">HotPepper Beauty 評価 / Instagram フォロワー</span></h3>
         <div class="text-[11px] text-gray-500 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1 flex items-center gap-1.5">
           <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          毎月 1日 9:30 JST に自動更新
+          毎月 1日 8:30 頃に自動更新 (前月末時点の値)
         </div>
       </div>
       <div id="mgmtExternal"></div>
@@ -4401,6 +4401,24 @@ function renderRetentionCards() {
     return new Set((DATA.staff_rows || []).filter(r => r.store === sid && r.month === ym && !r.hidden && (r.total_sales || 0) > 0 && (!dept || r.primary_dept === dept)).map(r => r.name)).size;
   };
   const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  // 来店の総量 (2026-11-01 水野「そもそも来客者数が少ない」): 稼働人数に対して客が埋まっているか
+  //   フルタイム水準 = 直近12ヶ月でこの部門のスタッフが月60名以上接客した月の客数の中央値 (新人・パートの月を除く)
+  //   受け皿 = Σ 稼働スタッフの換算 (正社員1 / パート・アルバイト0.5 / 不明1) × 水準。 埋まり具合 = 技術客数 ÷ 受け皿
+  const capacityInfo = (unitKey, ym) => {
+    const [sid, dept] = unitKey.split(":");
+    const all = (DATA.staff_rows || []).filter(r => r.store === sid && !r.hidden && (r.total_sales || 0) > 0 && (!dept || r.primary_dept === dept));
+    const months = [...new Set(all.map(r => r.month))].sort().filter(m => m <= ym).slice(-12);
+    const samples = all.filter(r => months.includes(r.month) && (r.customers || 0) >= 60).map(r => r.customers).sort((a, b) => a - b);
+    const bench = samples.length ? samples[Math.floor(samples.length / 2)] : null;
+    const cur = all.filter(r => r.month === ym);
+    const profiles = ((DATA.staff_profiles || {}).profiles) || {};
+    const weight = r => { const et = ((typeof findStaffProfile === "function" ? findStaffProfile(r.name) : null) || profiles[r.name] || {}).employment_type || ""; return /パート|アルバイト|バイト/.test(et) ? 0.5 : 1; };
+    const fte = cur.reduce((a, r) => a + weight(r), 0);
+    const customers = cur.reduce((a, r) => a + (r.customers || 0), 0);
+    const cap = bench && fte ? bench * fte : null;
+    const parts = { full: cur.filter(r => weight(r) === 1).length, part: cur.filter(r => weight(r) < 1).length };
+    return { bench, fte, customers, cap, util: cap ? customers / cap * 100 : null, n: cur.length, parts, perStaff: cur.length ? customers / cur.length : null };
+  };
   const statusBlock = (unitKey, u) => {
     const yms = Object.keys(u).filter(ym => u[ym].n_total > 0).sort();
     if (yms.length < 3) return "";
@@ -4430,12 +4448,18 @@ function renderRetentionCards() {
     const newWeak = newShort || (newRatio != null && newRatio < 0.85);  // 流入が平均より細い
     const retWeak = retDiff != null && retDiff < -3;
     const smallRet = c3.length && u[c3[0]].n_new < 10;
+    const capI = capacityInfo(unitKey, latest);
+    const volLow = capI.util != null && capI.util < 75;   // 受け皿の75%未満しか埋まっていない = そもそも客数が少ない
+    const volNote = volLow ? ` ／ 客数が受け皿の${capI.util.toFixed(0)}%しか埋まっていない` : "";
     let verdict, cls;
     if (newRatio == null || retDiff == null || smallRet) { verdict = "判定に足るデータがまだありません"; cls = "bg-gray-100 text-gray-500"; }
-    else if (!newWeak && !retWeak) { verdict = "順調 — 新規が離脱を補えていて、 定着も維持"; cls = "bg-green-50 text-green-700 border border-green-200"; }
-    else if (newWeak && !retWeak) { verdict = `新規が足りない — ${newShort ? `離脱を補えず ${Math.abs(netC)}名/月 不足` : "流入が平均より細い"} (定着はできている)`; cls = "bg-amber-50 text-amber-700 border border-amber-200"; }
-    else if (!newWeak && retWeak) { verdict = "新規をリピートにできていない — 流入は足りている (接客・次回提案を見る)"; cls = "bg-amber-50 text-amber-700 border border-amber-200"; }
-    else { verdict = `新規不足と定着低下の両方 — ${newShort ? `離脱に対し ${Math.abs(netC)}名/月 不足` : "流入も細い"}`; cls = "bg-red-50 text-red-700 border border-red-200"; }
+    else if (!newWeak && !retWeak) {
+      if (volLow) { verdict = `定着は維持・新規も離脱を補えているが、 客数が受け皿の${capI.util.toFixed(0)}%と少ない — 新規を増やす余地あり`; cls = "bg-amber-50 text-amber-700 border border-amber-200"; }
+      else { verdict = "順調 — 新規が離脱を補えていて、 定着も維持"; cls = "bg-green-50 text-green-700 border border-green-200"; }
+    }
+    else if (newWeak && !retWeak) { verdict = `新規が足りない — ${newShort ? `離脱を補えず ${Math.abs(netC)}名/月 不足` : "流入が平均より細い"} (定着はできている)${volNote}`; cls = "bg-amber-50 text-amber-700 border border-amber-200"; }
+    else if (!newWeak && retWeak) { verdict = `新規をリピートにできていない — 流入は足りている (接客・次回提案を見る)${volNote}`; cls = volLow ? "bg-red-50 text-red-700 border border-red-200" : "bg-amber-50 text-amber-700 border border-amber-200"; }
+    else { verdict = `新規不足と定着低下の両方 — ${newShort ? `離脱に対し ${Math.abs(netC)}名/月 不足` : "流入も細い"}${volNote}`; cls = "bg-red-50 text-red-700 border border-red-200"; }
     const sign = v => v >= 0 ? "▲" : "▼";
     const pctOf = (a, b) => (a != null && b) ? `${sign(a - b)}${Math.abs((a / b - 1) * 100).toFixed(0)}%` : "";
     return `<div class="pt-3 pb-2">
@@ -4457,6 +4481,10 @@ function renderRetentionCards() {
         <div class="text-[10px] text-gray-500">純増減 <span class="text-gray-400">${ymLabel(netYms[0])}組 · 新規 − ${netK}ヶ月で戻らなかった客</span></div>
         <div class="kpi-num text-sm font-bold ${netC >= 0 ? 'pct-good' : 'pct-bad'}">${netC >= 0 ? '+' : '−'}${Math.abs(netC)}名 <span class="text-[10px] font-normal text-gray-500">新規${netM.n_new} / 離脱${lostC}</span></div>
       </div>${isHair ? `<div class="text-[10px] text-gray-400 mt-0.5">※ヘアは来店周期2〜3ヶ月のため${netK === 6 ? "6ヶ月窓で判定" : "3ヶ月窓は厳しめ"}</div>` : ""}` : ""}
+      ${capI.util != null ? `<div class="mt-1.5 rounded px-2 py-1.5 bg-gray-50 flex items-baseline justify-between gap-2">
+        <div class="text-[10px] text-gray-500">来店の総量 <span class="text-gray-400">${ymLabel(latest)} · 受け皿に対する埋まり具合</span></div>
+        <div class="kpi-num text-sm font-bold ${volLow ? 'pct-bad' : capI.util >= 90 ? 'pct-good' : ''}">${capI.util.toFixed(0)}% <span class="text-[10px] font-normal text-gray-500">${capI.customers}名 / 稼働${capI.n}名${capI.parts.part ? `(うちパート・バイト${capI.parts.part})` : ""} · 1人${capI.perStaff.toFixed(0)}名 vs 水準${capI.bench}名</span></div>
+      </div>` : ""}
     </div>`;
   };
   const trendHtml = (u, k, kind) => {
@@ -5508,20 +5536,25 @@ function renderManagementTab() {
       const pm = m === 1 ? 12 : m - 1;
       return `${py}${String(pm).padStart(2,"0")}`;
     })();
-    let lastHP = recordForMonth(external.hotpepper, SCOPE.month);
-    let lastIG = recordForMonth(external.instagram, SCOPE.month);
-    const prevHP = recordForMonth(external.hotpepper, prevMonth);
-    const prevIG = recordForMonth(external.instagram, prevMonth);
-    // 当月のscrapeがない場合は最新を fallback (まだ月初取得前など)
-    let hpFallback = false, igFallback = false;
-    if (!lastHP && (external.hotpepper || []).length) {
-      lastHP = external.hotpepper[external.hotpepper.length - 1];
-      hpFallback = true;
-    }
-    if (!lastIG && (external.instagram || []).length) {
-      lastIG = external.instagram[external.instagram.length - 1];
-      igFallback = true;
-    }
+    // 🛡 2026-11-01 修正 (水野指摘): 毎月1日の scrape は「前月末時点」の値。 表示月 M には M+1 月初の scrape を当てる
+    //   (旧: M 月内の scrape = M 月初 = 前々月末の値を出していて、 11/1 取得分が 10月表示に反映されなかった)。
+    //   M+1 の scrape がまだ無ければ M 月初の scrape、 それも無ければ最新を fallback。 前月比はその1ヶ月前の scrape と比較。
+    const addMonth = (ym, k) => { let y = parseInt(ym.slice(0,4)), m = parseInt(ym.slice(4,6)) + k; y += Math.floor((m - 1) / 12); m = ((m - 1) % 12 + 12) % 12 + 1; return `${y}${String(m).padStart(2,"0")}`; };
+    const ymOf = rec => (rec && rec.scraped_at) ? rec.scraped_at.slice(0,7).replace("-", "") : null;
+    const pickFor = (records) => {
+      const a = recordForMonth(records, addMonth(SCOPE.month, 1));
+      if (a) return { rec: a, basis: "end" };            // M月末時点 (M+1 月初に取得)
+      const b = recordForMonth(records, SCOPE.month);
+      if (b) return { rec: b, basis: "start" };          // M月初時点
+      const list = records || [];
+      return list.length ? { rec: list[list.length - 1], basis: "latest" } : { rec: null, basis: null };
+    };
+    const hpPick = pickFor(external.hotpepper), igPick = pickFor(external.instagram);
+    let lastHP = hpPick.rec, lastIG = igPick.rec;
+    const prevHP = lastHP ? recordForMonth(external.hotpepper, addMonth(ymOf(lastHP), -1)) : null;
+    const prevIG = lastIG ? recordForMonth(external.instagram, addMonth(ymOf(lastIG), -1)) : null;
+    const hpFallback = hpPick.basis === "latest", igFallback = igPick.basis === "latest";
+    const basisLabel = (pick) => pick.basis === "end" ? `${parseInt(SCOPE.month.slice(4,6))}月末時点` : pick.basis === "start" ? `${parseInt(SCOPE.month.slice(4,6))}月初時点` : "最新値";
     if (!lastHP && !lastIG) {
       extEl.innerHTML = `<div class="text-sm text-gray-400 py-4 text-center">
         外部メディアデータ未取得<br>
@@ -5608,10 +5641,10 @@ function renderManagementTab() {
           </div>
         </div>`;
       }).join("");
-      const fallbackNote = (hpFallback || igFallback) ? `<span class="text-yellow-700">⚠️ ${SCOPE.month.slice(0,4)}年${SCOPE.month.slice(4,6)}月の scrape 未取得 — 最新値を表示</span>` : "";
+      const fallbackNote = (hpFallback || igFallback) ? `<span class="text-yellow-700">⚠️ ${SCOPE.month.slice(0,4)}年${SCOPE.month.slice(4,6)}月分の取得がまだ無いため最新値を表示</span>` : "";
       extEl.innerHTML = `<div class="grid lg:grid-cols-2 gap-3">${cards}</div>
         <div class="text-[11px] text-gray-400 mt-3 flex flex-wrap gap-3 justify-between">
-          <span>表示月: ${SCOPE.month.slice(0,4)}/${SCOPE.month.slice(4,6)} · HotPepper ${lastHP?.scraped_at?.slice(0,10) || "—"} / Instagram ${lastIG?.scraped_at?.slice(0,10) || "—"}</span>
+          <span>表示月: ${SCOPE.month.slice(0,4)}/${SCOPE.month.slice(4,6)} · HotPepper ${lastHP?.scraped_at?.slice(0,10) || "—"} 取得 (${lastHP ? basisLabel(hpPick) : "—"}) / Instagram ${lastIG?.scraped_at?.slice(0,10) || "—"} 取得 (${lastIG ? basisLabel(igPick) : "—"})</span>
           ${fallbackNote}
         </div>`;
     }

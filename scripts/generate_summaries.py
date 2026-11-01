@@ -265,6 +265,23 @@ def build_retention_block(data: dict, month: str, section_id: str) -> str:
     lines.append(f"- 新規の流入: {month[4:6].lstrip('0')}月 来店{m['n_total']}名のうち新規{m['n_new']}名 (新規比率{m['n_new']/m['n_total']*100:.0f}%)"
                  + (f"、 直近6ヶ月平均{avg_new:.0f}名" if avg_new else "")
                  + (f"、 稼働{cnt}名で1人あたり{m['n_new']/cnt:.1f}名" if cnt else ""))
+    # 来店の総量 (受け皿の埋まり具合): フルタイム水準 = 直近12ヶ月で月60名以上接客した月の客数の中央値、
+    #   受け皿 = Σ(正社員1 / パート・アルバイト0.5) × 水準。 水野「そもそも来客者数が少ない」視点 (2026-11-01)
+    profiles_ = ((data.get("staff_profiles") or {}).get("profiles") or {})
+    last12 = sorted({r["month"] for r in rows_all if r["month"] <= month})[-12:]
+    samples = sorted(r["customers"] for r in rows_all if r["month"] in last12 and (r.get("customers") or 0) >= 60 and (not dept or r.get("primary_dept") == dept))
+    bench = samples[len(samples) // 2] if samples else None
+    cur = staff_of(month)
+    def w(r):
+        et = (profiles_.get(r["name"]) or {}).get("employment_type") or ""
+        return 0.5 if any(k in et for k in ("パート", "アルバイト", "バイト")) else 1.0
+    fte = sum(w(r) for r in cur); custs = sum(r.get("customers") or 0 for r in cur)
+    if bench and fte:
+        util = custs / (bench * fte) * 100
+        parts = sum(1 for r in cur if w(r) < 1)
+        lines.append(f"- 来店の総量: {month[4:6].lstrip('0')}月 技術客数{custs}名、 稼働{len(cur)}名" + (f" (うちパート・アルバイト{parts}名)" if parts else "")
+                     + f"、 1人あたり{custs/len(cur):.0f}名 (部門のフルタイム水準{bench}名)、 受け皿 (正社員1・パート0.5換算×水準) の埋まり具合{util:.0f}%"
+                     + ("。 ※受け皿に空きがある=客数そのものが少ない" if util < 75 else ""))
     # 3ヶ月窓が閉じた直近コホート
     c3 = [k for k in reversed(yms) if u[k]["complete_through"] >= 3]
     if c3:
@@ -453,7 +470,7 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
 - 数字 (売上、客数、客単価、達成率、前月比、原価率、等) を必ず1つ以上引用
 - 原価率データがあれば 規定値との比較を1文加える (達成 or 超過、 構造的要因の所感込み)
 - 前提コンテキストの戦略・人事方針を踏まえた所感を含める
-- 顧客基盤データがあれば「新規が足りているか (純増減)」「新規をリピートにできているか (定着率)」「受け皿 (稼働・入退社・引き継ぎ)」のどれが今の論点かを数字を引用して1〜2文で述べる
+- 顧客基盤データがあれば「新規が足りているか (純増減)」「新規をリピートにできているか (定着率)」「受け皿 (稼働・入退社・引き継ぎ)」「来店の総量 (受け皿の埋まり具合=そもそも客数が少なくないか)」のどれが今の論点かを数字を引用して1〜2文で述べる
 - 退職と休業 (産休・育休等) は区別する。 【顧客基盤】の人員変動に書かれた種別 (退職/産休/最終稼働) をそのまま使い、 「退職」と書かれていない人を退職扱いしない
 - 人数・体制 (何名体制、 新人、 退職、 1名/2名 等) は【数字データ】【スタッフ動向】の実績を正とする。 前提コンテキストの人数記述と食い違う場合は実績を優先し、 実績に根拠のない体制の断定はしない
 - 改善アクションは 状況に応じて 必要な時のみ (無理に書かない)
