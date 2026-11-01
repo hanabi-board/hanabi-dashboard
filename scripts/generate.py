@@ -277,6 +277,96 @@ def load_cost_ratios() -> dict:
         return {"targets": {}, "monthly": {}, "fy_average": {}}
 
 
+def load_retention(staff_rows: list[dict]) -> dict:
+    """data/retention_<YYYYMM>_<store>.json (scrape_retention.py) → 店舗 / 部門 単位のコホート定着データ (2026-11-01)
+
+    出力: {"term_months": 6, "units": { "tsunashima": {ym: m}, "miyakojima": {ym: m},
+                                        "miyakojima:ヘア": {ym: m}, ... }}
+      m = {"n_total", "n_new", "cum_total": [k0..k6], "cum_new": [k0..k6], "complete_through": k}
+      cum_*[k] = コホート月から k ヶ月後 (k=0 は同月) までに再来した累計人数。 complete_through = 暦上 完了している最大オフセット。
+    部門: 担当者を staff_rows の primary_dept (その月の部門別売上の最大) で束ねる。 店舗合計は 全担当者 行をそのまま使う。
+    """
+    import re as _re
+    from datetime import datetime as _dt
+    out = {"term_months": None, "units": {}, "staff_cohorts": {}}
+    files = sorted(DATA.glob("retention_*.json"))
+    if not files:
+        return out
+    now = _dt.now()
+    this_ym = f"{now.year}{now.month:02d}"
+
+    def norm(n):
+        return _re.sub(r"\s+", "", n or "")
+
+    def add_months(ym, k):
+        y, m = int(ym[:4]), int(ym[4:6]) + k
+        y += (m - 1) // 12
+        m = (m - 1) % 12 + 1
+        return f"{y}{m:02d}"
+
+    # (store, month, 正規化名) → primary_dept
+    dept_of = {}
+    for r in staff_rows:
+        dept_of[(r["store"], r["month"], norm(r["name"]))] = r.get("primary_dept")
+
+    for f in files:
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"  warn: retention load failed {f.name}: {e}")
+            continue
+        ym = d.get("cohort_month"); sid = d.get("store"); term = int(d.get("term_months") or 6)
+        if not ym or not sid:
+            continue
+        out["term_months"] = term
+        offsets = list(range(0, term + 1))
+        months_k = [add_months(ym, k) for k in offsets]
+        complete_through = max([k for k, m in zip(offsets, months_k) if m < this_ym], default=-1)
+
+        def series(seg):
+            cum = seg.get("cum") or {}
+            return [cum.get(m, 0) for m in months_k]
+
+        def metrics_from(segments_list):
+            n_total = sum(s["総リピート"]["n"] for s in segments_list)
+            n_new = sum(s["新規"]["n"] for s in segments_list)
+            cum_total = [sum(x) for x in zip(*[series(s["総リピート"]) for s in segments_list])] if segments_list else [0] * len(offsets)
+            cum_new = [sum(x) for x in zip(*[series(s["新規"]) for s in segments_list])] if segments_list else [0] * len(offsets)
+            return {"n_total": n_total, "n_new": n_new, "cum_total": cum_total, "cum_new": cum_new,
+                    "complete_through": complete_through, "months": months_k}
+
+        staff = d.get("staff") or []
+        all_row = next((x for x in staff if x.get("code") == "ALL"), None)
+        if all_row:
+            out["units"].setdefault(sid, {})[ym] = metrics_from([all_row["segments"]])
+        # 担当者別 (退職者の客の引き継ぎ判定・個人の定着確認用)。 cum は店の誰かで戻った累計 (Uレジ仕様)
+        for x in staff:
+            if x.get("code") == "ALL" or not x.get("name"):
+                continue
+            segs = x["segments"]
+            if not segs.get("総リピート", {}).get("n"):
+                continue
+            out.setdefault("staff_cohorts", {}).setdefault(sid, {}).setdefault(norm(x["name"]), {})[ym] = {
+                "name": x["name"], "n_total": segs["総リピート"]["n"], "n_new": segs["新規"]["n"],
+                "cum_total": series(segs["総リピート"]), "cum_new": series(segs["新規"]),
+                "complete_through": complete_through, "months": months_k,
+            }
+        # 部門別 (複数部門の店舗のみ)
+        store_def = STORES.get(sid, {})
+        if len(store_def.get("departments", [])) > 1:
+            by_dept = {}
+            for x in staff:
+                if x.get("code") == "ALL":
+                    continue
+                dept = dept_of.get((sid, ym, norm(x.get("name"))))
+                if not dept:
+                    continue  # その月に売上の無い担当者 (退職者等) は束ねない
+                by_dept.setdefault(dept, []).append(x["segments"])
+            for dept, segs in by_dept.items():
+                out["units"].setdefault(f"{sid}:{dept}", {})[ym] = metrics_from(segs)
+    return out
+
+
 def load_cost_reviews() -> dict:
     """cost_reviews.json を読み込み (原価レビューレポート所感、 月次振り返りとは別管理)"""
     p = DATA / "cost_reviews.json"
@@ -624,6 +714,7 @@ def main():
         "monthly_summaries": load_monthly_summaries(),  # Claude CLI 自動生成 月次振り返り (月初に生成)
         "cost_ratios": load_cost_ratios(),  # Box xlsx 原価管理表 から自動生成 (FY別 規定/実績)
         "cost_reviews": load_cost_reviews(),  # 原価レビューレポート所感 (xlsx → 手動転記、 月次振り返りとは別管理)
+        "retention": load_retention(staff_rows),  # Uレジ 再来店の実績 (担当者別→部門) コホート定着データ (2026-11-01)
     }
 
     # === menu_data 分割 (2026-07-02) ===

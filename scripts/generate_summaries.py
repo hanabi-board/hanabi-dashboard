@@ -220,9 +220,11 @@ def build_dept_stats(data: dict, month: str, dept_label: str) -> str:
 
     # スタッフ別 部門売上 (top 3)
     staff_rows = [s for s in data.get("staff_rows", []) if s.get("month") == month and s.get("store") == "miyakojima" and not s.get("hidden")]
-    dept_field = {"ヘア": "hair", "アイ": "eye", "ネイル": "nail"}.get(dept_label)
+    # 🛡 2026-11-01 修正: staff_rows の部門別売上キーは sales_hair 等ではなく dept_sales[部門名]。
+    #   旧キーでは常に0 → ELLE部門のプロンプトに稼働スタッフ一覧が一度も渡っていなかった
+    dept_field = dept_label if dept_label in ("ヘア", "アイ", "ネイル") else None
     if dept_field:
-        dept_staff = [(s["name"], s.get(f"sales_{dept_field}", 0)) for s in staff_rows if s.get(f"sales_{dept_field}", 0) > 0]
+        dept_staff = [(s["name"], (s.get("dept_sales") or {}).get(dept_field, 0)) for s in staff_rows if (s.get("dept_sales") or {}).get(dept_field, 0) > 0]
         dept_staff.sort(key=lambda x: -x[1])
         if dept_staff:
             # 🛡 2026-11-01: 体制人数を実績から明示 (前提コンテキストの古い人数記述に引きずられて
@@ -232,6 +234,95 @@ def build_dept_stats(data: dict, month: str, dept_label: str) -> str:
             lines.append(f"{dept_label}部門 売上TOP: " + ", ".join(f"{n}({fmt_yen(v)})" for n, v in top))
 
     return "\n".join(lines)
+
+
+def build_retention_block(data: dict, month: str, section_id: str) -> str:
+    """顧客基盤 (客のつき具合) ブロック (2026-11-01 追加)。
+    Uレジ 再来店の実績 (data.json retention) から: 新規の流入 / 3ヶ月定着 / 離脱との純増減 / 受け皿 (稼働・1人あたり) / 人員変動 / 退職者の客の引き継ぎ
+    水野要望「新規が足りていないのか、新規をリピートにできていないのか、受け皿が減ったのか」を毎月の振り返りに入れる。"""
+    import re as _re
+    unit = {"tsunashima": "tsunashima", "miyakojima": "miyakojima", "miyakojima_hair": "miyakojima:ヘア",
+            "miyakojima_eye": "miyakojima:アイ", "miyakojima_nail": "miyakojima:ネイル"}.get(section_id)
+    if not unit:
+        return ""
+    ret = data.get("retention") or {}
+    u = (ret.get("units") or {}).get(unit) or {}
+    if not u:
+        return ""
+    sid, _, dept = unit.partition(":")
+    norm = lambda n: _re.sub(r"\s+", "", n or "")
+    rows_all = [r for r in data.get("staff_rows", []) if r.get("store") == sid and not r.get("hidden") and (r.get("total_sales") or 0) > 0]
+    def staff_of(ym):
+        return [r for r in rows_all if r["month"] == ym and (not dept or r.get("primary_dept") == dept)]
+    yms = sorted(k for k in u if u[k]["n_total"] > 0)
+    if month not in u:
+        return ""
+    lines = []
+    m = u[month]
+    cnt = len(staff_of(month))
+    prev6 = [k for k in yms if k < month][-6:]
+    avg_new = sum(u[k]["n_new"] for k in prev6) / len(prev6) if prev6 else None
+    lines.append(f"- 新規の流入: {month[4:6].lstrip('0')}月 来店{m['n_total']}名のうち新規{m['n_new']}名 (新規比率{m['n_new']/m['n_total']*100:.0f}%)"
+                 + (f"、 直近6ヶ月平均{avg_new:.0f}名" if avg_new else "")
+                 + (f"、 稼働{cnt}名で1人あたり{m['n_new']/cnt:.1f}名" if cnt else ""))
+    # 3ヶ月窓が閉じた直近コホート
+    c3 = [k for k in reversed(yms) if u[k]["complete_through"] >= 3]
+    if c3:
+        c = c3[0]; mc = u[c]
+        ret_new = mc["cum_new"][3] / mc["n_new"] * 100 if mc["n_new"] else None
+        ret_all = mc["cum_total"][3] / mc["n_total"] * 100 if mc["n_total"] else None
+        lost = mc["n_total"] - mc["cum_total"][3]
+        net = mc["n_new"] - lost
+        prev = [k for k in c3[1:7]]
+        avg_ret = (sum(u[k]["cum_new"][3] / u[k]["n_new"] for k in prev if u[k]["n_new"]) / len([k for k in prev if u[k]["n_new"]]) * 100) if any(u[k]["n_new"] for k in prev) else None
+        lines.append(f"- 新規の定着 (3ヶ月窓が閉じた直近={c[4:6].lstrip('0')}月に来た客): 新規{mc['n_new']}名のうち3ヶ月以内に再来{mc['cum_new'][3]}名 ({ret_new:.1f}%"
+                     + (f"、 直近コホート平均{avg_ret:.1f}%" if avg_ret is not None else "") + f")。 来店客全体の3ヶ月再来率{ret_all:.1f}%"
+                     + ("" if mc["n_new"] >= 10 else "。 ※新規の母数が少なく率は参考値"))
+        lines.append(f"- 純増減 ({c[4:6].lstrip('0')}月・3ヶ月窓): 3ヶ月で戻らなかった客{lost}名 に対して 新規{mc['n_new']}名 → {'+' if net >= 0 else ''}{net}名 ({'新規が離脱を補えている' if net >= 0 else '新規が離脱を補えていない'})"
+                     + ("。 ※ヘアは来店周期が2〜3ヶ月のため3ヶ月窓は厳しめに出る" if (dept == "ヘア" or sid == "tsunashima") else ""))
+    c6 = [k for k in reversed(yms) if u[k]["complete_through"] >= 6]
+    if c6:
+        c = c6[0]; mc = u[c]
+        lost6 = mc["n_total"] - mc["cum_total"][6]; net6 = mc["n_new"] - lost6
+        lines.append(f"- 純増減 ({c[4:6].lstrip('0')}月・6ヶ月窓): 6ヶ月で戻らなかった客{lost6}名 に対して 新規{mc['n_new']}名 → {'+' if net6 >= 0 else ''}{net6}名、 新規の6ヶ月定着率{(mc['cum_new'][6]/mc['n_new']*100) if mc['n_new'] else 0:.1f}%")
+    # 人員変動 (直近3ヶ月)
+    months_all = sorted({r["month"] for r in rows_all})
+    if months_all:
+        latest = months_all[-1]
+        by = {}
+        for r in rows_all:
+            by.setdefault(r["name"], []).append(r)
+        ev = []
+        for name, rs in by.items():
+            rs.sort(key=lambda r: r["month"]); f, l = rs[0], rs[-1]
+            if f["month"] > months_all[0] and f["month"] >= month[:4] + str(max(1, int(month[4:6]) - 3)).zfill(2) and (not dept or f.get("primary_dept") == dept):
+                ev.append(f"{f['month'][4:6].lstrip('0')}月 {name.split()[0]} 入社")
+            if l["month"] < latest and l["month"] >= month[:4] + str(max(1, int(month[4:6]) - 3)).zfill(2) and (not dept or l.get("primary_dept") == dept):
+                ev.append(f"{l['month'][4:6].lstrip('0')}月 {name.split()[0]} 最終稼働")
+        if ev:
+            lines.append("- 人員変動 (直近): " + "、 ".join(sorted(ev, key=lambda e: int(e.split("月")[0]))))
+        # 退職者の客の引き継ぎ (最終稼働が直近4ヶ月以内)
+        sc = ((ret.get("staff_cohorts") or {}).get(sid) or {})
+        for name, rs in by.items():
+            rs.sort(key=lambda r: r["month"]); l = rs[-1]
+            if l["month"] >= latest or (dept and l.get("primary_dept") != dept):
+                continue
+            if int(latest[:4]) * 12 + int(latest[4:6]) - (int(l["month"][:4]) * 12 + int(l["month"][4:6])) > 4:
+                continue
+            cohorts = sc.get(norm(name)) or {}
+            last2 = [k for k in sorted(cohorts) if k <= l["month"]][-2:]
+            if not last2:
+                continue
+            n = sum(cohorts[k]["n_total"] for k in last2)
+            # 最新の完了月までに戻った累計
+            back = 0
+            for k in last2:
+                ck = cohorts[k]; idx = max([i for i, mm in enumerate(ck["months"]) if mm <= latest and i <= ck["complete_through"]], default=0)
+                back += ck["cum_total"][idx]
+            if n >= 10:
+                el = [int(latest[:4]) * 12 + int(latest[4:6]) - (int(k[:4]) * 12 + int(k[4:6])) for k in last2]
+                lines.append(f"- 引き継ぎ: {name.split()[0]} (最終稼働{l['month'][4:6].lstrip('0')}月) の直近2ヶ月の来店客{n}名のうち、 店の誰かで戻ったのは{back}名 ({back/n*100:.0f}%・経過{min(el)}〜{max(el)}ヶ月時点)")
+    return "【顧客基盤 (客のつき具合・Uレジ再来店の実績より)】\n" + "\n".join(lines) if lines else ""
 
 
 def build_cost_ratio_block(data: dict, month: str, section_id: str) -> str:
@@ -333,6 +424,7 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
         return ""
 
     cost_block = build_cost_ratio_block(data, month, section_id)
+    retention_block = build_retention_block(data, month, section_id)
 
     prompt = f"""あなたは美容サロン経営の戦略アナリスト。 経営者(水野陽平氏)向けに 月次振り返り文章を作成してください。
 
@@ -347,14 +439,17 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
 
 {cost_block if cost_block else ""}
 
+{retention_block if retention_block else ""}
+
 【スタッフ動向】
 {staff_news}
 
 【出力ルール】
-- 3〜5文 で簡潔に
+- 3〜5文 で簡潔に (顧客基盤データがある場合は 4〜6文)
 - 数字 (売上、客数、客単価、達成率、前月比、原価率、等) を必ず1つ以上引用
 - 原価率データがあれば 規定値との比較を1文加える (達成 or 超過、 構造的要因の所感込み)
 - 前提コンテキストの戦略・人事方針を踏まえた所感を含める
+- 顧客基盤データがあれば「新規が足りているか (純増減)」「新規をリピートにできているか (定着率)」「受け皿 (稼働・入退社・引き継ぎ)」のどれが今の論点かを数字を引用して1〜2文で述べる
 - 人数・体制 (何名体制、 新人、 退職、 1名/2名 等) は【数字データ】【スタッフ動向】の実績を正とする。 前提コンテキストの人数記述と食い違う場合は実績を優先し、 実績に根拠のない体制の断定はしない
 - 改善アクションは 状況に応じて 必要な時のみ (無理に書かない)
 - 太字 (**) や 箇条書き (- や *) や 見出し (#) は禁止、 普通の段落文で

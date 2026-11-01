@@ -290,6 +290,7 @@
       <h2 class="text-2xl font-bold">売上・予算</h2>
       <div class="text-sm text-gray-500 mt-1">店舗別 予算進捗 + 部門別内訳 + 日別推移</div>
     </div>
+    <div class="card p-5 mb-5" id="fyBudgetProgress"></div>
     <div class="grid md:grid-cols-2 gap-3 mb-5" id="salesStoreCards"></div>
     <div class="card p-5 mb-5">
       <h3 class="section-title mb-3">日別売上推移 <span class="section-sub">全社 (店舗別積み上げ)</span></h3>
@@ -308,6 +309,9 @@
       <h2 class="text-2xl font-bold">来客分析</h2>
       <div class="text-sm text-gray-500 mt-1">店舗別に比較 (Hanabi 綱島店 = ヘア専門 / ELLE by Hanabi 宮古島店 = トータルビューティ。 業態が違うので全社合算しない)</div>
     </div>
+    <h3 class="section-title mb-2 mt-1">部門別 客のつき具合 <span class="section-sub">Uレジ「再来店の実績」(担当者別) を部門に束ねて集計 · 月初に更新</span></h3>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mb-2" id="retentionCards"></div>
+    <div class="text-[11px] text-gray-400 mb-5" id="retentionNote"></div>
     <h3 class="section-title mb-2 mt-1">新規 vs リピート <span class="section-sub">店舗別</span></h3>
     <div class="grid md:grid-cols-2 gap-3 mb-5" id="visitorBreakdownCards"></div>
     <h3 class="section-title mb-2">指名 vs フリー <span class="section-sub">店舗別</span></h3>
@@ -4073,28 +4077,135 @@ function renderSalesTab() {
             </div>
           </div>
 
-          ${showDept ? `<div class="pt-3 mt-3 border-t border-gray-100">
-            <div class="text-xs text-gray-500 mb-2 font-semibold">部門別売上</div>
-            <div class="space-y-1.5">
+          ${showDept ? (() => {
+            // 2026-11-01: 部門別は「構成比」ではなく「部門予算に対する進捗 (達成%・差額)」を見せる (水野要望)。
+            //   部門予算が未設定の部門だけ従来の構成比表示にフォールバック
+            const deptBudgetMap = ((DATA.budgets || {})[`monthly_dept_${r.sid}`] || {})[SCOPE.month] || {};
+            const total = Object.values(ms.by_dept).reduce((a,x)=>a+x.sales,0) || 1;
+            const hasAnyBudget = departments.some(d => deptBudgetMap[d] > 0);
+            return `<div class="pt-3 mt-3 border-t border-gray-100">
+            <div class="text-xs text-gray-500 mb-2 font-semibold">${hasAnyBudget ? "部門別 予算進捗" : "部門別売上"}</div>
+            <div class="space-y-2">
               ${departments.map(d => {
                 const sales = ms.by_dept[d].sales;
-                const total = Object.values(ms.by_dept).reduce((a,x)=>a+x.sales,0) || 1;
-                const w = (sales/total*100).toFixed(1);
+                const target = deptBudgetMap[d] || 0;
                 const color = d==="ヘア" ? "var(--dept-hair)" : d==="アイ" ? "var(--dept-eye)" : "var(--dept-nail)";
-                return `<div class="flex items-center text-sm">
-                  <div class="w-12 text-gray-600 text-xs">${d}</div>
-                  <div class="flex-1 progress-track mx-2"><div class="progress-fill" style="width:${w}%; background:${color}"></div></div>
-                  <div class="kpi-num w-24 text-right">${fmt(sales)}</div>
-                  <div class="kpi-num w-12 text-right text-xs text-gray-400">${w}%</div>
+                if (!target) {
+                  const w = (sales/total*100).toFixed(1);
+                  return `<div class="flex items-center text-sm">
+                    <div class="w-12 text-gray-600 text-xs">${d}</div>
+                    <div class="flex-1 progress-track mx-2"><div class="progress-fill" style="width:${w}%; background:${color}"></div></div>
+                    <div class="kpi-num w-24 text-right">${fmt(sales)}</div>
+                    <div class="kpi-num w-12 text-right text-xs text-gray-400">${w}%</div>
+                  </div>`;
+                }
+                const pct = sales / target * 100;
+                const diff = sales - target;
+                const w = Math.min(100, pct).toFixed(1);
+                return `<div>
+                  <div class="flex items-center text-sm">
+                    <div class="w-12 text-gray-600 text-xs">${d}</div>
+                    <div class="flex-1 progress-track mx-2"><div class="progress-fill" style="width:${w}%; background:${color}"></div></div>
+                    <div class="kpi-num w-24 text-right">${fmt(sales)}</div>
+                    <div class="kpi-num w-12 text-right text-xs font-semibold ${pctClass(pct)}">${pct.toFixed(0)}%</div>
+                  </div>
+                  <div class="text-[11px] text-right kpi-num ${diff>=0?'pct-good':'pct-bad'}" style="margin-top:-2px">予算 ${fmtM(target)} · ${diff>=0 ? '▲ '+fmt(diff) : '▼ '+fmt(Math.abs(diff))}</div>
                 </div>`;
               }).join("")}
             </div>
-          </div>` : ""}
+          </div>`;
+          })() : ""}
         </div>
       </div>`;
   }).join("");
 
+  renderFyBudgetProgress();
   renderDeptBudgetTable();
+}
+
+// === 年度予算の進捗 (2026-11-01 水野要望) ===
+// 「予算の進捗」= 年度累計で予算に対して いくら多い / いくら足りないか。 店舗×部門 + 全社。
+// 累計は FY開始月〜「完了した月」まで (進行中の月は含めない。 月次の進捗は下の店舗カード/表で見る)。
+function renderFyBudgetProgress() {
+  const root = document.getElementById("fyBudgetProgress");
+  if (!root) return;
+  const budgets = DATA.budgets || {};
+  const period = budgets.period || {};
+  if (!period.start || !period.end) { root.classList.add("hidden"); return; }
+  const fyLabel = budgets.fiscal_year || "FY";
+  // FY の全月 (YYYYMM)
+  const fyMonths = [];
+  { let [y, m] = period.start.split("-").map(Number); const [ey, em] = period.end.split("-").map(Number);
+    while (y < ey || (y === ey && m <= em)) { fyMonths.push(`${y}${String(m).padStart(2,"0")}`); m++; if (m > 12) { m = 1; y++; } } }
+  // 完了月 = 今日の暦月より前
+  const now = new Date();
+  const thisYM = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}`;
+  const doneMonths = fyMonths.filter(m => m < thisYM);
+  if (!doneMonths.length) {
+    root.innerHTML = `<h3 class="section-title mb-1">年度予算の進捗 <span class="section-sub">${fyLabel}</span></h3><div class="text-sm text-gray-500">${fyLabel} はまだ完了した月がありません (月次の進捗は下の店舗カードへ)</div>`;
+    return;
+  }
+  const first = doneMonths[0], last = doneMonths[doneMonths.length-1];
+  const idealPct = doneMonths.length / fyMonths.length * 100;  // 理想進捗 (経過月/12)
+  const sum = (arr) => arr.reduce((a,b)=>a+(b||0),0);
+  const storeSales = (sid, m) => (((DATA.monthly_by_store||{})[sid]||{})[m]||{}).total_sales || 0;
+  const deptSales = (sid, m, d) => (((((DATA.monthly_by_store||{})[sid]||{})[m]||{}).by_dept||{})[d]||{}).sales || 0;
+  const storeBudget = (sid, m) => ((budgets.monthly||{})[sid]||{})[m] || 0;
+  const deptBudget = (sid, m, d) => (((budgets[`monthly_dept_${sid}`]||{})[m])||{})[d] || 0;
+
+  const rows = [];
+  const company = { sales: 0, budget: 0, annual: 0 };
+  for (const sid of Object.keys(DATA.stores || {})) {
+    const st = DATA.stores[sid];
+    const sales = sum(doneMonths.map(m => storeSales(sid, m)));
+    const budget = sum(doneMonths.map(m => storeBudget(sid, m)));
+    const annual = ((budgets.annual||{}).by_store||{})[sid] || 0;
+    if (!budget && !sales) continue;
+    rows.push({ label: st.name, sales, budget, annual, kind: "store" });
+    company.sales += sales; company.budget += budget; company.annual += annual;
+    if ((st.departments||[]).length > 1 && budgets[`monthly_dept_${sid}`]) {
+      for (const d of st.departments) {
+        const ds = sum(doneMonths.map(m => deptSales(sid, m, d)));
+        const db = sum(doneMonths.map(m => deptBudget(sid, m, d)));
+        const da = (((budgets.annual||{})[`by_dept_${sid}`])||{})[d] || 0;
+        if (!db && !ds) continue;
+        rows.push({ label: d, sales: ds, budget: db, annual: da, kind: "dept",
+          color: d==="ヘア" ? "var(--dept-hair)" : d==="アイ" ? "var(--dept-eye)" : "var(--dept-nail)" });
+      }
+    }
+  }
+  rows.push({ label: "全社合計", ...company, kind: "total" });
+
+  const rowHtml = (r) => {
+    const pct = r.budget ? r.sales / r.budget * 100 : 0;
+    const diff = r.sales - r.budget;
+    const annualPct = r.annual ? r.sales / r.annual * 100 : 0;
+    const w = r.budget ? Math.min(100, pct) : 0;
+    const label = r.kind === "dept"
+      ? `<span class="badge" style="background:${r.color}22; color:${r.color}; border:1px solid ${r.color}40">${r.label}</span>`
+      : `<span class="font-bold">${r.label}</span>`;
+    const diffWord = diff >= 0 ? `予算比 ▲ ${fmt(diff)}` : `予算比 ▼ ${fmt(Math.abs(diff))}`;
+    return `<div class="py-2.5 ${r.kind === "total" ? "border-t-2 border-gray-200 mt-1" : "border-t border-gray-100"} ${r.kind === "dept" ? "pl-4" : ""}">
+      <div class="flex items-center gap-3">
+        <div class="w-28 sm:w-40 text-sm truncate">${label}</div>
+        <div class="flex-1 progress-track"><div class="progress-fill" style="width:${w}%; background:${pctColor(pct)}"></div></div>
+        <div class="text-right" style="min-width:7.5rem">
+          <span class="kpi-num font-bold text-base ${pctClass(pct)}">${r.budget ? pct.toFixed(1)+"%" : "—"}</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-between gap-2 mt-0.5 pl-0 sm:pl-0">
+        <div class="text-[11px] text-gray-500 kpi-num">累計 ${fmt(r.sales)} / 予算 ${fmt(r.budget)}${r.annual ? ` · 年間 ${fmtM(r.annual)} の ${annualPct.toFixed(1)}%` : ""}</div>
+        <div class="text-[11px] kpi-num font-semibold ${diff >= 0 ? "pct-good" : "pct-bad"} whitespace-nowrap">${r.budget ? diffWord : ""}</div>
+      </div>
+    </div>`;
+  };
+  root.innerHTML = `
+    <div class="flex items-baseline justify-between flex-wrap gap-2 mb-1">
+      <h3 class="section-title">年度予算の進捗 <span class="section-sub">${fyLabel} · ${parseInt(first.slice(4))}月〜${parseInt(last.slice(4))}月 (完了月まで)</span></h3>
+      <div class="text-[11px] text-gray-500">年間進捗の理想値 ${idealPct.toFixed(1)}% (${doneMonths.length}/${fyMonths.length}ヶ月経過)</div>
+    </div>
+    <div>${rows.map(rowHtml).join("")}</div>
+    <div class="text-[11px] text-gray-400 mt-2">達成率 = 累計実績 ÷ 累計予算 (経過月分)。 予算比 ▲ は累計予算を上回った額、 ▼ は下回った額。 進行中の月は含めず、 月次の進捗は下の店舗カードと「月次予算 vs 実績」で確認。</div>`;
 }
 
 function renderDeptBudgetTable() {
@@ -4110,6 +4221,9 @@ function renderDeptBudgetTable() {
     const pacePctV = expected ? (sales / expected * 100) : 0;
     const projection = _f > 0 ? Math.round(sales / _f) : 0;
     const projDelta = projection - target;
+    // 2026-11-01 水野要望: 進捗率だけでなく「金額の差異」も。 予算差額 = 実績-月予算 / ペース差額 = 実績-今日時点の期待値
+    const budgetDiff = sales - target;
+    const paceDiff = sales - expected;
     const w = target ? Math.min(100, sales/target*100) : 0;
     const labelCell = isStoreRow
       ? `<td class="py-3 pr-3 font-bold">${label}</td>`
@@ -4123,8 +4237,12 @@ function renderDeptBudgetTable() {
           <div class="bg-gray-100 rounded-full h-1.5 w-16 overflow-hidden"><div class="h-full" style="width:${w}%; background:${pctColor(monthPct)}"></div></div>
           <span class="kpi-num font-semibold ${pctClass(monthPct)} w-12">${monthPct.toFixed(1)}%</span>
         </div>
+        ${target ? `<div class="text-[11px] kpi-num ${budgetDiff>=0?'pct-good':'pct-bad'}">${budgetDiff>=0 ? '▲ '+fmt(budgetDiff) : '▼ '+fmt(Math.abs(budgetDiff))}</div>` : ""}
       </td>
-      <td class="text-right py-3 px-3 kpi-num font-semibold ${pctClass(pacePctV)}">${pacePctV.toFixed(1)}%</td>
+      <td class="text-right py-3 px-3">
+        <div class="kpi-num font-semibold ${pctClass(pacePctV)}">${pacePctV.toFixed(1)}%</div>
+        ${target ? `<div class="text-[11px] kpi-num ${paceDiff>=0?'pct-good':'pct-bad'}">${paceDiff>=0 ? '▲ '+fmt(paceDiff) : '▼ '+fmt(Math.abs(paceDiff))}</div>` : ""}
+      </td>
       <td class="text-right py-3 px-3">
         <div class="kpi-num font-semibold ${projDelta>=0?'pct-good':'pct-bad'}">${fmtM(projection)}</div>
         <div class="text-[11px] ${projDelta>=0?'pct-good':'pct-bad'}">${projDelta>=0 ? '▲ '+fmt(projDelta) : '▼ '+fmt(Math.abs(projDelta))}</div>
@@ -4175,8 +4293,8 @@ function renderDeptBudgetTable() {
             <th class="text-left py-2 pr-3 font-medium">店舗 / 部門</th>
             <th class="text-right py-2 px-3 font-medium">当月実績</th>
             <th class="text-right py-2 px-3 font-medium">月予算</th>
-            <th class="text-right py-2 px-3 font-medium">月達成</th>
-            <th class="text-right py-2 px-3 font-medium">進捗ペース</th>
+            <th class="text-right py-2 px-3 font-medium">月達成<div class="font-normal text-[10px]">予算との差額</div></th>
+            <th class="text-right py-2 px-3 font-medium">進捗ペース<div class="font-normal text-[10px]">期待値との差額</div></th>
             <th class="text-right py-2 px-3 font-medium">月末予測</th>
             <th class="text-right py-2 pl-3 font-medium">構成比</th>
           </tr>
@@ -4187,7 +4305,227 @@ function renderDeptBudgetTable() {
 }
 
 // ========== Tab 3: Visits ==========
+
+// === 部門別 客のつき具合 (2026-11-01 水野要望「今お店がどういう状態か」) ===
+// データ: DATA.retention.units[unit][cohortYM] = {n_total, n_new, cum_total[k], cum_new[k], complete_through, months}
+//   k = コホート月から k ヶ月後 までの累計再来人数 (k=0 同月)。 complete_through = 暦上完了している最大 k。
+//   「3ヶ月定着率」 = cum[3] / n を、 k=3 が完了しているコホートだけで計算 (途中の窓で過小評価しない)。
+function renderRetentionCards() {
+  const root = document.getElementById("retentionCards");
+  const note = document.getElementById("retentionNote");
+  if (!root) return;
+  const units = ((DATA.retention || {}).units) || {};
+  if (!Object.keys(units).length) {
+    root.innerHTML = `<div class="card p-5 text-sm text-gray-500 md:col-span-2 lg:col-span-3">定着データ未取得 (scripts/scrape_retention.py)</div>`;
+    if (note) note.textContent = "";
+    return;
+  }
+  const UNIT_DEFS = [
+    { key: "tsunashima",     title: "Hanabi 綱島店",       sub: "ヘア専門",     head: storeGradient("tsunashima") },
+    { key: "miyakojima:ヘア", title: "ELLE 宮古島 ヘア",    sub: "部門",         color: "var(--dept-hair)" },
+    { key: "miyakojima:アイ", title: "ELLE 宮古島 アイ",    sub: "部門",         color: "var(--dept-eye)" },
+    { key: "miyakojima:ネイル", title: "ELLE 宮古島 ネイル", sub: "部門",         color: "var(--dept-nail)" },
+    { key: "miyakojima",     title: "ELLE 宮古島 店舗合計", sub: "3部門合計",     head: storeGradient("miyakojima") },
+  ];
+  const ymLabel = ym => `${ym.slice(2,4)}/${parseInt(ym.slice(4))}`;   // 26/7
+  const rateOf = (m, k, kind) => {
+    const n = kind === "new" ? m.n_new : m.n_total;
+    const c = ((kind === "new" ? m.cum_new : m.cum_total) || [])[k] || 0;
+    return n ? c / n * 100 : null;
+  };
+  // k ヶ月窓が完了しているコホートを新しい順に
+  const completeCohorts = (u, k) => Object.keys(u).filter(ym => (u[ym].complete_through ?? -1) >= k && u[ym].n_total > 0).sort().reverse();
+  const nominationRate = (unitKey, ym) => {
+    const [sid, dept] = unitKey.split(":");
+    if (dept) {
+      const rows = (DATA.staff_rows || []).filter(r => r.store === sid && r.month === ym && !r.hidden && r.primary_dept === dept);
+      const tc = rows.reduce((a, r) => a + (r.tech_customers || 0), 0), tn = rows.reduce((a, r) => a + (r.tech_customers_nominated || 0), 0);
+      return tc ? tn / tc * 100 : null;
+    }
+    const ms = ((DATA.monthly_by_store || {})[sid] || {})[ym];
+    return ms && ms.tech_customers ? (ms.tech_customers_nominated || 0) / ms.tech_customers * 100 : null;
+  };
+  const fmtPct = v => v == null ? "—" : v.toFixed(1) + "%";
+  // 人員変動: 入退社で定着率が動いた時に読み解けるよう、 直近8ヶ月の 入社 (初めて売上が立った月) / 最終稼働 (以後売上なし) を注記
+  //   ※ 他担当で戻った客も Uレジ側で「再来」に数えられることは 2026-11-01 に退職者コホートで確認済 (数字自体は歪まない)
+  const staffEvents = (unitKey) => {
+    const [sid, dept] = unitKey.split(":");
+    const rows = (DATA.staff_rows || []).filter(r => r.store === sid && !r.hidden && (r.total_sales || 0) > 0);
+    if (!rows.length) return [];
+    const storeMonths = [...new Set(rows.map(r => r.month))].sort();
+    const latest = storeMonths[storeMonths.length - 1], first = storeMonths[0];
+    const cutoff = (() => { const y = +latest.slice(0,4), m = +latest.slice(4); const mm = m - 8; return mm >= 1 ? `${y}${String(mm).padStart(2,"0")}` : `${y-1}${String(mm+12).padStart(2,"0")}`; })();
+    const byName = {};
+    rows.forEach(r => { (byName[r.name] = byName[r.name] || []).push(r); });
+    const ev = [];
+    Object.entries(byName).forEach(([name, rs]) => {
+      rs.sort((a, b) => a.month < b.month ? -1 : 1);
+      const f = rs[0], l = rs[rs.length - 1];
+      const short = name.split(/\s+/)[0];
+      if (f.month > first && f.month >= cutoff && (!dept || f.primary_dept === dept)) ev.push({ ym: f.month, text: `${short} 入社`, kind: "in" });
+      if (l.month < latest && l.month >= cutoff && (!dept || l.primary_dept === dept)) ev.push({ ym: l.month, text: `${short} 最終稼働`, kind: "out" });
+    });
+    return ev.sort((a, b) => a.ym < b.ym ? 1 : -1).slice(0, 4);
+  };
+  // 引き継ぎ: 最終稼働が直近4ヶ月以内の担当者について、 その直近2ヶ月のコホートが「店の誰かで」戻った割合 (Uレジは他担当での再来も数える)
+  const handoverRows = (unitKey) => {
+    const [sid, dept] = unitKey.split(":");
+    const sc = (((DATA.retention || {}).staff_cohorts) || {})[sid] || {};
+    const rows = (DATA.staff_rows || []).filter(r => r.store === sid && !r.hidden && (r.total_sales || 0) > 0);
+    if (!rows.length) return [];
+    const months = [...new Set(rows.map(r => r.month))].sort(); const latest = months[months.length - 1];
+    const mi = ym => parseInt(ym.slice(0,4)) * 12 + parseInt(ym.slice(4));
+    const byName = {}; rows.forEach(r => { (byName[r.name] = byName[r.name] || []).push(r); });
+    const out = [];
+    Object.entries(byName).forEach(([name, rs]) => {
+      rs.sort((a, b) => a.month < b.month ? -1 : 1); const l = rs[rs.length - 1];
+      if (l.month >= latest || mi(latest) - mi(l.month) > 4 || (dept && l.primary_dept !== dept)) return;
+      const coh = sc[name.replace(/\s+/g, "")] || {};
+      const last2 = Object.keys(coh).filter(k => k <= l.month).sort().slice(-2);
+      if (!last2.length) return;
+      let n = 0, back = 0, el = [];
+      last2.forEach(k => { const c = coh[k]; n += c.n_total; const idx = Math.max(0, ...c.months.map((m, i) => (m <= latest && i <= c.complete_through) ? i : 0)); back += c.cum_total[idx] || 0; el.push(mi(latest) - mi(k)); });
+      if (n >= 10) out.push({ name: name.split(/\s+/)[0], n, back, rate: back / n * 100, elapsed: `${Math.min(...el)}〜${Math.max(...el)}`, last: l.month });
+    });
+    return out.sort((a, b) => a.last < b.last ? 1 : -1).slice(0, 3);
+  };
+  // いまの状態 (2026-11-01 水野要望): 「新規が足りていない」のか「新規をリピートにできていない」のかを切り分ける
+  //   新規の流入 = 直近月の新規数 (と 1人あたり) を 直近6ヶ月平均と比較 / 新規→リピート = 直近の3ヶ月定着率を 直近6コホート平均と比較
+  //   基準は業態共通の絶対値ではなく、 その部門自身の直近平均 (入退社で受け皿が変わる影響は 稼働スタッフ数・1人あたり新規 で見せる)
+  const staffCount = (unitKey, ym) => {
+    const [sid, dept] = unitKey.split(":");
+    return new Set((DATA.staff_rows || []).filter(r => r.store === sid && r.month === ym && !r.hidden && (r.total_sales || 0) > 0 && (!dept || r.primary_dept === dept)).map(r => r.name)).size;
+  };
+  const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  const statusBlock = (unitKey, u) => {
+    const yms = Object.keys(u).filter(ym => u[ym].n_total > 0).sort();
+    if (yms.length < 3) return "";
+    const latest = yms[yms.length - 1];
+    const prev6 = yms.slice(-7, -1);
+    const newNow = u[latest].n_new, newAvg = avg(prev6.map(ym => u[ym].n_new));
+    const sNow = staffCount(unitKey, latest), sPrev = staffCount(unitKey, yms[yms.length - 2]);
+    const perNow = sNow ? newNow / sNow : null;
+    const perAvg = avg(prev6.map(ym => { const c = staffCount(unitKey, ym); return c ? u[ym].n_new / c : null; }).filter(v => v != null));
+    const c3 = completeCohorts(u, 3);
+    const retNow = c3.length ? rateOf(u[c3[0]], 3, "new") : null;
+    const retAvg = avg(c3.slice(1, 7).map(ym => rateOf(u[ym], 3, "new")).filter(v => v != null));
+    const newRatio = (newAvg && newAvg > 0) ? newNow / newAvg : null;          // 1.0 = 平均並み
+    const retDiff = (retNow != null && retAvg != null) ? retNow - retAvg : null;  // pt
+    // 純増減 (水野要望: 来店客の総数に対して新規が足りているか) = 新規 − 3ヶ月で戻らなかった客。 窓が閉じた直近コホートで判定
+    const isHair = unitKey === "tsunashima" || unitKey.endsWith(":ヘア");
+    // ヘアは来店周期2〜3ヶ月なので、 6ヶ月窓が閉じたコホートがあればそちらで純増減を判定 (3ヶ月窓だと厳しすぎる)
+    const c6 = completeCohorts(u, 6);
+    const netK = (isHair && c6.length) ? 6 : 3;
+    const netYms = netK === 6 ? c6 : c3;
+    const netM = netYms.length ? u[netYms[0]] : null;
+    const lostC = netM ? (netM.n_total - (netM.cum_total[netK] || 0)) : null;
+    const netC = (lostC != null) ? netM.n_new - lostC : null;
+    // 来店数の3% (最低3名) 以内のマイナスは「均衡」扱い (−3名程度で不足と断じない)
+    const tol = netM ? Math.max(3, Math.round(netM.n_total * 0.03)) : 3;
+    const newShort = netC != null && netC < -tol;                    // 新規が離脱を補えていない
+    const newWeak = newShort || (newRatio != null && newRatio < 0.85);  // 流入が平均より細い
+    const retWeak = retDiff != null && retDiff < -3;
+    const smallRet = c3.length && u[c3[0]].n_new < 10;
+    let verdict, cls;
+    if (newRatio == null || retDiff == null || smallRet) { verdict = "判定に足るデータがまだありません"; cls = "bg-gray-100 text-gray-500"; }
+    else if (!newWeak && !retWeak) { verdict = "順調 — 新規が離脱を補えていて、 定着も維持"; cls = "bg-green-50 text-green-700 border border-green-200"; }
+    else if (newWeak && !retWeak) { verdict = `新規が足りない — ${newShort ? `離脱を補えず ${Math.abs(netC)}名/月 不足` : "流入が平均より細い"} (定着はできている)`; cls = "bg-amber-50 text-amber-700 border border-amber-200"; }
+    else if (!newWeak && retWeak) { verdict = "新規をリピートにできていない — 流入は足りている (接客・次回提案を見る)"; cls = "bg-amber-50 text-amber-700 border border-amber-200"; }
+    else { verdict = `新規不足と定着低下の両方 — ${newShort ? `離脱に対し ${Math.abs(netC)}名/月 不足` : "流入も細い"}`; cls = "bg-red-50 text-red-700 border border-red-200"; }
+    const sign = v => v >= 0 ? "▲" : "▼";
+    const pctOf = (a, b) => (a != null && b) ? `${sign(a - b)}${Math.abs((a / b - 1) * 100).toFixed(0)}%` : "";
+    return `<div class="pt-3 pb-2">
+      <div class="text-[10px] text-gray-400 mb-1">いまの状態</div>
+      <div class="text-xs font-semibold rounded px-2 py-1.5 ${cls}">${verdict}</div>
+      <div class="grid grid-cols-2 gap-3 mt-2">
+        <div>
+          <div class="text-[10px] text-gray-500">新規の流入 <span class="text-gray-400">${ymLabel(latest)}</span></div>
+          <div class="kpi-num text-sm font-bold">${newNow}名 <span class="text-[10px] font-normal ${newWeak ? 'pct-bad' : 'text-gray-500'}">${pctOf(newNow, newAvg)} vs 6ヶ月平均${newAvg != null ? Math.round(newAvg) : "—"}名</span></div>
+          <div class="text-[10px] text-gray-400 kpi-num">1人あたり ${perNow != null ? perNow.toFixed(1) : "—"}名 (平均 ${perAvg != null ? perAvg.toFixed(1) : "—"}) · 稼働 ${sNow}名${sPrev && sPrev !== sNow ? ` (前月${sPrev})` : ""}</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500">新規→リピート <span class="text-gray-400">${c3.length ? ymLabel(c3[0]) + "組" : ""}</span></div>
+          <div class="kpi-num text-sm font-bold">${fmtPct(retNow)} <span class="text-[10px] font-normal ${retWeak ? 'pct-bad' : 'text-gray-500'}">${retDiff != null ? `${sign(retDiff)}${Math.abs(retDiff).toFixed(1)}pt vs 直近平均${retAvg.toFixed(1)}%` : ""}</span></div>
+          <div class="text-[10px] text-gray-400">3ヶ月以内に再来した新規の割合</div>
+        </div>
+      </div>
+      ${netC != null ? `<div class="mt-2 rounded px-2 py-1.5 bg-gray-50 flex items-baseline justify-between gap-2">
+        <div class="text-[10px] text-gray-500">純増減 <span class="text-gray-400">${ymLabel(netYms[0])}組 · 新規 − ${netK}ヶ月で戻らなかった客</span></div>
+        <div class="kpi-num text-sm font-bold ${netC >= 0 ? 'pct-good' : 'pct-bad'}">${netC >= 0 ? '+' : '−'}${Math.abs(netC)}名 <span class="text-[10px] font-normal text-gray-500">新規${netM.n_new} / 離脱${lostC}</span></div>
+      </div>${isHair ? `<div class="text-[10px] text-gray-400 mt-0.5">※ヘアは来店周期2〜3ヶ月のため${netK === 6 ? "6ヶ月窓で判定" : "3ヶ月窓は厳しめ"}</div>` : ""}` : ""}
+    </div>`;
+  };
+  const trendHtml = (u, k, kind) => {
+    const yms = completeCohorts(u, k).slice(0, 3);
+    if (!yms.length) return `<div class="text-[11px] text-gray-400">窓が閉じたコホートがまだありません</div>`;
+    const parts = yms.map((ym, i) => {
+      const v = rateOf(u[ym], k, kind);
+      const prevN = yms[i+1] ? (kind === "new" ? u[yms[i+1]].n_new : u[yms[i+1]].n_total) : 0;
+      const prev = (yms[i+1] && prevN >= 10) ? rateOf(u[yms[i+1]], k, kind) : null;  // 比較先が少数コホートなら差分を出さない
+      const d = (v != null && prev != null) ? v - prev : null;
+      const arrow = d == null ? "" : `<span class="${d >= 0 ? 'pct-good' : 'pct-bad'}">${d >= 0 ? '▲' : '▼'}${Math.abs(d).toFixed(1)}</span>`;
+      const nn = kind === "new" ? u[ym].n_new : u[ym].n_total;
+      return `<span class="whitespace-nowrap ${nn < 10 ? 'text-gray-300' : ''}">${ymLabel(ym)} <span class="kpi-num ${i === 0 ? 'font-semibold' : ''}">${fmtPct(v)}</span>${nn < 10 ? '' : arrow}</span>`;
+    });
+    return `<div class="text-[11px] text-gray-500 flex flex-wrap gap-x-2">${parts.join('<span class="text-gray-300">‹</span>')}</div>`;
+  };
+  const metricRow = (label, u, k, kind, hint) => {
+    const yms = completeCohorts(u, k);
+    const latest = yms[0];
+    const m = latest ? u[latest] : null;
+    const v = m ? rateOf(m, k, kind) : null;
+    const n = m ? (kind === "new" ? m.n_new : m.n_total) : 0;
+    const c = m ? ((kind === "new" ? m.cum_new : m.cum_total)[k] || 0) : 0;
+    const small = m && n < 10;   // 母数10名未満は率が暴れるので薄く表示
+    return `<div class="py-2 border-t border-gray-100">
+      <div class="flex items-baseline justify-between gap-2">
+        <div class="text-xs text-gray-600">${label}<div class="text-[10px] text-gray-400">${hint}</div></div>
+        <div class="text-right">
+          <div class="kpi-num text-lg font-bold ${small ? 'text-gray-400' : ''}">${fmtPct(v)}</div>
+          ${m ? `<div class="text-[10px] text-gray-400 kpi-num">${ymLabel(latest)}の${kind === "new" ? "新規" : "来店客"} ${n}名中 ${c}名${small ? ' · 母数が少ない' : ''}</div>` : ""}
+        </div>
+      </div>
+      ${trendHtml(u, k, kind)}
+    </div>`;
+  };
+
+  let latestAll = null;
+  root.innerHTML = UNIT_DEFS.filter(d => units[d.key]).map(def => {
+    const u = units[def.key];
+    const yms = Object.keys(u).filter(ym => u[ym].n_total > 0).sort();
+    const latest = yms[yms.length - 1];
+    if (latest && (!latestAll || latest > latestAll)) latestAll = latest;
+    const lm = u[latest] || {};
+    const newShare = lm.n_total ? lm.n_new / lm.n_total * 100 : null;
+    const nomi = latest ? nominationRate(def.key, latest) : null;
+    const header = def.head
+      ? `<div class="${def.head} text-white px-4 py-3"><div class="font-bold">${def.title}</div><div class="text-xs opacity-80">${def.sub}</div></div>`
+      : `<div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2"><span class="badge" style="background:${def.color}22; color:${def.color}; border:1px solid ${def.color}40">${def.title.split(" ").pop()}</span><div class="font-bold">${def.title}</div></div>`;
+    return `<div class="card overflow-hidden">
+      ${header}
+      <div class="px-4 pb-3">
+        ${statusBlock(def.key, u)}
+        ${metricRow("新規の定着率 (3ヶ月)", u, 3, "new", "初来店から3ヶ月以内に再来した割合")}
+        ${metricRow("新規の定着率 (6ヶ月)", u, 6, "new", "初来店から6ヶ月以内に再来した割合")}
+        ${metricRow("来店客全体の再来率 (3ヶ月)", u, 3, "all", "その月の来店客のうち3ヶ月以内に再来")}
+        <div class="py-2 border-t border-gray-100 grid grid-cols-2 gap-3">
+          <div><div class="text-xs text-gray-600">新規比率 <span class="text-[10px] text-gray-400">${latest ? ymLabel(latest) : ""}</span></div>
+            <div class="kpi-num text-lg font-bold">${fmtPct(newShare)}</div>
+            <div class="text-[10px] text-gray-400 kpi-num">${lm.n_total ? `来店 ${lm.n_total}名 / 新規 ${lm.n_new}名` : ""}</div></div>
+          <div><div class="text-xs text-gray-600">指名率 <span class="text-[10px] text-gray-400">${latest ? ymLabel(latest) : ""}</span></div>
+            <div class="kpi-num text-lg font-bold">${fmtPct(nomi)}</div>
+            <div class="text-[10px] text-gray-400">技術客数ベース</div></div>
+        </div>
+        ${(() => { const ev = staffEvents(def.key); return ev.length ? `<div class="pt-2 border-t border-gray-100 text-[11px] text-gray-500"><span class="text-gray-400">人員変動 (直近8ヶ月):</span> ${ev.map(e => `<span class="whitespace-nowrap">${ymLabel(e.ym)} <span class="${e.kind === 'in' ? 'pct-good' : 'text-gray-600'}">${e.text}</span></span>`).join(' · ')}</div>` : ""; })()}
+        ${(() => { const h = handoverRows(def.key); return h.length ? `<div class="pt-1 text-[11px] text-gray-500"><span class="text-gray-400">引き継ぎ (辞めた担当の客が店に戻った割合):</span> ${h.map(x => `<span class="whitespace-nowrap">${x.name} <span class="kpi-num ${x.rate >= 70 ? 'pct-good' : x.rate >= 55 ? 'text-gray-700' : 'pct-bad'}">${x.rate.toFixed(0)}%</span> <span class="text-gray-400">(${x.back}/${x.n}名・経過${x.elapsed}ヶ月)</span></span>`).join(' · ')}</div>` : ""; })()}
+      </div>
+    </div>`;
+  }).join("");
+  if (note) note.innerHTML = `定着率は「その月に来店した客 (コホート) が N ヶ月以内に再来した割合」で、 N ヶ月の窓が暦上閉じたコホートだけを表示 (直近は ${latestAll ? ymLabel(latestAll) : "—"} まで取得済)。 部門は担当者をその月の部門別売上の最大で束ねたもの。 1回の来店で複数担当がつくと両部門に数えられるため、 部門合計は店舗合計を少し上回ります。 ▲▼ は前のコホートとの差 (pt)。`;
+}
+
 function renderVisitsTab() {
+  renderRetentionCards();
   const root1 = document.getElementById("visitorBreakdownCards");
   const root2 = document.getElementById("nominationCards");
   // Visit breakdown per store

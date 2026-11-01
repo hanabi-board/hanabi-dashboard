@@ -141,6 +141,16 @@ fi
 log "[2e/5] 採用データ Notion 同期"
 python3 scripts/sync_recruitment_from_notion.py 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ Notion 採用同期 失敗 — 既存 recruitment.json 維持で続行"
 
+# 3f. 月初日のみ: Uレジ「再来店の実績」(担当者別) を取得 → 部門別 客のつき具合 (2026-11-01 追加)
+#     コホート月ごとの再来は 6ヶ月窓が閉じるまで毎月値が変わるので、 前月〜7ヶ月前の7コホートを毎月取り直す。
+#     非致命 (失敗しても既存 data/retention_*.json のまま続行)。 所要 10分前後。
+if [ "$DAY" = "01" ]; then
+  RET_COHORTS=""
+  for k in 7 6 5 4 3 2 1; do RET_COHORTS="$RET_COHORTS $(date -v -${k}m +%Y%m)"; done
+  log "[2f/5] 月初日: 再来店の実績 (定着率) 取得 cohorts=$RET_COHORTS"
+  python3 scripts/scrape_retention.py $RET_COHORTS --term 6 2>&1 | tee -a "$LOG_FILE" || log "  ⚠️ 定着率 取得失敗 — 既存データ維持で続行"
+fi
+
 # 4. JSON再生成
 log "[3/5] generate.py"
 python3 scripts/generate.py 2>&1 | tee -a "$LOG_FILE"
