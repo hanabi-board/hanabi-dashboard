@@ -4362,8 +4362,10 @@ function renderRetentionCards() {
       rs.sort((a, b) => a.month < b.month ? -1 : 1);
       const f = rs[0], l = rs[rs.length - 1];
       const short = name.split(/\s+/)[0];
+      const prof = (typeof findStaffProfile === "function" ? findStaffProfile(name) : null) || (((DATA.staff_profiles || {}).profiles || {})[name]) || {};
+      const outLabel = prof.leave ? `${short} ${prof.leave}` : prof.retired ? `${short} 退職` : `${short} 最終稼働`;
       if (f.month > first && f.month >= cutoff && (!dept || f.primary_dept === dept)) ev.push({ ym: f.month, text: `${short} 入社`, kind: "in" });
-      if (l.month < latest && l.month >= cutoff && (!dept || l.primary_dept === dept)) ev.push({ ym: l.month, text: `${short} 最終稼働`, kind: "out" });
+      if (l.month < latest && l.month >= cutoff && (!dept || l.primary_dept === dept)) ev.push({ ym: l.month, text: outLabel, kind: prof.leave ? "leave" : "out" });
     });
     return ev.sort((a, b) => a.ym < b.ym ? 1 : -1).slice(0, 4);
   };
@@ -4385,7 +4387,9 @@ function renderRetentionCards() {
       if (!last2.length) return;
       let n = 0, back = 0, el = [];
       last2.forEach(k => { const c = coh[k]; n += c.n_total; const idx = Math.max(0, ...c.months.map((m, i) => (m <= latest && i <= c.complete_through) ? i : 0)); back += c.cum_total[idx] || 0; el.push(mi(latest) - mi(k)); });
-      if (n >= 10) out.push({ name: name.split(/\s+/)[0], n, back, rate: back / n * 100, elapsed: `${Math.min(...el)}〜${Math.max(...el)}`, last: l.month });
+      const prof = (typeof findStaffProfile === "function" ? findStaffProfile(name) : null) || (((DATA.staff_profiles || {}).profiles || {})[name]) || {};
+      const status = prof.leave ? prof.leave : prof.retired ? "退職" : "最終稼働";
+      if (n >= 10) out.push({ name: `${name.split(/\s+/)[0]} (${status})`, n, back, rate: back / n * 100, elapsed: `${Math.min(...el)}〜${Math.max(...el)}`, last: l.month });
     });
     return out.sort((a, b) => a.last < b.last ? 1 : -1).slice(0, 3);
   };
@@ -4516,8 +4520,8 @@ function renderRetentionCards() {
             <div class="kpi-num text-lg font-bold">${fmtPct(nomi)}</div>
             <div class="text-[10px] text-gray-400">技術客数ベース</div></div>
         </div>
-        ${(() => { const ev = staffEvents(def.key); return ev.length ? `<div class="pt-2 border-t border-gray-100 text-[11px] text-gray-500"><span class="text-gray-400">人員変動 (直近8ヶ月):</span> ${ev.map(e => `<span class="whitespace-nowrap">${ymLabel(e.ym)} <span class="${e.kind === 'in' ? 'pct-good' : 'text-gray-600'}">${e.text}</span></span>`).join(' · ')}</div>` : ""; })()}
-        ${(() => { const h = handoverRows(def.key); return h.length ? `<div class="pt-1 text-[11px] text-gray-500"><span class="text-gray-400">引き継ぎ (辞めた担当の客が店に戻った割合):</span> ${h.map(x => `<span class="whitespace-nowrap">${x.name} <span class="kpi-num ${x.rate >= 70 ? 'pct-good' : x.rate >= 55 ? 'text-gray-700' : 'pct-bad'}">${x.rate.toFixed(0)}%</span> <span class="text-gray-400">(${x.back}/${x.n}名・経過${x.elapsed}ヶ月)</span></span>`).join(' · ')}</div>` : ""; })()}
+        ${(() => { const ev = staffEvents(def.key); return ev.length ? `<div class="pt-2 border-t border-gray-100 text-[11px] text-gray-500"><span class="text-gray-400">人員変動 (直近8ヶ月):</span> ${ev.map(e => `<span class="whitespace-nowrap">${ymLabel(e.ym)} <span class="${e.kind === 'in' ? 'pct-good' : e.kind === 'leave' ? 'text-amber-700' : 'text-gray-600'}">${e.text}</span></span>`).join(' · ')}</div>` : ""; })()}
+        ${(() => { const h = handoverRows(def.key); return h.length ? `<div class="pt-1 text-[11px] text-gray-500"><span class="text-gray-400">引き継ぎ (退職・休業した担当の客が店に戻った割合):</span> ${h.map(x => `<span class="whitespace-nowrap">${x.name} <span class="kpi-num ${x.rate >= 70 ? 'pct-good' : x.rate >= 55 ? 'text-gray-700' : 'pct-bad'}">${x.rate.toFixed(0)}%</span> <span class="text-gray-400">(${x.back}/${x.n}名・経過${x.elapsed}ヶ月)</span></span>`).join(' · ')}</div>` : ""; })()}
       </div>
     </div>`;
   }).join("");

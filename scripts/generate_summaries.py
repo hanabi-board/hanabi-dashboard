@@ -292,13 +292,17 @@ def build_retention_block(data: dict, month: str, section_id: str) -> str:
         by = {}
         for r in rows_all:
             by.setdefault(r["name"], []).append(r)
+        profiles = ((data.get("staff_profiles") or {}).get("profiles") or {})
+        def status_of(name):
+            pr = profiles.get(name) or {}
+            return pr.get("leave") or ("退職" if pr.get("retired") else "最終稼働 (理由未登録)")
         ev = []
         for name, rs in by.items():
             rs.sort(key=lambda r: r["month"]); f, l = rs[0], rs[-1]
             if f["month"] > months_all[0] and f["month"] >= month[:4] + str(max(1, int(month[4:6]) - 3)).zfill(2) and (not dept or f.get("primary_dept") == dept):
                 ev.append(f"{f['month'][4:6].lstrip('0')}月 {name.split()[0]} 入社")
             if l["month"] < latest and l["month"] >= month[:4] + str(max(1, int(month[4:6]) - 3)).zfill(2) and (not dept or l.get("primary_dept") == dept):
-                ev.append(f"{l['month'][4:6].lstrip('0')}月 {name.split()[0]} 最終稼働")
+                ev.append(f"{l['month'][4:6].lstrip('0')}月 {name.split()[0]} {status_of(name)}")
         if ev:
             lines.append("- 人員変動 (直近): " + "、 ".join(sorted(ev, key=lambda e: int(e.split("月")[0]))))
         # 退職者の客の引き継ぎ (最終稼働が直近4ヶ月以内)
@@ -321,7 +325,7 @@ def build_retention_block(data: dict, month: str, section_id: str) -> str:
                 back += ck["cum_total"][idx]
             if n >= 10:
                 el = [int(latest[:4]) * 12 + int(latest[4:6]) - (int(k[:4]) * 12 + int(k[4:6])) for k in last2]
-                lines.append(f"- 引き継ぎ: {name.split()[0]} (最終稼働{l['month'][4:6].lstrip('0')}月) の直近2ヶ月の来店客{n}名のうち、 店の誰かで戻ったのは{back}名 ({back/n*100:.0f}%・経過{min(el)}〜{max(el)}ヶ月時点)")
+                lines.append(f"- 引き継ぎ: {name.split()[0]} ({status_of(name)}・最終稼働{l['month'][4:6].lstrip('0')}月) の直近2ヶ月の来店客{n}名のうち、 店の誰かで戻ったのは{back}名 ({back/n*100:.0f}%・経過{min(el)}〜{max(el)}ヶ月時点)")
     return "【顧客基盤 (客のつき具合・Uレジ再来店の実績より)】\n" + "\n".join(lines) if lines else ""
 
 
@@ -450,6 +454,7 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
 - 原価率データがあれば 規定値との比較を1文加える (達成 or 超過、 構造的要因の所感込み)
 - 前提コンテキストの戦略・人事方針を踏まえた所感を含める
 - 顧客基盤データがあれば「新規が足りているか (純増減)」「新規をリピートにできているか (定着率)」「受け皿 (稼働・入退社・引き継ぎ)」のどれが今の論点かを数字を引用して1〜2文で述べる
+- 退職と休業 (産休・育休等) は区別する。 【顧客基盤】の人員変動に書かれた種別 (退職/産休/最終稼働) をそのまま使い、 「退職」と書かれていない人を退職扱いしない
 - 人数・体制 (何名体制、 新人、 退職、 1名/2名 等) は【数字データ】【スタッフ動向】の実績を正とする。 前提コンテキストの人数記述と食い違う場合は実績を優先し、 実績に根拠のない体制の断定はしない
 - 改善アクションは 状況に応じて 必要な時のみ (無理に書かない)
 - 太字 (**) や 箇条書き (- や *) や 見出し (#) は禁止、 普通の段落文で
