@@ -1253,6 +1253,14 @@ function isSameStoreEligible(sid, currentMonth) {
   // 比較対象の前年同月の月初日
   const prevYear = parseInt(currentMonth.slice(0, 4)) - 1;
   const prevMonth = currentMonth.slice(4, 6);
+  const prevYM = `${prevYear}${prevMonth}`;
+  // 🛡 2026-11-01: 既存サロンの加入 (ELLE宮古島 2025-09) は開店ランプアップが無いので、
+  //   前年同月に実績がある時点から同店舗 YoY の対象にする (水野指摘: 2026-09 から2店舗で比較できるはず)。
+  //   新規開店 (新横浜 2026-05-29 等) は従来どおり 開店+12ヶ月ルール。
+  if (store.joined_existing) {
+    const prevMs = ((DATA.monthly_by_store || {})[sid] || {})[prevYM];
+    return !!(prevMs && prevMs.total_sales > 0);
+  }
   const prevYearStart = new Date(`${prevYear}-${prevMonth}-01`);
   // 開店日+12ヶ月の日付 (この日以降が「成熟」期)
   const openDate = new Date(store.open_date);

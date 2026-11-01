@@ -39,6 +39,9 @@ STORES = {
         "brand": "elle",
         "departments": ["ヘア", "アイ", "ネイル"],
         "open_date": "2025-09-01",  # ELLE by Hanabi 宮古島店 開店
+        # 2026-11-01: 新規開店ではなく既存サロンの HANABI 加入 (2025-09) なのでランプアップ期間なし。
+        #   同店舗 YoY は「前年同月に実績があれば対象」 (開店+12ヶ月ルールを適用しない)
+        "joined_existing": True,
         "photos": ["miyakojima_1.jpg", "miyakojima_2.jpg"],
     },
     "shinyokohama": {

@@ -225,6 +225,9 @@ def build_dept_stats(data: dict, month: str, dept_label: str) -> str:
         dept_staff = [(s["name"], s.get(f"sales_{dept_field}", 0)) for s in staff_rows if s.get(f"sales_{dept_field}", 0) > 0]
         dept_staff.sort(key=lambda x: -x[1])
         if dept_staff:
+            # 🛡 2026-11-01: 体制人数を実績から明示 (前提コンテキストの古い人数記述に引きずられて
+            #   「1名体制」と書いた事故の再発防止)。 TOP3 だけでなく 稼働した全員と人数を渡す
+            lines.append(f"{dept_label}部門 当月稼働スタッフ {len(dept_staff)}名 (売上実績あり): " + ", ".join(n for n, _ in dept_staff))
             top = dept_staff[:3]
             lines.append(f"{dept_label}部門 売上TOP: " + ", ".join(f"{n}({fmt_yen(v)})" for n, v in top))
 
@@ -352,6 +355,7 @@ def build_prompt(section_id: str, month: str, data: dict, context: str) -> str:
 - 数字 (売上、客数、客単価、達成率、前月比、原価率、等) を必ず1つ以上引用
 - 原価率データがあれば 規定値との比較を1文加える (達成 or 超過、 構造的要因の所感込み)
 - 前提コンテキストの戦略・人事方針を踏まえた所感を含める
+- 人数・体制 (何名体制、 新人、 退職、 1名/2名 等) は【数字データ】【スタッフ動向】の実績を正とする。 前提コンテキストの人数記述と食い違う場合は実績を優先し、 実績に根拠のない体制の断定はしない
 - 改善アクションは 状況に応じて 必要な時のみ (無理に書かない)
 - 太字 (**) や 箇条書き (- や *) や 見出し (#) は禁止、 普通の段落文で
 - 「〜です」「〜ます」 調で
