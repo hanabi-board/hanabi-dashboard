@@ -195,6 +195,13 @@ if [ "$DAY" = "01" ]; then
   notify "HANABI Dashboard 月初更新完了" "前月確定値を反映済"
 fi
 
+# 6. 診断ログの掃除 (2026-11-03 追加): download_* / retention_* は 60日より古いものをローカルから削除。
+#    Box 側には ~/box_sync.sh (毎朝9:00・削除なし) が同じフォルダを退避しているので、 遡りたい時は Box を見る。
+#    非致命 (失敗しても通知しない)。 ディレクトリの更新日=作成日なので -mtime で判定できる。
+PRUNED=$(find "$LOG_DIR" -maxdepth 1 -type d \( -name 'download_*' -o -name 'retention_*' \) -mtime +60 -print 2>/dev/null | wc -l | tr -d ' ')
+find "$LOG_DIR" -maxdepth 1 -type d \( -name 'download_*' -o -name 'retention_*' \) -mtime +60 -exec rm -rf {} + 2>/dev/null || true
+log "[6/5] 診断ログ掃除: 60日超 ${PRUNED:-0} フォルダ削除 (Box に退避済み)"
+
 log "==== done ===="
 
 # 成功メール (毎朝必ず送信)
