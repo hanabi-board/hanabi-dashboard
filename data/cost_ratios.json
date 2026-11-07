@@ -393,6 +393,33 @@
         "cost": 52924,
         "ratio": 0.039225
       }
+    },
+    "202610": {
+      "tsunashima": {
+        "sales": 3180053,
+        "cost": 267943,
+        "ratio": 0.084257
+      },
+      "miyakojima_total": {
+        "sales": 5436422,
+        "cost": 264951,
+        "ratio": 0.048736
+      },
+      "miyakojima_hair": {
+        "sales": 2042983,
+        "cost": 163099,
+        "ratio": 0.079834
+      },
+      "miyakojima_eye": {
+        "sales": 2428440,
+        "cost": 89362,
+        "ratio": 0.036798
+      },
+      "miyakojima_nail": {
+        "sales": 964999,
+        "cost": 12490,
+        "ratio": 0.012943
+      }
     }
   },
   "fy_average": {
@@ -415,10 +442,10 @@
       "months": 12
     },
     {
-      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/000_本部/HABABI_FY26予実管理表_ver0.9.xlsx",
+      "file": "/Users/yoheimizuno/Library/CloudStorage/Box-Box/050_HANABI/010_運営本部/000_本部/HABABI_FY26予実管理表_ver1.0.xlsx",
       "fy": "FY26",
-      "months": 5
+      "months": 6
     }
   ],
-  "parsed_at": "2026-10-10T02:17:11.371426+09:00"
+  "parsed_at": "2026-11-08T00:06:09.872811+09:00"
 }
