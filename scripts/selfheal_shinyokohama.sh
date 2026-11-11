@@ -41,7 +41,14 @@ if [ "$DAY" = "01" ]; then
   YM=$(date -v -1m +%Y%m 2>/dev/null || date -d "-1 month" +%Y%m)
 fi
 
+# --- スリープ対策 (2026-11-11・scripts/deploy_auto.sh と同じ) ---
+# Mac が眠っていると、この修復も「約5分おきに10秒だけ動く」コマ送りになり push が時間切れになりうる。
+# 起動直後に本覚醒を要求し、完走まで眠らせない (-w $$ = このスクリプト終了で自動解除)
+( /usr/bin/caffeinate -u -t 60 >/dev/null 2>&1 & )
+( /usr/bin/caffeinate -i -s -w $$ >/dev/null 2>&1 & )
+
 log "==== 新横浜 自己修復チェック ($YM) ===="
+log "[sleep-guard] 本覚醒を要求・完走までスリープ防止 (電源: $(/usr/bin/pmset -g batt 2>/dev/null | head -1 | sed -E "s/^Now drawing from '(.*)'$/\1/"))"
 
 # --- Step 1: salon dist が今日更新済か ---
 DIST="/Users/yoheimizuno/salon-dashboard/dist/index.html"

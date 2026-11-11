@@ -51,7 +51,17 @@ on_error() {
 }
 trap 'on_error $LINENO' ERR
 
+# --- スリープ対策 (2026-11-11・salon-dashboard/deploy_auto.sh と同じ) ---
+# 夜にバッテリーで眠った Mac は、あとから充電器を挿しても起きない。その状態だと朝の実行は
+# 「約5分おきに10秒だけ動く」コマ送り (DarkWake) になる (2026-11-11 に salon 側がこれで失敗)。
+# 起動直後に本覚醒を要求し、完走まで眠らせない。
+#   -u = DarkWake を本覚醒へ / -s = スリープ防止 (AC のみ有効) / -i = アイドルスリープ防止 (本覚醒中のみ有効)
+#   -w $$ = このスクリプト終了で自動解除。サブシェル起動 = ジョブ表に載せない
+( /usr/bin/caffeinate -u -t 60 >/dev/null 2>&1 & )
+( /usr/bin/caffeinate -i -s -w $$ >/dev/null 2>&1 & )
+
 log "==== HANABI dashboard daily auto-deploy ===="
+log "[sleep-guard] 本覚醒を要求・完走までスリープ防止 (電源: $(/usr/bin/pmset -g batt 2>/dev/null | head -1 | sed -E "s/^Now drawing from '(.*)'$/\1/"))"
 
 # 0. 最新リモートを取り込む (ブラウザUI経由の編集を取り逃さないため)
 #    例: 麗花さんが UI から recruitment.json 編集 → push 済の状態から始める
